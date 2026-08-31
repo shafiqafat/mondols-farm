@@ -1,0 +1,569 @@
+/* ========================================
+   FARM HERO
+======================================== */
+
+.farm-hero {
+  position: relative;
+
+  min-height: 650px;
+
+  display: flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  color: var(--color-white);
+}
+
+.farm-hero__image {
+  position: absolute;
+  inset: 0;
+}
+
+.farm-hero__image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.farm-hero__overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(16, 41, 30, 0.48);
+}
+
+.farm-hero__content {
+  position: relative;
+
+  z-index: 2;
+
+  padding-block: 120px;
+}
+
+.farm-hero__eyebrow {
+  display: block;
+
+  margin-bottom: 22px;
+
+  color: var(--color-beige);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  letter-spacing: 0.16em;
+}
+
+.farm-hero h1 {
+  margin: 0;
+
+  color: var(--color-white);
+
+  font-size: clamp(60px, 8vw, 105px);
+
+  font-weight: 500;
+
+  line-height: 0.95;
+
+  letter-spacing: -0.04em;
+}
+
+.farm-hero p {
+  max-width: 520px;
+
+  margin-top: 30px;
+
+  color: rgba(255, 255, 255, 0.82);
+
+  font-size: 17px;
+
+  line-height: 1.7;
+}
+
+
+/* ========================================
+   INTRODUCTION
+======================================== */
+
+.farm-introduction {
+  background: var(--color-cream);
+}
+
+.farm-introduction__grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 100px;
+
+  align-items: center;
+}
+
+.farm-introduction__image {
+  height: 600px;
+
+  overflow: hidden;
+}
+
+.farm-introduction__image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.farm-introduction__extra {
+  max-width: 540px;
+
+  margin-top: 24px;
+
+  color: var(--color-text-muted);
+
+  font-size: 15px;
+
+  line-height: 1.75;
+}
+
+.farm-page__link {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-top: 30px;
+
+  padding-bottom: 6px;
+
+  border-bottom: 1px solid var(--color-forest);
+
+  color: var(--color-forest);
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.farm-page__link span {
+  font-size: 18px;
+}
+
+
+/* ========================================
+   PROJECTS
+======================================== */
+
+.farm-projects {
+  background: var(--color-white);
+}
+
+.farm-projects__header {
+  margin-bottom: 60px;
+}
+
+.farm-projects__grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 24px;
+}
+
+
+/* ========================================
+   WHAT WE GROW
+======================================== */
+
+.farm-grow {
+  background: var(--color-cream);
+}
+
+.farm-grow__list {
+  margin-top: 65px;
+
+  border-top: 1px solid var(--color-border);
+}
+
+.farm-grow__item {
+  display: grid;
+
+  grid-template-columns: 60px 0.8fr 1fr;
+
+  align-items: center;
+
+  gap: 30px;
+
+  padding: 25px 0;
+
+  border-bottom: 1px solid var(--color-border);
+}
+
+.farm-grow__item > span {
+  color: var(--color-terracotta);
+
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+.farm-grow__item h3 {
+  margin: 0;
+
+  font-size: 27px;
+
+  font-weight: 500;
+}
+
+.farm-grow__item p {
+  max-width: 480px;
+
+  margin: 0;
+
+  color: var(--color-text-muted);
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+
+/* ========================================
+   GALLERY
+======================================== */
+
+.farm-gallery {
+  background: var(--color-white);
+}
+
+.farm-gallery__header {
+  margin-bottom: 60px;
+}
+
+.farm-gallery__grid {
+  display: grid;
+
+  grid-template-columns: 1.2fr 0.8fr 0.8fr;
+
+  grid-template-rows: 298px 298px;
+
+  gap: 18px;
+}
+
+.farm-gallery__footer {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin-top: 35px;
+}
+
+.farm-gallery__footer a {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding-bottom: 6px;
+
+  border-bottom: 1px solid var(--color-forest);
+
+  color: var(--color-forest);
+
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+
+/* ========================================
+   PHILOSOPHY
+======================================== */
+
+.farm-philosophy {
+  background: var(--color-forest);
+
+  color: var(--color-white);
+}
+
+.farm-philosophy__grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 100px;
+}
+
+.farm-philosophy__eyebrow {
+  display: block;
+
+  margin-bottom: 20px;
+
+  color: var(--color-beige);
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.15em;
+}
+
+.farm-philosophy h2 {
+  margin: 0;
+
+  color: var(--color-white);
+
+  font-size: clamp(48px, 6vw, 78px);
+
+  font-weight: 500;
+
+  line-height: 0.98;
+}
+
+.farm-philosophy__values {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.farm-philosophy__values > div {
+  padding: 25px 0;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.farm-philosophy__values span {
+  color: var(--color-beige);
+
+  font-size: 10px;
+
+  font-weight: 600;
+}
+
+.farm-philosophy__values h3 {
+  margin-top: 8px;
+
+  color: var(--color-white);
+
+  font-size: 24px;
+
+  font-weight: 500;
+}
+
+.farm-philosophy__values p {
+  max-width: 450px;
+
+  margin-top: 8px;
+
+  color: rgba(255, 255, 255, 0.65);
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+
+/* ========================================
+   CTA
+======================================== */
+
+.farm-cta {
+  position: relative;
+
+  min-height: 500px;
+
+  display: flex;
+
+  align-items: center;
+
+  background:
+    linear-gradient(
+      rgba(16, 41, 30, 0.75),
+      rgba(16, 41, 30, 0.75)
+    ),
+    url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85')
+    center / cover;
+
+  color: var(--color-white);
+}
+
+.farm-cta__content {
+  padding-block: 100px;
+}
+
+.farm-cta__content > span {
+  display: block;
+
+  margin-bottom: 20px;
+
+  color: var(--color-beige);
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.15em;
+}
+
+.farm-cta h2 {
+  margin: 0 0 35px;
+
+  color: var(--color-white);
+
+  font-size: clamp(48px, 6vw, 78px);
+
+  font-weight: 500;
+
+  line-height: 0.98;
+}
+@media (max-width: 767px) {
+
+  /* Hero */
+
+  .farm-hero {
+    min-height: 580px;
+  }
+
+  .farm-hero__content {
+    padding-block: 90px;
+  }
+
+  .farm-hero h1 {
+    font-size: clamp(52px, 15vw, 68px);
+  }
+
+  .farm-hero p {
+    margin-top: 22px;
+
+    font-size: 15px;
+  }
+
+
+  /* Introduction */
+
+  .farm-introduction {
+    padding-block: 70px;
+  }
+
+  .farm-introduction__grid {
+    grid-template-columns: 1fr;
+
+    gap: 45px;
+  }
+
+  .farm-introduction__image {
+    height: 400px;
+  }
+
+
+  /* Projects */
+
+  .farm-projects {
+    padding-block: 70px;
+  }
+
+  .farm-projects__header {
+    margin-bottom: 40px;
+  }
+
+  .farm-projects__grid {
+    grid-template-columns: 1fr;
+
+    gap: 20px;
+  }
+
+
+  /* Grow */
+
+  .farm-grow {
+    padding-block: 70px;
+  }
+
+  .farm-grow__list {
+    margin-top: 45px;
+  }
+
+  .farm-grow__item {
+    grid-template-columns: 35px 1fr;
+
+    gap: 15px;
+  }
+
+  .farm-grow__item p {
+    grid-column: 2;
+  }
+
+  .farm-grow__item h3 {
+    font-size: 23px;
+  }
+
+
+  /* Gallery */
+
+  .farm-gallery {
+    padding-block: 70px;
+  }
+
+  .farm-gallery__header {
+    margin-bottom: 40px;
+  }
+
+  .farm-gallery__grid {
+    grid-template-columns: 1fr 1fr;
+
+    grid-template-rows: auto;
+
+    gap: 10px;
+  }
+
+  .farm-gallery__grid
+  .gallery-item--large {
+    grid-column: 1 / -1;
+
+    height: 400px;
+  }
+
+  .farm-gallery__grid
+  .gallery-item--small {
+    height: 230px;
+  }
+
+  .farm-gallery__grid
+  .gallery-item--medium {
+    grid-column: 1 / -1;
+
+    height: 300px;
+  }
+
+
+  /* Philosophy */
+
+  .farm-philosophy {
+    padding-block: 70px;
+  }
+
+  .farm-philosophy__grid {
+    grid-template-columns: 1fr;
+
+    gap: 50px;
+  }
+
+  .farm-philosophy h2 {
+    font-size: clamp(46px, 13vw, 62px);
+  }
+
+
+  /* CTA */
+
+  .farm-cta {
+    min-height: 520px;
+  }
+
+  .farm-cta__content {
+    padding-block: 90px;
+  }
+
+  .farm-cta h2 {
+    font-size: clamp(46px, 13vw, 62px);
+  }
+
+}

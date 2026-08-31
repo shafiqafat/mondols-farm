@@ -1,0 +1,32 @@
+:root {
+  /* Brand Colors */
+  --color-forest: #183A2B;
+  --color-forest-dark: #10291E;
+  --color-earth: #7A5C3E;
+  --color-terracotta: #B86F52;
+  --color-beige: #DCCDB8;
+  
+  /* Backgrounds */
+  --color-cream: #F7F4ED;
+  --color-white: #FFFFFF;
+  --color-dark: #1C211E;
+
+  /* Text */
+  --color-text: #252824;
+  --color-text-muted: #6F746E;
+
+  /* Borders */
+  --color-border: #DDD9CF;
+
+  /* Layout */
+  --container-width: 1280px;
+  --container-padding: 24px;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  /* Transitions */
+  --transition: 0.3s ease;
+}

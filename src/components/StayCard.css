@@ -1,0 +1,163 @@
+.stay-card {
+  display: grid;
+
+  grid-template-columns: 1.25fr 0.75fr;
+
+  min-height: 500px;
+
+  background: var(--color-white);
+
+  border: 1px solid var(--color-border);
+
+  overflow: hidden;
+}
+
+/* Image */
+
+.stay-card__image {
+  height: 100%;
+
+  min-height: 500px;
+
+  overflow: hidden;
+}
+
+.stay-card__image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  transition: transform 0.7s ease;
+}
+
+.stay-card:hover .stay-card__image img {
+  transform: scale(1.03);
+}
+
+/* Content */
+
+.stay-card__content {
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  padding: 50px;
+}
+
+/* Heading */
+
+.stay-card__heading {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 25px;
+}
+
+.stay-card h3 {
+  margin: 0;
+
+  font-size: clamp(32px, 3vw, 46px);
+
+  font-weight: 500;
+
+  line-height: 1.05;
+}
+
+/* Price */
+
+.stay-card__price {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  white-space: nowrap;
+}
+
+.stay-card__price strong {
+  color: var(--color-forest);
+
+  font-size: 18px;
+}
+
+.stay-card__price span {
+  color: var(--color-text-muted);
+
+  font-size: 11px;
+}
+
+/* Description */
+
+.stay-card__description {
+  max-width: 420px;
+
+  margin-top: 28px;
+
+  color: var(--color-text-muted);
+
+  font-size: 15px;
+
+  line-height: 1.75;
+}
+
+/* Details */
+
+.stay-card__details {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  margin-top: 28px;
+}
+
+.stay-card__details span {
+  padding: 8px 11px;
+
+  background: var(--color-cream);
+
+  color: var(--color-text);
+
+  font-size: 11px;
+}
+
+/* Link */
+
+.stay-card__link {
+  display: inline-flex;
+
+  align-items: center;
+
+  align-self: flex-start;
+
+  gap: 10px;
+
+  margin-top: 35px;
+
+  padding-bottom: 6px;
+
+  border-bottom: 1px solid var(--color-forest);
+
+  color: var(--color-forest);
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.stay-card__link span {
+  font-size: 18px;
+
+  transition: transform var(--transition);
+}
+
+.stay-card__link:hover span {
+  transform: translateX(5px);
+}

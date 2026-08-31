@@ -1,0 +1,47 @@
+import { Routes, Route } from "react-router-dom";
+
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+
+import Home from "./pages/Home";
+import Farm from "./pages/Farm";
+import Stay from "./pages/Stay";
+import Shop from "./pages/Shop";
+import Journal from "./pages/Journal";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import ProductDetail from "./pages/ProductDetail";
+import JournalDetail from "./pages/JournalDetail";
+import Gallery from "./pages/Gallery";
+
+function App() {
+  return (
+    <>
+      <Navbar />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+
+        <Route path="/farm" element={<Farm />} />
+
+        <Route path="/stay" element={<Stay />} />
+
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/shop/:slug" element={<ProductDetail />} />
+
+        <Route path="/journal" element={<Journal />} />
+        <Route path="/journal/:slug" element={<JournalDetail />} />
+
+        <Route path="/gallery" element={<Gallery />} />
+
+        <Route path="/about" element={<About />} />
+
+        <Route path="/contact" element={<Contact />} />
+      </Routes>
+
+      <Footer />
+    </>
+  );
+}
+
+export default App;

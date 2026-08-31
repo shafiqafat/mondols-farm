@@ -1,0 +1,602 @@
+/* ========================================
+   HERO
+======================================== */
+
+.stay-hero {
+  position: relative;
+
+  min-height: 680px;
+
+  display: flex;
+  align-items: center;
+
+  overflow: hidden;
+
+  color: var(--color-white);
+}
+
+.stay-hero__image {
+  position: absolute;
+  inset: 0;
+}
+
+.stay-hero__image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.stay-hero__overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(16, 41, 30, 0.5);
+}
+
+.stay-hero__content {
+  position: relative;
+
+  z-index: 2;
+
+  padding-block: 120px;
+}
+
+.stay-hero__eyebrow {
+  display: block;
+
+  margin-bottom: 22px;
+
+  color: var(--color-beige);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  letter-spacing: 0.16em;
+}
+
+.stay-hero h1 {
+  margin: 0;
+
+  color: var(--color-white);
+
+  font-size: clamp(60px, 8vw, 105px);
+
+  font-weight: 500;
+
+  line-height: 0.95;
+
+  letter-spacing: -0.04em;
+}
+
+.stay-hero p {
+  max-width: 540px;
+
+  margin-top: 30px;
+
+  color: rgba(255, 255, 255, 0.82);
+
+  font-size: 17px;
+
+  line-height: 1.7;
+}
+
+
+/* ========================================
+   INTRO
+======================================== */
+
+.stay-intro {
+  background: var(--color-cream);
+}
+
+.stay-intro__grid {
+  display: grid;
+
+  grid-template-columns: 0.5fr 1.5fr;
+
+  gap: 80px;
+}
+
+.stay-intro__label {
+  padding-top: 10px;
+}
+
+.stay-intro__label span {
+  color: var(--color-terracotta);
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.14em;
+}
+
+.stay-intro__content {
+  max-width: 850px;
+}
+
+.stay-intro__content h2 {
+  margin: 0;
+
+  color: var(--color-dark);
+
+  font-size: clamp(44px, 5vw, 70px);
+
+  font-weight: 500;
+
+  line-height: 1;
+
+  letter-spacing: -0.03em;
+}
+
+.stay-intro__content p {
+  max-width: 650px;
+
+  margin-top: 28px;
+
+  color: var(--color-text-muted);
+
+  font-size: 16px;
+
+  line-height: 1.75;
+}
+
+
+/* ========================================
+   ACCOMMODATION
+======================================== */
+
+.stay-accommodation {
+  background: var(--color-white);
+}
+
+.stay-accommodation__header {
+  margin-bottom: 60px;
+}
+
+.stay-accommodation__list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 24px;
+}
+
+
+/* ========================================
+   WHAT TO EXPECT
+======================================== */
+
+.stay-expect {
+  background: var(--color-cream);
+}
+
+.stay-expect__grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 0;
+
+  margin-top: 65px;
+
+  border-top: 1px solid var(--color-border);
+}
+
+.stay-expect__item {
+  padding: 28px 24px;
+
+  border-right: 1px solid var(--color-border);
+}
+
+.stay-expect__item:first-child {
+  padding-left: 0;
+}
+
+.stay-expect__item:last-child {
+  border-right: 0;
+}
+
+.stay-expect__item > span {
+  color: var(--color-terracotta);
+
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+.stay-expect__item h3 {
+  margin-top: 35px;
+
+  font-size: 23px;
+
+  font-weight: 500;
+}
+
+.stay-expect__item p {
+  margin-top: 12px;
+
+  color: var(--color-text-muted);
+
+  font-size: 13px;
+
+  line-height: 1.7;
+}
+
+
+/* ========================================
+   EXPERIENCES
+======================================== */
+
+.stay-experiences {
+  background: var(--color-white);
+}
+
+.stay-experiences__grid {
+  display: grid;
+
+  grid-template-columns: 1.1fr 0.9fr;
+
+  gap: 100px;
+
+  align-items: center;
+}
+
+.stay-experiences__image {
+  height: 620px;
+
+  overflow: hidden;
+}
+
+.stay-experiences__image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.stay-experiences__content {
+  max-width: 560px;
+}
+
+.stay-experiences__eyebrow {
+  display: block;
+
+  margin-bottom: 20px;
+
+  color: var(--color-terracotta);
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.15em;
+}
+
+.stay-experiences__content h2 {
+  margin: 0;
+
+  color: var(--color-dark);
+
+  font-size: clamp(42px, 5vw, 68px);
+
+  font-weight: 500;
+
+  line-height: 1;
+}
+
+.stay-experiences__content p {
+  margin-top: 25px;
+
+  color: var(--color-text-muted);
+
+  font-size: 15px;
+
+  line-height: 1.75;
+}
+
+.stay-page__link {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-top: 30px;
+
+  padding-bottom: 6px;
+
+  border-bottom: 1px solid var(--color-forest);
+
+  color: var(--color-forest);
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+/* ========================================
+   GUEST JOURNEY
+======================================== */
+
+.guest-journey {
+  background: var(--color-cream);
+}
+
+.guest-journey__header {
+  margin-bottom: 60px;
+}
+
+.guest-journey__steps {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  border-top: 1px solid var(--color-border);
+
+  border-left: 1px solid var(--color-border);
+}
+
+.guest-journey__step {
+  min-height: 240px;
+
+  padding: 28px;
+
+  border-right: 1px solid var(--color-border);
+
+  border-bottom: 1px solid var(--color-border);
+}
+
+.guest-journey__step > span {
+  color: var(--color-terracotta);
+
+  font-size: 11px;
+
+  font-weight: 600;
+}
+
+.guest-journey__step h3 {
+  margin-top: 55px;
+
+  font-size: 28px;
+
+  font-weight: 500;
+}
+
+.guest-journey__step p {
+  max-width: 300px;
+
+  margin-top: 10px;
+
+  color: var(--color-text-muted);
+
+  font-size: 13px;
+
+  line-height: 1.65;
+}
+
+
+/* ========================================
+   CTA
+======================================== */
+
+.stay-cta {
+  position: relative;
+
+  min-height: 560px;
+
+  display: flex;
+
+  align-items: center;
+
+  overflow: hidden;
+
+  color: var(--color-white);
+}
+
+.stay-cta__image {
+  position: absolute;
+  inset: 0;
+}
+
+.stay-cta__image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.stay-cta__overlay {
+  position: absolute;
+  inset: 0;
+
+  background: rgba(16, 41, 30, 0.62);
+}
+
+.stay-cta__content {
+  position: relative;
+
+  z-index: 2;
+
+  padding-block: 100px;
+}
+
+.stay-cta__content > span {
+  display: block;
+
+  margin-bottom: 20px;
+
+  color: var(--color-beige);
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.15em;
+}
+
+.stay-cta h2 {
+  margin: 0 0 35px;
+
+  color: var(--color-white);
+
+  font-size: clamp(50px, 6vw, 82px);
+
+  font-weight: 500;
+
+  line-height: 0.98;
+}
+
+@media (max-width: 767px) {
+
+  /* Hero */
+
+  .stay-hero {
+    min-height: 580px;
+  }
+
+  .stay-hero__content {
+    padding-block: 90px;
+  }
+
+  .stay-hero h1 {
+    font-size: clamp(52px, 15vw, 68px);
+  }
+
+  .stay-hero p {
+    margin-top: 22px;
+
+    font-size: 15px;
+  }
+
+
+  /* Intro */
+
+  .stay-intro {
+    padding-block: 70px;
+  }
+
+  .stay-intro__grid {
+    grid-template-columns: 1fr;
+
+    gap: 30px;
+  }
+
+  .stay-intro__content h2 {
+    font-size: clamp(42px, 12vw, 56px);
+  }
+
+  .stay-intro__content p {
+    font-size: 15px;
+  }
+
+
+  /* Accommodation */
+
+  .stay-accommodation {
+    padding-block: 70px;
+  }
+
+  .stay-accommodation__header {
+    margin-bottom: 40px;
+  }
+
+
+  /* Expect */
+
+  .stay-expect {
+    padding-block: 70px;
+  }
+
+  .stay-expect__grid {
+    grid-template-columns: 1fr 1fr;
+
+    margin-top: 45px;
+  }
+
+  .stay-expect__item {
+    min-height: 230px;
+
+    padding: 22px;
+
+    border-right: 1px solid var(--color-border);
+  }
+
+  .stay-expect__item:first-child {
+    padding-left: 22px;
+  }
+
+  .stay-expect__item:nth-child(2) {
+    border-right: 0;
+  }
+
+  .stay-expect__item h3 {
+    margin-top: 30px;
+
+    font-size: 20px;
+  }
+
+
+  /* Experiences */
+
+  .stay-experiences {
+    padding-block: 70px;
+  }
+
+  .stay-experiences__grid {
+    grid-template-columns: 1fr;
+
+    gap: 45px;
+  }
+
+  .stay-experiences__image {
+    height: 400px;
+  }
+
+  .stay-experiences__content h2 {
+    font-size: clamp(42px, 12vw, 56px);
+  }
+
+
+  /* Guest journey */
+
+  .guest-journey {
+    padding-block: 70px;
+  }
+
+  .guest-journey__header {
+    margin-bottom: 40px;
+  }
+
+  .guest-journey__steps {
+    grid-template-columns: 1fr;
+  }
+
+  .guest-journey__step {
+    min-height: 190px;
+  }
+
+  .guest-journey__step h3 {
+    margin-top: 35px;
+
+    font-size: 25px;
+  }
+
+
+  /* CTA */
+
+  .stay-cta {
+    min-height: 520px;
+  }
+
+  .stay-cta__content {
+    padding-block: 90px;
+  }
+
+  .stay-cta h2 {
+    font-size: clamp(46px, 13vw, 62px);
+  }
+
+}

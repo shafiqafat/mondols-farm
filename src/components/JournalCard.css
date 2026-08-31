@@ -1,0 +1,151 @@
+.journal-card {
+  display: flex;
+
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+.journal-card__image {
+  display: block;
+
+  width: 100%;
+  height: 300px;
+
+  overflow: hidden;
+
+  background: var(--color-beige);
+}
+
+.journal-card__image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  transition: transform 0.6s ease;
+}
+
+.journal-card:hover .journal-card__image img {
+  transform: scale(1.04);
+}
+
+/* Content */
+
+.journal-card__content {
+  padding-top: 22px;
+}
+
+.journal-card__meta {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-bottom: 12px;
+
+  color: var(--color-text-muted);
+
+  font-size: 10px;
+  font-weight: 600;
+
+  letter-spacing: 0.08em;
+
+  text-transform: uppercase;
+}
+
+.journal-card__meta span {
+  color: var(--color-terracotta);
+}
+
+.journal-card h3 {
+  margin: 0;
+
+  font-size: 28px;
+
+  font-weight: 500;
+
+  line-height: 1.15;
+}
+
+.journal-card h3 a {
+  transition: color var(--transition);
+}
+
+.journal-card h3 a:hover {
+  color: var(--color-forest);
+}
+
+.journal-card p {
+  margin-top: 14px;
+
+  color: var(--color-text-muted);
+
+  font-size: 14px;
+
+  line-height: 1.7;
+}
+
+.journal-card__link {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  margin-top: 20px;
+
+  padding-bottom: 5px;
+
+  border-bottom: 1px solid var(--color-forest);
+
+  color: var(--color-forest);
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+.journal-card__link span {
+  font-size: 17px;
+
+  transition: transform var(--transition);
+}
+
+.journal-card__link:hover span {
+  transform: translateX(5px);
+}
+
+/* Featured */
+
+.journal-card--featured {
+  display: grid;
+
+  grid-template-columns: 1.4fr 0.6fr;
+
+  gap: 45px;
+
+  grid-column: 1 / -1;
+}
+
+.journal-card--featured .journal-card__image {
+  height: 500px;
+}
+
+.journal-card--featured .journal-card__content {
+  align-self: center;
+
+  padding-top: 0;
+}
+
+.journal-card--featured h3 {
+  font-size: clamp(36px, 4vw, 54px);
+}
+
+.journal-card--featured p {
+  max-width: 450px;
+
+  font-size: 15px;
+}

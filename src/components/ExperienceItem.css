@@ -1,0 +1,95 @@
+.experience-item {
+  display: grid;
+
+  grid-template-columns: 45px 1fr 30px;
+
+  align-items: start;
+
+  gap: 20px;
+
+  padding: 22px 0;
+
+  border-top: 1px solid var(--color-border);
+
+  cursor: default;
+
+  transition:
+    padding-left var(--transition),
+    background-color var(--transition);
+}
+
+.experience-item:last-child {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.experience-item__number {
+  padding-top: 5px;
+
+  color: var(--color-terracotta);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  letter-spacing: 0.08em;
+}
+
+.experience-item__content h3 {
+  margin: 0;
+
+  font-size: 24px;
+
+  font-weight: 500;
+}
+
+.experience-item__content p {
+  max-width: 460px;
+
+  max-height: 0;
+
+  margin: 0;
+
+  overflow: hidden;
+
+  color: var(--color-text-muted);
+
+  font-size: 13px;
+
+  line-height: 1.6;
+
+  opacity: 0;
+
+  transition:
+    max-height 0.35s ease,
+    margin-top 0.35s ease,
+    opacity 0.35s ease;
+}
+
+.experience-item__arrow {
+  padding-top: 2px;
+
+  color: var(--color-forest);
+
+  font-size: 20px;
+
+  transition: transform var(--transition);
+}
+
+/* Hover */
+
+.experience-item:hover {
+  padding-left: 10px;
+}
+
+.experience-item:hover
+.experience-item__content p {
+  max-height: 100px;
+
+  margin-top: 8px;
+
+  opacity: 1;
+}
+
+.experience-item:hover
+.experience-item__arrow {
+  transform: translate(3px, -3px);
+}

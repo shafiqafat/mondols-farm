@@ -1,0 +1,15 @@
+.stay-section {
+  background: var(--color-white);
+}
+
+.stay-section__header {
+  margin-bottom: 60px;
+}
+
+.stay-section__list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 24px;
+}

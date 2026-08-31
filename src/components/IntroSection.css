@@ -1,0 +1,115 @@
+.intro {
+  background: var(--color-cream);
+}
+
+/* Layout */
+
+.intro__grid {
+  display: grid;
+
+  grid-template-columns: 1.1fr 0.9fr;
+
+  gap: 100px;
+
+  align-items: center;
+}
+
+/* Image */
+
+.intro__image {
+  width: 100%;
+  height: 650px;
+
+  overflow: hidden;
+}
+
+.intro__image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  transition: transform 0.6s ease;
+}
+
+.intro__image:hover img {
+  transform: scale(1.03);
+}
+
+/* Content */
+
+.intro__content {
+  max-width: 540px;
+}
+
+/* Eyebrow */
+
+.intro__eyebrow {
+  display: block;
+
+  margin-bottom: 20px;
+
+  color: var(--color-terracotta);
+
+  font-size: 12px;
+  font-weight: 600;
+
+  letter-spacing: 0.16em;
+}
+
+/* Heading */
+
+.intro__content h2 {
+  margin: 0;
+
+  color: var(--color-dark);
+
+  font-size: clamp(42px, 5vw, 68px);
+
+  font-weight: 500;
+
+  letter-spacing: -0.03em;
+}
+
+/* Paragraph */
+
+.intro__content p {
+  margin-top: 24px;
+
+  color: var(--color-text-muted);
+
+  font-size: 16px;
+
+  line-height: 1.75;
+}
+
+/* Link */
+
+.intro__link {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin-top: 30px;
+
+  padding-bottom: 6px;
+
+  border-bottom: 1px solid var(--color-forest);
+
+  color: var(--color-forest);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  transition: gap var(--transition);
+}
+
+.intro__link span {
+  font-size: 18px;
+}
+
+.intro__link:hover {
+  gap: 18px;
+}

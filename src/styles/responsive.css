@@ -1,0 +1,447 @@
+/* Tablet */
+@media (max-width: 1024px) {
+
+  .produce__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stay-card {
+    grid-template-columns: 1fr;
+
+    min-height: auto;
+  }
+
+  .stay-card__image {
+    min-height: 450px;
+  }  
+  .footer__main {
+    grid-template-columns: 1.5fr 1fr 1fr;
+
+    gap: 45px;
+  }
+
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+
+  .navbar__inner {
+    min-height: 70px;
+  }
+
+  .navbar__logo {
+    font-size: 21px;
+  }
+
+  .navbar__links,
+  .navbar__cta {
+    display: none;
+  }
+
+  .navbar__menu-button {
+    display: block;
+  }
+  .hero {
+    min-height: calc(100svh - 70px);
+  }
+
+  .hero__content {
+    padding-block: 80px;
+  }
+
+  .hero__text {
+    max-width: 100%;
+  }
+
+  .hero__eyebrow {
+    margin-bottom: 18px;
+
+    font-size: 10px;
+  }
+
+  .hero h1 {
+    font-size: clamp(46px, 14vw, 64px);
+
+    line-height: 1.02;
+  }
+
+  .hero p {
+    margin-top: 22px;
+
+    font-size: 16px;
+
+    line-height: 1.6;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    margin-top: 30px;
+  }
+
+  .hero__actions .button {
+    width: 100%;
+  }
+  .intro {
+    padding-block: 70px;
+  }
+
+  .intro__grid {
+    grid-template-columns: 1fr;
+
+    gap: 50px;
+  }
+
+  .intro__image {
+    height: 430px;
+  }
+
+  .intro__content {
+    max-width: 100%;
+  }
+
+  .intro__content h2 {
+    font-size: clamp(40px, 12vw, 54px);
+  }
+
+  .intro__content p {
+    font-size: 15px;
+  }
+  .projects {
+    padding-block: 70px;
+  }
+
+  .projects__header {
+    display: block;
+
+    margin-bottom: 40px;
+  }
+
+  .projects__count {
+    display: block;
+
+    margin-top: 24px;
+  }
+
+  .projects__grid {
+    grid-template-columns: 1fr;
+
+    gap: 20px;
+  }
+
+  .project-card__image {
+    height: 300px;
+  }
+
+  .project-card__content {
+    padding: 24px;
+  }
+
+  .project-card h3 {
+    font-size: 27px;
+  }
+  .produce {
+    padding-block: 70px;
+  }
+
+  .produce__header {
+    display: block;
+
+    margin-bottom: 40px;
+  }
+
+  .produce__season {
+    display: block;
+
+    margin-top: 24px;
+  }
+
+  .produce__grid {
+    grid-template-columns: 1fr;
+
+    gap: 20px;
+  }
+
+  .product-card__image {
+    height: 300px;
+  }
+
+  .product-card__content {
+    padding: 22px;
+  }
+
+  .product-card h3 {
+    font-size: 26px;
+  }
+
+  .produce__footer {
+    justify-content: flex-start;
+
+    margin-top: 30px;
+  }
+  .stay-section {
+    padding-block: 70px;
+  }
+
+  .stay-section__header {
+    margin-bottom: 40px;
+  }
+
+  .stay-card {
+    display: flex;
+
+    flex-direction: column;
+  }
+
+  .stay-card__image {
+    height: 320px;
+
+    min-height: 0;
+  }
+
+  .stay-card__content {
+    padding: 28px 24px 32px;
+  }
+
+  .stay-card__heading {
+    display: block;
+  }
+
+  .stay-card h3 {
+    font-size: 36px;
+  }
+
+  .stay-card__price {
+    align-items: flex-start;
+
+    margin-top: 14px;
+  }
+
+  .stay-card__description {
+    margin-top: 20px;
+
+    font-size: 14px;
+  }
+
+  .stay-card__details {
+    margin-top: 22px;
+  }
+  .experiences {
+    padding-block: 70px;
+  }
+
+  .experiences__grid {
+    grid-template-columns: 1fr;
+
+    gap: 50px;
+  }
+
+  .experiences__image {
+    height: 330px;
+
+    margin-top: 35px;
+  }
+
+  .experiences__list {
+    padding-top: 0;
+  }
+
+  .experience-item {
+    grid-template-columns: 35px 1fr 25px;
+
+    gap: 12px;
+
+    padding: 20px 0;
+  }
+
+  .experience-item__content h3 {
+    font-size: 21px;
+  }
+
+  /*
+   * On mobile there is no hover.
+   * Keep descriptions visible.
+   */
+
+  .experience-item__content p {
+    max-height: none;
+
+    margin-top: 7px;
+
+    opacity: 1;
+  }
+
+  .experience-item:hover {
+    padding-left: 0;
+  }
+  .journal-section {
+    padding-block: 70px;
+  }
+
+  .journal-section__header {
+    margin-bottom: 40px;
+  }
+
+  .journal-section__grid {
+    grid-template-columns: 1fr;
+
+    gap: 45px;
+  }
+
+  .journal-card__image {
+    height: 280px;
+  }
+
+  .journal-card h3 {
+    font-size: 26px;
+  }
+
+  .journal-card--featured {
+    display: flex;
+
+    gap: 0;
+  }
+
+  .journal-card--featured .journal-card__image {
+    height: 340px;
+  }
+
+  .journal-card--featured .journal-card__content {
+    padding-top: 22px;
+  }
+
+  .journal-card--featured h3 {
+    font-size: 36px;
+  }
+
+  .journal-section__footer {
+    justify-content: flex-start;
+
+    margin-top: 35px;
+  }
+  .final-cta {
+    min-height: 620px;
+  }
+
+  .final-cta__content {
+    padding-block: 90px;
+  }
+
+  .final-cta__eyebrow {
+    font-size: 10px;
+
+    margin-bottom: 18px;
+  }
+
+  .final-cta h2 {
+    font-size: clamp(48px, 14vw, 64px);
+  }
+
+  .final-cta p {
+    margin-top: 22px;
+
+    font-size: 15px;
+  }
+
+  .final-cta__actions {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    margin-top: 30px;
+  }
+
+  .final-cta__actions .button {
+    width: 100%;
+  }
+  .footer__main {
+    grid-template-columns: 1fr;
+
+    gap: 40px;
+
+    padding-block: 60px;
+  }
+
+  .footer__brand {
+    max-width: 100%;
+  }
+
+  .footer__logo {
+    font-size: 25px;
+  }
+
+  .footer__bottom {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 8px;
+
+    padding-block: 20px;
+  }
+  .gallery-section {
+    padding-block: 70px;
+  }
+
+  .gallery-section__header {
+    margin-bottom: 40px;
+  }
+
+  .gallery-section__grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    grid-template-rows: auto;
+
+    gap: 10px;
+  }
+
+  .gallery-item--large {
+    height: 420px;
+
+    grid-column: 1 / -1;
+
+    grid-row: auto;
+  }
+
+  .gallery-item--small {
+    height: 240px;
+  }
+
+  .gallery-item--medium {
+    height: 300px;
+
+    grid-column: 1 / -1;
+  }
+
+  /*
+   * Captions are always visible on mobile
+   * because there is no hover interaction.
+   */
+
+  .gallery-item__caption {
+    opacity: 1;
+
+    transform: none;
+
+    padding: 35px 14px 14px;
+  }
+
+  .gallery-item__caption strong {
+    font-size: 14px;
+  }
+
+  .gallery-section__footer {
+    justify-content: flex-start;
+
+    margin-top: 30px;
+  }
+
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+
+}

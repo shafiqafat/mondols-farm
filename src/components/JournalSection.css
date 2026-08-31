@@ -1,0 +1,51 @@
+.journal-section {
+  background: var(--color-cream);
+}
+
+.journal-section__header {
+  margin-bottom: 60px;
+}
+
+.journal-section__grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 50px 24px;
+}
+
+.journal-section__footer {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin-top: 45px;
+}
+
+.journal-section__footer a {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding-bottom: 6px;
+
+  border-bottom: 1px solid var(--color-forest);
+
+  color: var(--color-forest);
+
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+.journal-section__footer a span {
+  font-size: 18px;
+
+  transition: transform var(--transition);
+}
+
+.journal-section__footer a:hover span {
+  transform: translateX(5px);
+}

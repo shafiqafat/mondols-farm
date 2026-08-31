@@ -1,0 +1,296 @@
+/* ========================================
+   FOOTER
+======================================== */
+
+.footer {
+  background: var(--color-forest);
+
+  color: var(--color-white);
+}
+
+
+/* ========================================
+   MAIN
+======================================== */
+
+.footer__main {
+  display: grid;
+
+  grid-template-columns:
+    1.7fr
+    0.8fr
+    0.8fr
+    1fr;
+
+  gap: 60px;
+
+  padding-block: 90px;
+
+  border-bottom: 1px solid rgba(255,255,255,0.18);
+}
+
+
+/* ========================================
+   BRAND
+======================================== */
+
+.footer__logo {
+  display: inline-block;
+
+  color: var(--color-white);
+
+  font-family: 'Playfair Display', serif;
+
+  font-size: 27px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.02em;
+}
+
+.footer__brand p {
+  max-width: 350px;
+
+  margin-top: 22px;
+
+  color: rgba(255,255,255,0.65);
+
+  font-size: 14px;
+
+  line-height: 1.7;
+}
+
+
+/* ========================================
+   COLUMNS
+======================================== */
+
+.footer__column {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.footer__heading {
+  display: block;
+
+  margin-bottom: 20px;
+
+  color: var(--color-beige);
+
+  font-size: 9px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.15em;
+
+  text-transform: uppercase;
+}
+
+.footer__column nav {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 11px;
+}
+
+.footer__column a {
+  width: fit-content;
+
+  color: rgba(255,255,255,0.78);
+
+  font-size: 14px;
+
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.footer__column a:hover {
+  color: var(--color-white);
+
+  transform: translateX(3px);
+}
+
+
+/* ========================================
+   CONTACT
+======================================== */
+
+.footer__column address {
+  margin: 0 0 15px;
+
+  color: rgba(255,255,255,0.65);
+
+  font-size: 14px;
+
+  font-style: normal;
+
+  line-height: 1.7;
+}
+
+.footer__column address + a {
+  margin-bottom: 7px;
+}
+
+
+/* ========================================
+   NEWSLETTER
+======================================== */
+
+.footer__newsletter {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 80px;
+
+  align-items: end;
+
+  padding-block: 70px;
+
+  border-bottom: 1px solid rgba(255,255,255,0.18);
+}
+
+.footer__newsletter h3 {
+  margin: 0;
+
+  color: var(--color-white);
+
+  font-size: clamp(35px, 4vw, 55px);
+
+  font-weight: 500;
+
+  line-height: 1;
+}
+
+.footer__form {
+  display: flex;
+
+  align-items: stretch;
+
+  border-bottom: 1px solid rgba(255,255,255,0.5);
+}
+
+.footer__form input {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 15px 0;
+
+  border: 0;
+
+  outline: none;
+
+  background: transparent;
+
+  color: var(--color-white);
+
+  font-family: inherit;
+
+  font-size: 14px;
+}
+
+.footer__form input::placeholder {
+  color: rgba(255,255,255,0.45);
+}
+
+.footer__form button {
+  padding: 15px 0 15px 20px;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--color-white);
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+/* ========================================
+   BOTTOM
+======================================== */
+
+.footer__bottom {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding-block: 25px;
+
+  color: rgba(255,255,255,0.5);
+
+  font-size: 10px;
+
+  letter-spacing: 0.04em;
+}
+@media (max-width: 767px) {
+
+  .footer__main {
+    grid-template-columns: 1fr 1fr;
+
+    gap: 50px 30px;
+
+    padding-block: 70px;
+  }
+
+
+  .footer__brand {
+    grid-column: 1 / -1;
+  }
+
+
+  .footer__brand p {
+    max-width: 330px;
+
+    font-size: 13px;
+  }
+
+
+  .footer__column a,
+  .footer__column address {
+    font-size: 13px;
+  }
+
+
+  .footer__newsletter {
+    grid-template-columns: 1fr;
+
+    gap: 35px;
+
+    padding-block: 60px;
+  }
+
+
+  .footer__newsletter h3 {
+    font-size: 38px;
+  }
+
+
+  .footer__form {
+    width: 100%;
+  }
+
+
+  .footer__bottom {
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    gap: 8px;
+
+    padding-block: 22px;
+  }
+
+}

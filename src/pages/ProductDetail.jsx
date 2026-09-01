@@ -14,7 +14,7 @@ function ProductDetail() {
     return (
       <main className="product-not-found">
         <div className="container">
-          <span>PRODUCT NOT FOUND</span>
+          <span>P R O D U C T &nbsp; N O T &nbsp; F O U N D</span>
 
           <h1>
             We couldn't find
@@ -87,16 +87,12 @@ function ProductDetail() {
                 </p>
 
                 <div className="product-detail__actions">
-                  <a
-                    href={`https://wa.me/8801000000000?text=Hello%20Mondol's%20Farm,%20I'm%20interested%20in%20${encodeURIComponent(
-                      product.name,
-                    )}.`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <Link
+                    to={`/contact?product=${encodeURIComponent(product.name)}`}
                     className="button"
                   >
-                    Order via WhatsApp
-                  </a>
+                    Order Now →
+                  </Link>
 
                   <Link to="/contact" className="button button--outline">
                     Send Inquiry
@@ -115,7 +111,7 @@ function ProductDetail() {
       <section className="product-story section">
         <div className="container product-story__grid">
           <div>
-            <span className="product-story__eyebrow">FROM OUR FARM</span>
+            <span className="product-story__eyebrow">F R O M &nbsp; O U R &nbsp; F A R M</span>
 
             <h2>Grown with care.</h2>
           </div>
@@ -141,7 +137,7 @@ function ProductDetail() {
 
       <section className="product-detail__cta">
         <div className="container">
-          <span>EXPLORE MORE</span>
+          <span>E X P L O R E &nbsp; M O R E</span>
 
           <h2>
             See what's growing

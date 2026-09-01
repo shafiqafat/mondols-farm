@@ -32,7 +32,7 @@ function Gallery() {
 
       <section className="gallery-hero">
         <div className="container gallery-hero__content">
-          <span>FARM MEMORIES</span>
+          <span>F A R M &nbsp; M E M O R I E S</span>
 
           <h1>
             Life,
@@ -61,7 +61,7 @@ function Gallery() {
             <img src={galleryItems[0].image} alt={galleryItems[0].title} />
 
             <div className="gallery-featured__label">
-              <span>FEATURED MEMORY</span>
+              <span>F E A T U R E D &nbsp; M E M O R Y</span>
 
               <strong>{galleryItems[0].title}</strong>
             </div>
@@ -77,7 +77,9 @@ function Gallery() {
         <div className="container">
           <div className="gallery-heading">
             <div>
-              <span className="gallery-eyebrow">FROM THE FARM</span>
+              <span className="gallery-eyebrow">
+                F R O M &nbsp; T H E &nbsp; F A R M
+              </span>
 
               <h2>Farm memories.</h2>
             </div>
@@ -113,7 +115,12 @@ function Gallery() {
                 key={item.id}
                 onClick={() => setSelectedImage(item)}
               >
-                <img src={item.image} alt={item.title} loading="lazy" />
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  title={item.text}
+                  loading="lazy"
+                />
 
                 <div className="gallery-item__overlay">
                   <span>{item.category}</span>
@@ -142,7 +149,7 @@ function Gallery() {
 
       <section className="gallery-cta">
         <div className="container">
-          <span>EXPERIENCE THE FARM</span>
+          <span>E X P E R I E N C E &nbsp; T H E &nbsp; F A R M</span>
 
           <h2>
             Some moments

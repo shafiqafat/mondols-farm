@@ -1,3 +1,5 @@
+import mudHouse from "../assets/image/stay/mud-house.jpg";
+import brickHouse from "../assets/image/stay/brick-house.jpg";
 const stays = [
   {
     id: 1,
@@ -9,8 +11,7 @@ const stays = [
     bathrooms: "1 bathroom",
     price: "৳3,500",
     unit: "per night",
-    image:
-      "https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=1600&q=85",
+    image: mudHouse,
   },
 
   {
@@ -23,8 +24,7 @@ const stays = [
     bathrooms: "1 bathroom",
     price: "৳4,500",
     unit: "per night",
-    image:
-      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1600&q=85",
+    image: brickHouse,
   },
 ];
 

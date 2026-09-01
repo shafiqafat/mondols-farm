@@ -1,8 +1,13 @@
 import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import "./Contact.css";
 
 function Contact() {
+  const [searchParams] = useSearchParams();
+
+  const product = searchParams.get("product");
+  const stay = searchParams.get("stay");
   return (
     <main className="contact-page">
       {/* ========================================
@@ -11,7 +16,7 @@ function Contact() {
 
       <section className="contact-hero">
         <div className="container contact-hero__content">
-          <span>GET IN TOUCH</span>
+          <span>G E T &nbsp; I N &nbsp; T O U C H</span>
 
           <h1>
             Come
@@ -35,7 +40,7 @@ function Contact() {
         <div className="container">
           <div className="contact-info__grid">
             <div className="contact-info__intro">
-              <span className="contact-eyebrow">CONTACT</span>
+              <span className="contact-eyebrow">C O N T A C T</span>
 
               <h2>
                 Let's start
@@ -57,7 +62,7 @@ function Contact() {
               <div className="contact-detail">
                 <span>PHONE</span>
 
-                <a href="tel:+8801000000000">+880 1000-000000</a>
+                <a href="tel:+8801534282793">+8801534282793</a>
               </div>
 
               <div className="contact-detail">
@@ -70,7 +75,7 @@ function Contact() {
                 <span>WHATSAPP</span>
 
                 <a
-                  href="https://wa.me/8801000000000"
+                  href="https://wa.me/8801534282793"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -90,7 +95,9 @@ function Contact() {
         <div className="container">
           <div className="contact-form__grid">
             <div className="contact-form__heading">
-              <span className="contact-eyebrow">SEND AN INQUIRY</span>
+              <span className="contact-eyebrow">
+                S E N D &nbsp; A N &nbsp; I N Q U I R Y
+              </span>
 
               <h2>
                 How can we
@@ -103,6 +110,20 @@ function Contact() {
                 back to you.
               </p>
             </div>
+
+            {product && (
+              <div className="contact-form__product">
+                <span>PRODUCT INQUIRY</span>
+
+                <strong>{product}</strong>
+              </div>
+            )}
+            {stay && (
+              <div className="contact-form__product">
+                <span>STAY INQUIRY</span>
+                <strong>{stay}</strong>
+              </div>
+            )}
 
             <form className="contact-form">
               <div className="contact-form__row">
@@ -143,7 +164,11 @@ function Contact() {
               <div className="contact-field">
                 <label htmlFor="interest">I'm interested in</label>
 
-                <select id="interest" name="interest" defaultValue="">
+                <select
+                  id="interest"
+                  name="interest"
+                  defaultValue={product ? "produce" : stay ? "homestay" : ""}
+                >
                   <option value="" disabled>
                     Select an option
                   </option>
@@ -184,7 +209,7 @@ function Contact() {
       <section className="contact-location">
         <div className="container">
           <div className="contact-location__heading">
-            <span className="contact-eyebrow">FIND US</span>
+            <span className="contact-eyebrow">F I N D &nbsp; U S</span>
 
             <h2>
               Somewhere
@@ -211,7 +236,7 @@ function Contact() {
 
       <section className="contact-cta">
         <div className="container">
-          <span>MONDOL'S FARM</span>
+          <span>M O N D O L ' S &nbsp; F A R M</span>
 
           <h2>
             See you
@@ -225,7 +250,7 @@ function Contact() {
             </Link>
 
             <a
-              href="https://wa.me/8801000000000"
+              href="https://wa.me/8801534282793"
               target="_blank"
               rel="noreferrer"
               className="button button--outline-light"

@@ -1,12 +1,13 @@
 import "./Hero.css";
 import Button from "./Button";
+import heroImage from "../assets/image/hero/hero-image.jpg";
 
 function Hero() {
   return (
     <section className="hero">
       <div className="hero__image">
         <img
-          src="https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&w=2000&q=85"
+          src={heroImage}
           alt="Green countryside landscape"
         />
       </div>

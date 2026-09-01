@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import SectionHeading from "../components/SectionHeading";
 import StayCard from "../components/StayCard";
+import mudHouse from "../assets/image/stay/mud-house.jpg";
 
 import stays from "../data/stays";
 
@@ -17,7 +18,7 @@ function Stay() {
       <section className="stay-hero">
         <div className="stay-hero__image">
           <img
-            src="https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=2000&q=85"
+            src={mudHouse}
             alt="Countryside accommodation"
           />
         </div>
@@ -25,7 +26,7 @@ function Stay() {
         <div className="stay-hero__overlay"></div>
 
         <div className="container stay-hero__content">
-          <span className="stay-hero__eyebrow">STAY WITH US</span>
+          <span className="stay-hero__eyebrow">S T A Y &nbsp; W I T H &nbsp; U S</span>
 
           <h1>
             Stay close
@@ -47,7 +48,7 @@ function Stay() {
       <section className="stay-intro section">
         <div className="container stay-intro__grid">
           <div className="stay-intro__label">
-            <span>THE EXPERIENCE</span>
+            <span>T H E &nbsp; E X P E R I E N C E</span>
           </div>
 
           <div className="stay-intro__content">
@@ -78,7 +79,7 @@ function Stay() {
         <div className="container">
           <div className="stay-accommodation__header">
             <SectionHeading
-              eyebrow="ACCOMMODATION"
+              eyebrow="A C C O M M O D A T I O N"
               title="Choose your stay."
               description="Two different ways to experience the farm, each with its own character."
             />
@@ -99,7 +100,7 @@ function Stay() {
       <section className="stay-expect section">
         <div className="container">
           <SectionHeading
-            eyebrow="WHAT TO EXPECT"
+            eyebrow="W H A T &nbsp; T O &nbsp; E X P E C T"
             title="Simple things. Done well."
             description="Our stay is about comfort without losing the feeling of being in the countryside."
           />
@@ -166,7 +167,9 @@ function Stay() {
           </div>
 
           <div className="stay-experiences__content">
-            <span className="stay-experiences__eyebrow">FARM EXPERIENCES</span>
+            <span className="stay-experiences__eyebrow">
+              F A R M &nbsp; E X P E R I E N C E S
+            </span>
 
             <h2>
               Your stay can be
@@ -196,7 +199,7 @@ function Stay() {
         <div className="container">
           <div className="guest-journey__header">
             <SectionHeading
-              eyebrow="YOUR STAY"
+              eyebrow="Y O U R &nbsp; S T A Y"
               title="Arrive. Explore. Slow down."
               description="A simple rhythm for your time at Mondol's Farm."
             />
@@ -272,7 +275,7 @@ function Stay() {
         <div className="stay-cta__overlay"></div>
 
         <div className="container stay-cta__content">
-          <span>YOUR COUNTRYSIDE ESCAPE</span>
+          <span>Y O U R &nbsp; C O U N T R Y S I D E &nbsp; E S C A P E</span>
 
           <h2>
             Stay for a while.

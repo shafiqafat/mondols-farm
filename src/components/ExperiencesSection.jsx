@@ -3,6 +3,8 @@ import ExperienceItem from "./ExperienceItem";
 
 import experiences from "../data/experiences";
 
+import riverImage from "../assets/image/experiences/river.jpg";
+
 import "./ExperiencesSection.css";
 
 function ExperiencesSection() {
@@ -21,8 +23,8 @@ function ExperiencesSection() {
 
             <div className="experiences__image">
               <img
-                src="https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1400&q=85"
-                alt="Countryside landscape"
+                src={riverImage}
+                alt="River flowing through a countryside landscape"
                 loading="lazy"
               />
             </div>

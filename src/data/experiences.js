@@ -2,7 +2,7 @@ const experiences = [
   {
     id: 1,
     number: "01",
-    title: "Harvesting",
+    title: "H a r v e s t i n g",
     description:
       "Join us in the garden and experience the simple satisfaction of harvesting fresh produce.",
   },
@@ -45,6 +45,13 @@ const experiences = [
     title: "Sunrise & Sunset",
     description:
       "Slow down and enjoy the changing light across the farm and surrounding landscape.",
+  },
+  {
+    id: 7,
+    number: "07",
+    title: "River Siting",
+    description:
+      "Take a moment to sit by the river and enjoy the peaceful countryside surroundings.",
   },
 ];
 

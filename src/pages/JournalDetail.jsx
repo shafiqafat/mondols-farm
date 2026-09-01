@@ -13,7 +13,7 @@ function JournalDetail() {
     return (
       <main className="journal-not-found">
         <div className="container">
-          <span>ARTICLE NOT FOUND</span>
+          <span>A R T I C L E &nbsp; N O T &nbsp; F O U N D</span>
 
           <h1>
             We couldn't find
@@ -78,7 +78,7 @@ function JournalDetail() {
         <div className="container">
           <div className="journal-detail__article-grid">
             <aside className="journal-detail__aside">
-              <span>THE JOURNAL</span>
+              <span>T H E &nbsp; J O U R N A L</span>
 
               <div>{article.category}</div>
 
@@ -104,7 +104,7 @@ function JournalDetail() {
         <section className="journal-detail__related section">
           <div className="container">
             <div className="journal-detail__related-heading">
-              <span>KEEP READING</span>
+              <span>K E E P &nbsp; R E A D I N G</span>
 
               <h2>More from the farm.</h2>
             </div>
@@ -161,7 +161,7 @@ function JournalDetail() {
 
       <section className="journal-detail__cta">
         <div className="container">
-          <span>EXPERIENCE IT YOURSELF</span>
+          <span>E X P E R I E N C E &nbsp; I T &nbsp; Y O U R S E L F</span>
 
           <h2>
             Come slow down

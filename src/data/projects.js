@@ -1,24 +1,27 @@
+import quailFarming from "../assets/image/projects/quail-farming.jpg";
+import goatRearing from "../assets/image/projects/goat-rearing.avif";
+import mustardCultivation from "../assets/image/projects/mustard-cultivation.jpg";
+import chickenRearing from "../assets/image/projects/chicken-rearing.jpg";
+
 const projects = [
   {
     id: 1,
-    title: "Vegetable Garden",
+    title: "Mustard",
     description:
-      "Seasonal vegetables grown with simple, responsible farming practices.",
+      "A small mustard field that grows seasonally, providing fresh mustard greens and seeds.",
     status: "ONGOING",
-    category: "Farming",
-    image:
-      "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=1200&q=85",
+    category: "F a r m i n g",
+    image: mustardCultivation,
   },
 
   {
     id: 2,
-    title: "Poultry",
+    title: "Quail Farming",
     description:
-      "Small-scale poultry farming focused on healthy birds and fresh eggs.",
+      "Small-scale quail farming focused on healthy birds and fresh eggs.",
     status: "ONGOING",
-    category: "Livestock",
-    image:
-      "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?auto=format&fit=crop&w=1200&q=85",
+    category: "L i v e s t o c k",
+    image: quailFarming,
   },
 
   {
@@ -27,20 +30,18 @@ const projects = [
     description:
       "Building a healthy small-scale goat herd as part of our farm ecosystem.",
     status: "ONGOING",
-    category: "Livestock",
-    image:
-      "https://images.unsplash.com/photo-1524024973431-2ad916746881?auto=format&fit=crop&w=1200&q=85",
+    category: "L i v e s t o c k",
+    image: goatRearing,
   },
 
   {
     id: 4,
-    title: "Mushroom Cultivation",
+    title: "Chicken Rearing",
     description:
-      "Exploring small-scale mushroom cultivation as a seasonal farm project.",
+      "Exploring small-scale chicken farming as a seasonal farm project.",
     status: "SEASONAL",
-    category: "Farming",
-    image:
-      "https://images.unsplash.com/photo-1504545102780-26774c1bb073?auto=format&fit=crop&w=1200&q=85",
+    category: "L i v e s t o c k",
+    image: chickenRearing,
   },
 ];
 

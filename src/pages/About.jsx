@@ -11,7 +11,7 @@ function About() {
 
       <section className="about-hero">
         <div className="container about-hero__content">
-          <span className="about-hero__eyebrow">ABOUT MONDOL'S FARM</span>
+          <span className="about-hero__eyebrow">A B O U T &nbsp; M O N D O L ' S &nbsp; F A R M</span>
 
           <h1>
             Built from
@@ -40,7 +40,7 @@ function About() {
           </div>
 
           <div className="about-story__content">
-            <span className="about-eyebrow">OUR STORY</span>
+            <span className="about-eyebrow">O U R &nbsp; S T O R Y</span>
 
             <h2>It started with a simple idea.</h2>
 
@@ -73,7 +73,7 @@ function About() {
       <section className="about-philosophy section">
         <div className="container">
           <div className="about-philosophy__heading">
-            <span className="about-eyebrow">OUR PHILOSOPHY</span>
+            <span className="about-eyebrow">O U R &nbsp; P H I L O S O P H Y</span>
 
             <h2>
               Grow locally.
@@ -110,7 +110,7 @@ function About() {
       <section className="about-values section">
         <div className="container">
           <div className="about-section-heading">
-            <span className="about-eyebrow">WHAT MATTERS TO US</span>
+            <span className="about-eyebrow">W H A T &nbsp; M A T T E R S &nbsp; T O &nbsp; U S</span>
 
             <h2>
               The principles behind
@@ -172,7 +172,7 @@ function About() {
       <section className="about-timeline section">
         <div className="container">
           <div className="about-section-heading">
-            <span className="about-eyebrow">THE JOURNEY</span>
+            <span className="about-eyebrow">T H E &nbsp; J O U R N E Y</span>
 
             <h2>
               One project
@@ -260,7 +260,7 @@ function About() {
         <div className="about-vision__overlay"></div>
 
         <div className="container about-vision__content">
-          <span>LOOKING AHEAD</span>
+          <span>L O O K I N G &nbsp; A H E A D</span>
 
           <h2>
             A little more
@@ -282,7 +282,7 @@ function About() {
 
       <section className="about-cta">
         <div className="container">
-          <span>COME SEE IT FOR YOURSELF</span>
+          <span>C O M E &nbsp; S E E &nbsp; I T &nbsp; F O R &nbsp; Y O U R S E L F</span>
 
           <h2>The farm is waiting.</h2>
 

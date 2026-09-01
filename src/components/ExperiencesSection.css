@@ -34,11 +34,10 @@
 /* Image */
 
 .experiences__image {
-  height: 420px;
-
+  height: 460px;
   margin-top: 55px;
-
-  overflow: hidden;
+  /* overflow: hidden; */
+  opacity: 0.8;
 }
 
 .experiences__image img {

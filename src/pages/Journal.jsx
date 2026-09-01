@@ -35,7 +35,7 @@ function Journal() {
 
       <section className="journal-hero">
         <div className="container journal-hero__content">
-          <span className="journal-hero__eyebrow">THE JOURNAL</span>
+          <span className="journal-hero__eyebrow">T H E &nbsp; J O U R N A L</span>
 
           <h1>
             Stories
@@ -63,7 +63,7 @@ function Journal() {
             </Link>
 
             <div className="journal-featured__content">
-              <span>FEATURED STORY</span>
+              <span>F R E A T U R E D &nbsp; S T O R Y</span>
 
               <small>
                 {featuredArticle.category} · {featuredArticle.date}
@@ -90,7 +90,7 @@ function Journal() {
       <section className="journal-articles section">
         <div className="container">
           <SectionHeading
-            eyebrow="FROM THE FARM"
+            eyebrow="F R O M &nbsp; T H E &nbsp; F A R M"
             title="Recent stories."
             description="Follow the seasons, projects, ideas, and everyday moments that shape life here."
           />
@@ -149,7 +149,7 @@ function Journal() {
 
       <section className="journal-cta">
         <div className="container">
-          <span>KEEP EXPLORING</span>
+          <span>K E E P &nbsp; E X P L O R I N G</span>
 
           <h2>
             Come experience

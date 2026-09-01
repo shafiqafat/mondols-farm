@@ -35,8 +35,11 @@ function StayCard({
           <span>{bathrooms}</span>
         </div>
 
-        <Link to="/stay" className="stay-card__link">
-          Explore Stay
+        <Link
+          to={`/contact?stay=${encodeURIComponent(name)}`}
+          className="stay-card__link"
+        >
+          Check Availability
           <span>→</span>
         </Link>
       </div>

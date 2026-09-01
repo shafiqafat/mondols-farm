@@ -1,24 +1,29 @@
+import quailMeat from "../assets/image/products/quail-meat.jpg";
+import quailEggs from "../assets/image/products/quail-eggs.jpg";
+import mustardOil from "../assets/image/products/mustard-oil.jpg";
+import harivangaMangoes from "../assets/image/products/mango.jpg";
+
 const products = [
   {
     id: 1,
-    slug: "fresh-seasonal-vegetables",
-    name: "Fresh Seasonal Vegetables",
-    category: "Vegetables",
+    slug: "mustard-oil",
+    name: "Mustard Oil",
+    category: "O i l s",
     description:
-      "Fresh vegetables harvested from the farm according to the season.",
-    price: "৳120",
+      "Cold-pressed mustard oil made from our farm-grown mustard seeds, known for its pungent flavor and health benefits.",
+    price: "৳300",
     unit: "per kg",
     availability: "Available",
     image:
-      "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=1200&q=85",
+      mustardOil,
   },
 
   {
     id: 2,
-    slug: "farm-fresh-eggs",
-    name: "Farm Fresh Eggs",
-    category: "Eggs",
-    description: "Fresh eggs from our small-scale poultry project.",
+    slug: "chicken-eggs",
+    name: "Chicken Eggs",
+    category: "E g g s",
+    description: "Fresh eggs from our small-scale poultry project, collected daily to ensure quality and freshness.",
     price: "৳160",
     unit: "per dozen",
     availability: "Available",
@@ -28,23 +33,23 @@ const products = [
 
   {
     id: 3,
-    slug: "seasonal-fruits",
-    name: "Seasonal Fruits",
-    category: "Fruits",
-    description: "Seasonal fruits harvested when they are naturally ready.",
-    price: "৳180",
+    slug: "Harivanga-mangoes",
+    name: "Harivanga Mangoes",
+    category: "F r u i t s",
+    description: "A rare and aromatic mango variety known for its unique flavor and fragrance, grown seasonally on our farm.",
+    price: "৳75",
     unit: "per kg",
     availability: "Seasonal",
     image:
-      "https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=1200&q=85",
+      harivangaMangoes,
   },
 
   {
     id: 4,
     slug: "farm-raised-goat-meat",
     name: "Farm-Raised Goat Meat",
-    category: "Meat",
-    description: "Farm-raised goat meat available in limited quantities.",
+    category: "M e a t",
+    description: "Fresh goat meat from our small-scale goat rearing project, raised with care and attention to quality.",
     price: "৳950",
     unit: "per kg",
     availability: "Limited",
@@ -54,29 +59,29 @@ const products = [
 
   {
     id: 5,
-    slug: "fresh-mushrooms",
-    name: "Fresh Mushrooms",
-    category: "Other",
+    slug: "quail-meat",
+    name: "Quail Meat",
+    category: "M e a t",
     description:
-      "Fresh mushrooms grown in our small-scale cultivation project.",
-    price: "৳250",
-    unit: "per 500g",
-    availability: "Seasonal",
-    image:
-      "https://images.unsplash.com/photo-1504545102780-26774c1bb073?auto=format&fit=crop&w=1200&q=85",
-  },
-
-  {
-    id: 6,
-    slug: "farm-honey",
-    name: "Farm Honey",
-    category: "Other",
-    description: "Naturally harvested honey available in limited quantities.",
+      "Fresh quail meat from our small-scale quail farming project, known for its tenderness and flavor.",
     price: "৳450",
     unit: "per 500g",
     availability: "Limited",
     image:
-      "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=1200&q=85",
+      quailMeat,
+  },
+
+  {
+    id: 6,
+    slug: "quail-eggs",
+    name: "Quail Eggs",
+    category: "E g g s",
+    description: "Fresh quail eggs from our small-scale quail farming project, known for their delicate flavor and nutritional value.",
+    price: "৳40",
+    unit: "per dozens",
+    availability: "Available",
+    image:
+      quailEggs,
   },
 ];
 

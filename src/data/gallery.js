@@ -1,10 +1,23 @@
+import aDay from "../assets/image/Memory/a-day.avif";
+import dust from "../assets/image/Memory/dust.jpg";
+import farmLife from "../assets/image/Memory/farm-life.jpg";
+import hervest from "../assets/image/Memory/hervest.jpg";
+import winterMorning from "../assets/image/Memory/winter-morning.jpg";
+import farmPond from "../assets/image/Memory/farm-pond.jpg";
+import midDay from "../assets/image/Memory/mid-day.jpg";
+import mustardField from "../assets/image/Memory/mustard-field.avif";
+import winterSunset from "../assets/image/Memory/winter-sunset.avif";
+import sunset from "../assets/image/Memory/sunset.jpg";
+
+
+
 const galleryItems = [
   {
     id: 1,
     category: "Farm Life",
     title: "Morning on the farm",
     image:
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85",
+      aDay,
   },
 
   {
@@ -12,7 +25,7 @@ const galleryItems = [
     category: "Animals",
     title: "Life around the farm",
     image:
-      "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=1200&q=85",
+      farmLife,
   },
 
   {
@@ -20,7 +33,7 @@ const galleryItems = [
     category: "Harvest",
     title: "Fresh from the garden",
     image:
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1200&q=85",
+      hervest,
   },
 
   {
@@ -28,7 +41,7 @@ const galleryItems = [
     category: "Countryside",
     title: "A quieter landscape",
     image:
-      "https://images.unsplash.com/photo-1473445361085-b9a07f55608b?auto=format&fit=crop&w=1200&q=85",
+      winterMorning,
   },
 
   {
@@ -36,15 +49,15 @@ const galleryItems = [
     category: "Farm Life",
     title: "Working with the land",
     image:
-      "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=1200&q=85",
+      farmPond,
   },
 
   {
     id: 6,
-    category: "Homestay",
+    category: "HomeStay",
     title: "A place to slow down",
     image:
-      "https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=1200&q=85",
+      midDay,
   },
 
   {
@@ -52,7 +65,7 @@ const galleryItems = [
     category: "Animals",
     title: "Around the animals",
     image:
-      "https://images.unsplash.com/photo-1548550023-2bdb3c5beed7?auto=format&fit=crop&w=1200&q=85",
+      dust,
   },
 
   {
@@ -60,7 +73,7 @@ const galleryItems = [
     category: "Harvest",
     title: "Seasonal produce",
     image:
-      "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1200&q=85",
+      mustardField,
   },
 
   {
@@ -68,8 +81,15 @@ const galleryItems = [
     category: "Countryside",
     title: "The countryside around us",
     image:
-      "https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&w=1200&q=85",
+      winterSunset,
   },
+  {
+    id: 10,
+    category: "Sunset",
+    title: "Golden hour",
+    image:
+      sunset,
+  }
 ];
 
 export default galleryItems;

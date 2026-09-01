@@ -33,7 +33,7 @@ function Shop() {
         <div className="shop-hero__overlay"></div>
 
         <div className="container shop-hero__content">
-          <span>FROM OUR FARM</span>
+          <span>F R O M &nbsp; O U R &nbsp; F A R M</span>
 
           <h1>
             Fresh from
@@ -50,7 +50,7 @@ function Shop() {
       <section className="shop-intro section">
         <div className="container">
           <SectionHeading
-            eyebrow="OUR PRODUCE"
+            eyebrow="O U R &nbsp; P R O D U C E"
             title="Good food starts with good soil."
             description="What we offer changes with the seasons. Browse what's currently available and get in touch to place an order."
           />
@@ -88,7 +88,7 @@ function Shop() {
         <div className="container">
           <div className="shop-order__grid">
             <div>
-              <span className="shop-order__eyebrow">HOW IT WORKS</span>
+              <span className="shop-order__eyebrow">H O W &nbsp; I T &nbsp; W O R K S</span>
 
               <h2>
                 Simple ordering.
@@ -130,7 +130,7 @@ function Shop() {
 
       <section className="shop-cta">
         <div className="container shop-cta__content">
-          <span>WANT TO KNOW WHAT'S AVAILABLE?</span>
+          <span>W A N T &nbsp; T O &nbsp; K N O W &nbsp; W H A T ' S &nbsp; A V A I L A B L E ?</span>
 
           <h2>
             Let's talk about

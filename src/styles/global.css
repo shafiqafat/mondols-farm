@@ -7,6 +7,11 @@
   padding: 0;
   box-sizing: border-box;
 }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 html {
   scroll-behavior: smooth;
@@ -18,10 +23,19 @@ body {
   color: var(--color-text);
   line-height: 1.6;
 }
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
 
 img {
   display: block;
   max-width: 100%;
+}
+img,
+svg {
+  vertical-align: middle;
 }
 
 a {
@@ -34,6 +48,10 @@ button {
   cursor: pointer;
   border: none;
 }
+button,
+a {
+  max-width: 100%;
+}
 
 h1,
 h2,
@@ -42,7 +60,14 @@ h4 {
   font-family: 'Playfair Display', serif;
   line-height: 1.1;
 }
-
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
 .container {
   width: min(
     100% - (var(--container-padding) * 2),
@@ -69,4 +94,14 @@ h4 {
 
 .justify-between {
   justify-content: space-between;
+}
+.container {
+  width: min(1200px, calc(100% - 48px));
+
+  margin-inline: auto;
+}
+@media (max-width: 767px) {
+  .container {
+    width: min(100% - 32px, 1200px);
+  }
 }

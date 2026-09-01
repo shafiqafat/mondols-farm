@@ -7,6 +7,8 @@ import GalleryItem from "../components/GalleryItem";
 import projects from "../data/projects";
 import galleryImages from "../data/gallery";
 
+import mustardCultivation from "../assets/image/projects/mustard-cultivation.jpg";
+
 import "./Farm.css";
 
 function Farm() {
@@ -17,7 +19,7 @@ function Farm() {
       <section className="farm-hero">
         <div className="farm-hero__image">
           <img
-            src="https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&w=2000&q=85"
+            src={mustardCultivation}
             alt="Countryside farm landscape"
           />
         </div>
@@ -133,6 +135,12 @@ function Farm() {
               <p>Farm-raised meat available in limited quantities.</p>
             </div>
           </div>
+          <div className="produce__footer">
+            <Link to="/shop">
+              Explore Our Produce
+              <span>→</span>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -156,7 +164,7 @@ function Farm() {
 
           <div className="farm-gallery__footer">
             <Link to="/gallery">
-              See All Memories
+              View Farm Memories
               <span>→</span>
             </Link>
           </div>

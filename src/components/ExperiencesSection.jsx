@@ -9,7 +9,7 @@ import "./ExperiencesSection.css";
 
 function ExperiencesSection() {
   return (
-    <section className="experiences section">
+    <section className="experiences experiences--home-transition section">
       <div className="container">
         <div className="experiences__grid">
           {/* Left side */}

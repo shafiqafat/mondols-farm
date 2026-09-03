@@ -8,6 +8,7 @@ import JournalSection from "../components/JournalSection";
 import FinalCTA from "../components/FinalCTA";
 import GallerySection from "../components/GallerySection";
 
+
 function Home() {
   return (
     <main>
@@ -19,16 +20,15 @@ function Home() {
 
       <ProduceSection />
 
-      <StaySection />
+      <StaySection home />
 
       <ExperiencesSection />
 
-      <GallerySection />
+      <GallerySection home />
 
       <JournalSection />
 
       <FinalCTA />
-
     </main>
   );
 }

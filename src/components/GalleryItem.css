@@ -1,10 +1,7 @@
 .gallery-item {
   position: relative;
-
   margin: 0;
-
   overflow: hidden;
-
   background: var(--color-beige);
 }
 

@@ -7,9 +7,13 @@ import galleryImages from "../data/gallery";
 
 import "./GallerySection.css";
 
-function GallerySection() {
+function GallerySection({ home = false }) {
   return (
-    <section className="gallery-section section">
+    <section
+      className={`gallery-section section ${
+        home ? "gallery-section--home" : ""
+      }`}
+    >
       <div className="container">
         <div className="gallery-section__header">
           <SectionHeading
@@ -20,7 +24,7 @@ function GallerySection() {
         </div>
 
         <div className="gallery-section__grid">
-          {galleryImages.map((image) => (
+          {galleryImages.slice(0, 6).map((image) => (
             <GalleryItem key={image.id} {...image} />
           ))}
         </div>

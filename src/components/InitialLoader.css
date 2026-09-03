@@ -1,0 +1,157 @@
+.initial-loader {
+  position: fixed;
+  inset: 0;
+
+  width: 100%;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--color-forest);
+
+  z-index: 99999;
+
+  opacity: 1;
+  visibility: visible;
+
+  transition: transform 1s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+.initial-loader--exit {
+  transform: translateY(-100%);
+}
+
+.initial-loader__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+
+  color: var(--color-white);
+}
+
+
+/* FARM SVG */
+
+.initial-loader__icon {
+  width: 180px;
+  height: 180px;
+
+  margin-bottom: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  animation: loaderIcon 1s ease forwards;
+}
+
+.initial-loader__icon img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  display: block;
+}
+/* BRAND */
+
+.initial-loader__brand {
+  font-family: "Playfair Display", serif;
+
+  font-size: 28px;
+  font-weight: 500;
+
+  letter-spacing: 0.08em;
+
+  opacity: 0;
+
+  animation: loaderBrand 0.8s ease 0.45s forwards;
+}
+
+
+/* LINE */
+
+.initial-loader__line {
+  width: 40px;
+  height: 1px;
+
+  margin: 18px 0;
+
+  background: var(--color-beige);
+
+  transform: scaleX(0);
+
+  animation: loaderLine 0.6s ease 0.7s forwards;
+}
+
+
+/* TAGLINE */
+
+.initial-loader p {
+  margin: 0;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  letter-spacing: 0.2em;
+
+  color: var(--color-beige);
+
+  opacity: 0;
+
+  animation: loaderText 0.8s ease 0.8s forwards;
+}
+
+
+/* ========================================
+   ANIMATIONS
+======================================== */
+
+@keyframes loaderIcon {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes loaderBrand {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes loaderLine {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes loaderText {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

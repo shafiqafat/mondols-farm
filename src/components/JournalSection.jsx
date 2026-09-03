@@ -1,15 +1,19 @@
 import SectionHeading from "./SectionHeading";
 import JournalCard from "./JournalCard";
-
 import journalPosts from "../data/journal";
-
 import "./JournalSection.css";
 import { Link } from "react-router-dom";
 
 function JournalSection() {
-  const featuredPost = journalPosts.find((post) => post.featured);
+  // Use the marked featured post.
+  // If none exists, use the first post as the featured article.
+  const featuredPost =
+    journalPosts.find((post) => post.featured) || journalPosts[0];
 
-  const regularPosts = journalPosts.filter((post) => !post.featured);
+  // Remove the featured post from the regular cards
+  const regularPosts = journalPosts.filter(
+    (post) => post.id !== featuredPost?.id,
+  );
 
   return (
     <section className="journal-section section">
@@ -23,9 +27,11 @@ function JournalSection() {
         </div>
 
         <div className="journal-section__grid">
-          {featuredPost && <JournalCard {...featuredPost} />}
+          {/* Featured article */}
+          {featuredPost && <JournalCard {...featuredPost} featured />}
 
-          {regularPosts.map((post) => (
+          {/* Two regular articles */}
+          {regularPosts.slice(0, 2).map((post) => (
             <JournalCard key={post.id} {...post} />
           ))}
         </div>

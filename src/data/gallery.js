@@ -15,81 +15,71 @@ const galleryItems = [
   {
     id: 1,
     category: "Farm Life",
-    title: "Morning on the farm",
-    image:
-      aDay,
+    title: "A day in the life",
+    image: aDay,
   },
 
   {
     id: 2,
     category: "Animals",
     title: "Life around the farm",
-    image:
-      farmLife,
+    image: farmLife,
   },
 
   {
     id: 3,
     category: "Harvest",
     title: "Fresh from the garden",
-    image:
-      hervest,
+    image: winterSunset,
   },
 
   {
     id: 4,
     category: "Countryside",
     title: "A quieter landscape",
-    image:
-      winterMorning,
+    image: dust,
   },
 
   {
     id: 5,
     category: "Farm Life",
     title: "Working with the land",
-    image:
-      farmPond,
+    image: sunset,
   },
 
   {
     id: 6,
     category: "HomeStay",
     title: "A place to slow down",
-    image:
-      midDay,
+    image: mustardField,
   },
 
   {
     id: 7,
     category: "Animals",
     title: "Around the animals",
-    image:
-      dust,
+    image: winterMorning,
   },
 
   {
     id: 8,
     category: "Harvest",
     title: "Seasonal produce",
-    image:
-      mustardField,
+    image: midDay,
   },
 
   {
     id: 9,
     category: "Countryside",
     title: "The countryside around us",
-    image:
-      winterSunset,
+    image: hervest,
   },
   {
     id: 10,
     category: "Sunset",
     title: "Golden hour",
-    image:
-      sunset,
-  }
+    image: farmPond,
+  },
 ];
 
 export default galleryItems;

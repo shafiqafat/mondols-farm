@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import SectionHeading from "./SectionHeading";
 import StayCard from "./StayCard";
 
@@ -5,9 +7,11 @@ import stays from "../data/stays";
 
 import "./StaySection.css";
 
-function StaySection() {
+function StaySection({ home = false }) {
   return (
-    <section className="stay-section section">
+    <section
+      className={`stay-section section ${home ? "stay-section--home" : ""}`}
+    >
       <div className="container">
         <div className="stay-section__header">
           <SectionHeading
@@ -22,6 +26,15 @@ function StaySection() {
             <StayCard key={stay.id} {...stay} />
           ))}
         </div>
+
+        {home && (
+          <div className="stay-section__footer">
+            <Link to="/stay">
+              View All Stays
+              <span>→</span>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

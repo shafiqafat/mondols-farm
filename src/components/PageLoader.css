@@ -1,0 +1,31 @@
+.page-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 3px;
+
+  background: var(--color-forest);
+
+  z-index: 9999;
+
+  animation: pageLoading 0.35s ease-out forwards;
+}
+
+@keyframes pageLoading {
+  0% {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  60% {
+    transform: scaleX(0.75);
+    transform-origin: left;
+  }
+
+  100% {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}

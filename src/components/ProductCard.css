@@ -1,37 +1,31 @@
-/* ========================================
-   PROJECT CARD
-======================================== */
-
 .project-card {
-  display: flex;
-  flex-direction: column;
+  background: var(--color-white);
 
-  min-width: 0;
+  border: 1px solid rgba(28, 48, 35, 0.12);
+  border-radius: 12px;
 
   overflow: hidden;
 
-  background: var(--color-white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
+.project-card__content {
+  padding: 18px 20px 22px;
+}
 
-/* ========================================
-   IMAGE
-======================================== */
-
-.project-card__image {
+.product-card__image {
   position: relative;
 
-  width: 100%;
-  height: 420px;
+  display: block;
+
+  height: 360px;
 
   overflow: hidden;
 
   background: var(--color-beige);
 }
 
-.project-card__image img {
-  display: block;
-
+.product-card__image img {
   width: 100%;
   height: 100%;
 
@@ -40,20 +34,79 @@
   transition: transform 0.6s ease;
 }
 
-.project-card:hover .project-card__image img {
-  transform: scale(1.04);
+.product-card:hover
+.product-card__image img {
+  transform: scale(1.1);
 }
-
-
 /* ========================================
-   STATUS
+   GLASS CURSOR
 ======================================== */
 
-.project-card__status {
+.product-card__cursor {
+  position: absolute;
+  z-index: 20;
+
+  left: 0;
+  top: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 105px;
+  height: 34px;
+  padding: 0 13px;
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+
+  background: rgba(28, 48, 35, 0.28);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  pointer-events: none;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transform: translate(-50%, -50%) scale(0.9);
+
+  will-change: left, top, transform, opacity;
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-card__cursor--visible {
+  opacity: 1;
+  visibility: visible;
+
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.product-card__status {
   position: absolute;
 
-  top: 16px;
-  left: 16px;
+  top: 15px;
+  left: 15px;
 
   padding: 7px 10px;
 
@@ -70,61 +123,49 @@
   text-transform: uppercase;
 }
 
+.product-card__meta {
+  display: flex;
 
-/* ========================================
-   CONTENT
-======================================== */
+  justify-content: space-between;
 
-.project-card__content {
-  padding-top: 20px;
-}
+  gap: 15px;
 
-.project-card__category {
-  display: block;
-
-  margin-bottom: 8px;
-
-  color: var(--color-terracotta);
+  color: var(--color-text-muted);
 
   font-size: 10px;
 
   font-weight: 600;
 
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
 
   text-transform: uppercase;
 }
 
-.project-card__content h3 {
-  margin: 0;
+.product-card__meta span:first-child {
+  color: var(--color-terracotta);
+}
 
-  color: var(--color-dark);
+.product-card h3 {
+  margin-top: 12px;
 
-  font-size: 28px;
+  font-size: 25px;
 
   font-weight: 500;
 
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
-.project-card__content p {
-  max-width: 550px;
-
+.product-card p {
   margin-top: 10px;
 
   color: var(--color-text-muted);
 
-  font-size: 14px;
+  font-size: 13px;
 
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
-
-/* ========================================
-   LINK
-======================================== */
-
-.project-card__link {
+.product-card__link {
   display: inline-flex;
 
   align-items: center;
@@ -133,45 +174,23 @@
 
   margin-top: 18px;
 
-  padding: 0 0 5px;
+  padding-bottom: 5px;
 
-  border: 0;
   border-bottom: 1px solid var(--color-forest);
 
-  background: transparent;
-
   color: var(--color-forest);
-
-  font-family: inherit;
 
   font-size: 12px;
 
   font-weight: 600;
-
-  cursor: pointer;
 }
 
-.project-card__link span {
+.product-card__link span {
   font-size: 17px;
 
-  transition: transform 0.3s ease;
+  transition: transform var(--transition);
 }
 
-.project-card__link:hover span {
+.product-card__link:hover span {
   transform: translateX(5px);
-}
-@media (max-width: 767px) {
-
-  .project-card__image {
-    height: 300px;
-  }
-
-  .project-card__content h3 {
-    font-size: 24px;
-  }
-
-  .project-card__content p {
-    font-size: 13px;
-  }
-
 }

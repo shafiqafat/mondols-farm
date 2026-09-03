@@ -16,13 +16,12 @@ function ProduceSection() {
             title="Fresh from our farm."
             description="Seasonal produce grown, raised, and harvested with care."
           />
-          
 
           <span className="produce__season">SEASONAL AVAILABILITY</span>
         </div>
 
         <div className="produce__grid">
-          {products.map((product) => (
+          {products.slice(0, 4).map((product) => (
             <ProductCard key={product.id} {...product} />
           ))}
         </div>

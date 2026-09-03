@@ -27,7 +27,7 @@ function Footer() {
           {/* EXPLORE */}
 
           <div className="footer__column">
-            <span className="footer__heading">EXPLORE</span>
+            <span className="footer__heading">E X P L O R E</span>
 
             <nav>
               <Link to="/farm">Farm</Link>
@@ -43,7 +43,7 @@ function Footer() {
           {/* DISCOVER */}
 
           <div className="footer__column">
-            <span className="footer__heading">DISCOVER</span>
+            <span className="footer__heading">D I S C O V E R</span>
 
             <nav>
               <Link to="/gallery">Gallery</Link>
@@ -57,7 +57,7 @@ function Footer() {
           {/* CONTACT */}
 
           <div className="footer__column">
-            <span className="footer__heading">FIND US</span>
+            <span className="footer__heading">F I N D &nbsp; U S</span>
 
             <address>
               Mondol's Farm
@@ -77,7 +77,7 @@ function Footer() {
 
         <div className="footer__newsletter">
           <div>
-            <span className="footer__heading">FARM JOURNAL</span>
+            <span className="footer__heading">F A R M &nbsp; J O U R N A L</span>
 
             <h3>
               Stories from the farm,

@@ -15,11 +15,16 @@
 /* Image */
 
 .stay-card__image {
-  height: 100%;
+  position: relative;
 
+  display: block;
+
+  height: 100%;
   min-height: 500px;
 
   overflow: hidden;
+
+  cursor: pointer;
 }
 
 .stay-card__image img {
@@ -32,9 +37,72 @@
 }
 
 .stay-card:hover .stay-card__image img {
-  transform: scale(1.03);
+  transform: scale(1.1);
 }
 
+/* ========================================
+   GLASS CURSOR
+======================================== */
+
+.stay-card__cursor {
+  position: absolute;
+  z-index: 20;
+
+  left: 0;
+  top: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 105px;
+  height: 34px;
+  padding: 0 13px;
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+
+  background: rgba(28, 48, 35, 0.28);
+
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  pointer-events: none;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transform: translate(-50%, -50%) scale(0.9);
+
+  will-change: left, top, transform, opacity;
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.stay-card__cursor--visible {
+  opacity: 1;
+  visibility: visible;
+
+  transform: translate(-50%, -50%) scale(1);
+}
 /* Content */
 
 .stay-card__content {

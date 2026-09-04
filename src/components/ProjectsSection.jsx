@@ -53,9 +53,9 @@ function ProjectsSection() {
             description="A look at the projects, crops, and animals that are shaping life at Mondol's Farm."
           />
 
-          <span className="projects__count">
+          {/* <span className="projects__count">
             {displayedProjects.length} CURRENT PROJECTS
-          </span>
+          </span> */}
         </div>
 
         <div className="projects__grid">

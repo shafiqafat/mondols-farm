@@ -2,7 +2,7 @@ const experiences = [
   {
     id: 1,
     number: "01",
-    title: "H a r v e s t i n g",
+    title: "Harvesting",
     description:
       "Join us in the garden and experience the simple satisfaction of harvesting fresh produce.",
   },

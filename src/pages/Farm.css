@@ -23,15 +23,20 @@
 .farm-hero__image img {
   width: 100%;
   height: 100%;
-
+  object-position: center 65%;
   object-fit: cover;
+  transform: scale(1.05);
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.farm-hero:hover .farm-hero__image img {
+  transform: scale(1.08);
+}
 .farm-hero__overlay {
   position: absolute;
   inset: 0;
 
-  background: rgba(16, 41, 30, 0.48);
+  background: rgba(20, 45, 31, 0.62);
 }
 
 .farm-hero__content {
@@ -92,25 +97,26 @@
 
 .farm-introduction__grid {
   display: grid;
-
-  grid-template-columns: 1fr 1fr;
-
-  gap: 100px;
-
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 90px;
   align-items: center;
 }
 
 .farm-introduction__image {
   height: 600px;
-
   overflow: hidden;
+  border-radius: 12px;
 }
 
 .farm-introduction__image img {
   width: 100%;
   height: 100%;
-
   object-fit: cover;
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.farm-introduction__image:hover img {
+  transform: scale(1.04);
 }
 
 .farm-introduction__extra {
@@ -159,15 +165,13 @@
 }
 
 .farm-projects__header {
-  margin-bottom: 60px;
+  margin-bottom: 70px;
 }
 
 .farm-projects__grid {
   display: grid;
-
   grid-template-columns: repeat(2, 1fr);
-
-  gap: 24px;
+  gap: 30px;
 }
 
 
@@ -187,23 +191,22 @@
 
 .farm-grow__item {
   display: grid;
-
   grid-template-columns: 60px 0.8fr 1fr;
-
   align-items: center;
-
   gap: 30px;
-
-  padding: 25px 0;
-
+  padding: 32px 0;
   border-bottom: 1px solid var(--color-border);
+  transition: padding-left 0.35s ease;
+}
+.farm-grow__item:hover {
+  padding-left: 12px;
 }
 
 .farm-grow__item > span {
   color: var(--color-terracotta);
-
+  
   font-size: 11px;
-
+  
   font-weight: 600;
 }
 
@@ -242,14 +245,46 @@
 
 .farm-gallery__grid {
   display: grid;
-
   grid-template-columns: 1.2fr 0.8fr 0.8fr;
-
-  grid-template-rows: 298px 298px;
-
+  grid-template-rows: 300px 300px;
   gap: 18px;
 }
+.farm-gallery__grid .gallery-item {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
 
+.farm-gallery__grid .gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.farm-gallery__grid .gallery-item:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+
+.farm-gallery__grid .gallery-item:nth-child(2) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.farm-gallery__grid .gallery-item:nth-child(3) {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.farm-gallery__grid .gallery-item:nth-child(4) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.farm-gallery__grid .gallery-item:nth-child(5) {
+  grid-column: 3;
+  grid-row: 2;
+}
 .farm-gallery__footer {
   display: flex;
 
@@ -274,8 +309,21 @@
   font-size: 14px;
 
   font-weight: 600;
+  transition:
+    gap 0.3s ease,
+    color 0.3s ease;
+}
+.farm-gallery__footer a:hover {
+  gap: 16px;
+}
+.farm-gallery__footer a span {
+  font-size: 18px;
+  transition: transform 0.3s ease;
 }
 
+.farm-gallery__footer a:hover span {
+  transform: translateX(4px);
+}
 
 /* ========================================
    PHILOSOPHY
@@ -286,13 +334,11 @@
 
   color: var(--color-white);
 }
-
 .farm-philosophy__grid {
   display: grid;
-
   grid-template-columns: 1fr 1fr;
-
-  gap: 100px;
+  gap: 120px;
+  align-items: start;
 }
 
 .farm-philosophy__eyebrow {
@@ -327,8 +373,12 @@
 
 .farm-philosophy__values > div {
   padding: 25px 0;
-
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  transition: padding-left 0.35s ease;
+}
+
+.farm-philosophy__values > div:hover {
+  padding-left: 12px;
 }
 
 .farm-philosophy__values span {
@@ -368,17 +418,14 @@
 
 .farm-cta {
   position: relative;
-
-  min-height: 500px;
-
+  min-height: 560px;
   display: flex;
-
   align-items: center;
 
   background:
     linear-gradient(
-      rgba(16, 41, 30, 0.75),
-      rgba(16, 41, 30, 0.75)
+      rgba(16, 41, 30, 0.68),
+      rgba(16, 41, 30, 0.68)
     ),
     url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85')
     center / cover;
@@ -387,7 +434,7 @@
 }
 
 .farm-cta__content {
-  padding-block: 100px;
+  padding-block: 110px;
 }
 
 .farm-cta__content > span {
@@ -415,6 +462,27 @@
 
   line-height: 0.98;
 }
+.farm-grow__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 35px;
+}
+
+.farm-grow__footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-forest);
+  color: var(--color-forest);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.farm-grow__footer a span {
+  font-size: 18px;
+}
+
 @media (max-width: 767px) {
 
   /* Hero */
@@ -466,9 +534,33 @@
   }
 
   .farm-projects__grid {
-    grid-template-columns: 1fr;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
 
-    gap: 20px;
+  .farm-gallery__grid .gallery-item:nth-child(1) {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .farm-gallery__grid .gallery-item:nth-child(2) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .farm-gallery__grid .gallery-item:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .farm-gallery__grid .gallery-item:nth-child(4) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .farm-gallery__grid .gallery-item:nth-child(5) {
+    grid-column: 2;
+    grid-row: 3;
   }
 
 
@@ -506,35 +598,6 @@
   .farm-gallery__header {
     margin-bottom: 40px;
   }
-
-  .farm-gallery__grid {
-    grid-template-columns: 1fr 1fr;
-
-    grid-template-rows: auto;
-
-    gap: 10px;
-  }
-
-  .farm-gallery__grid
-  .gallery-item--large {
-    grid-column: 1 / -1;
-
-    height: 400px;
-  }
-
-  .farm-gallery__grid
-  .gallery-item--small {
-    height: 230px;
-  }
-
-  .farm-gallery__grid
-  .gallery-item--medium {
-    grid-column: 1 / -1;
-
-    height: 300px;
-  }
-
-
   /* Philosophy */
 
   .farm-philosophy {
@@ -546,6 +609,9 @@
 
     gap: 50px;
   }
+  .farm-philosophy__values > div:hover {
+  padding-left: 0;
+}
 
   .farm-philosophy h2 {
     font-size: clamp(46px, 13vw, 62px);

@@ -42,17 +42,19 @@
 
 .product-detail__image {
   height: 680px;
-
   overflow: hidden;
-
+  border-radius: 14px;
   background: var(--color-beige);
 }
-
 .product-detail__image img {
   width: 100%;
   height: 100%;
-
   object-fit: cover;
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-detail__image:hover img {
+  transform: scale(1.04);
 }
 
 .product-detail__content {
@@ -111,21 +113,14 @@
 
 .product-detail__availability {
   display: inline-block;
-
   margin-top: 18px;
-
   padding: 7px 10px;
-
+  border-radius: 6px;
   background: var(--color-forest);
-
   color: var(--color-white);
-
   font-size: 9px;
-
   font-weight: 600;
-
   letter-spacing: 0.08em;
-
   text-transform: uppercase;
 }
 

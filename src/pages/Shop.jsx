@@ -88,7 +88,9 @@ function Shop() {
         <div className="container">
           <div className="shop-order__grid">
             <div>
-              <span className="shop-order__eyebrow">H O W &nbsp; I T &nbsp; W O R K S</span>
+              <span className="shop-order__eyebrow">
+                H O W &nbsp; I T &nbsp; W O R K S
+              </span>
 
               <h2>
                 Simple ordering.
@@ -129,8 +131,21 @@ function Shop() {
       {/* CTA */}
 
       <section className="shop-cta">
+        <div className="shop-cta__image">
+          <img
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"
+            alt="Countryside farmland"
+            loading="lazy"
+          />
+        </div>
+
+        <div className="shop-cta__overlay"></div>
+
         <div className="container shop-cta__content">
-          <span>W A N T &nbsp; T O &nbsp; K N O W &nbsp; W H A T ' S &nbsp; A V A I L A B L E ?</span>
+          <span>
+            W A N T &nbsp; T O &nbsp; K N O W &nbsp; W H A T ' S &nbsp; A V A I
+            L A B L E ?
+          </span>
 
           <h2>
             Let's talk about

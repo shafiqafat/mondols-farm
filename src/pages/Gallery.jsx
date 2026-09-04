@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import galleryItems from "../data/gallery";
+import galleryHero from "../assets/image/Memory/mustard-field.avif";
+import galleryCta from "../assets/image/Memory/dust.jpg";
 
 import "./Gallery.css";
 
@@ -30,7 +32,10 @@ function Gallery() {
           HERO
       ======================================== */}
 
-      <section className="gallery-hero">
+      <section
+        className="gallery-hero"
+        style={{ backgroundImage: `url(${galleryHero})` }}
+      >
         <div className="container gallery-hero__content">
           <span>F A R M &nbsp; M E M O R I E S</span>
 
@@ -46,28 +51,6 @@ function Gallery() {
           </p>
         </div>
       </section>
-
-      {/* ========================================
-          FEATURED MEMORY
-      ======================================== */}
-
-      {/* <section className="gallery-featured section">
-        <div className="container">
-          <button
-            type="button"
-            className="gallery-featured__image"
-            onClick={() => setSelectedImage(galleryItems[0])}
-          >
-            <img src={galleryItems[0].image} alt={galleryItems[0].title} />
-
-            <div className="gallery-featured__label">
-              <span>F E A T U R E D &nbsp; M E M O R Y</span>
-
-              <strong>{galleryItems[0].title}</strong>
-            </div>
-          </button>
-        </div>
-      </section> */}
 
       {/* ========================================
           GALLERY
@@ -122,9 +105,10 @@ function Gallery() {
                   loading="lazy"
                 />
 
+                <span className="gallery-item__cursor">View Memory</span>
+
                 <div className="gallery-item__overlay">
                   <span>{item.category}</span>
-
                   <strong>{item.title}</strong>
                 </div>
               </button>
@@ -134,20 +118,13 @@ function Gallery() {
       </section>
 
       {/* ========================================
-          QUOTE
-      ======================================== */}
-
-      {/* <section className="gallery-quote">
-        <div className="container">
-          <p>"The best memories are often found in the simplest moments."</p>
-        </div>
-      </section> */}
-
-      {/* ========================================
           CTA
       ======================================== */}
 
-      <section className="gallery-cta">
+      <section
+        className="gallery-cta"
+        style={{ backgroundImage: `url(${galleryCta})` }}
+      >
         <div className="container">
           <span>E X P E R I E N C E &nbsp; T H E &nbsp; F A R M</span>
 

@@ -36,7 +36,7 @@
 
   object-fit: cover;
 
-  transition: transform 0.7s ease;
+  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .stay-card:hover .stay-card__image img {
@@ -188,12 +188,10 @@
 
 .stay-card__details span {
   padding: 8px 11px;
-
   background: var(--color-cream);
-
   color: var(--color-text);
-
   font-size: 11px;
+  border-radius: 6px;
 }
 
 /* Link */
@@ -225,4 +223,27 @@
 
 .stay-card__link:hover span {
   transform: translateX(5px);
+}
+@media (max-width: 767px) {
+  .stay-card {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .stay-card__image {
+    height: 320px;
+    min-height: 0;
+  }
+
+  .stay-card__content {
+    padding: 30px 24px;
+  }
+
+  .stay-card__heading {
+    gap: 15px;
+  }
+
+  .stay-card h3 {
+    font-size: 32px;
+  }
 }

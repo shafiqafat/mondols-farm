@@ -195,24 +195,26 @@
   font-size: 12px;
   font-weight: 600;
 
-  transition: opacity 0.3s ease;
+  transition:
+    gap 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.35s ease;
 }
 
 .project-card__link span {
+  display: inline-block;
   font-size: 17px;
 
-  transition: transform var(--transition);
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .project-card__link:hover {
-  opacity: 0.7;
+  gap: 12px;
 }
 
 .project-card__link:hover span {
-  transform: translateX(5px);
+  transform: translateX(2px);
 }
-
-
 /* ========================================
    MOBILE
 ======================================== */

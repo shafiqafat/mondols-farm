@@ -69,15 +69,41 @@
 }
 
 .navbar__links a {
+  position: relative;
+
   font-size: 15px;
   font-weight: 500;
-  transition: color var(--transition);
+
+  transition: color 0.3s ease;
+}
+
+.navbar__links a::after {
+  content: "";
+
+  position: absolute;
+  left: 0;
+  bottom: -5px;
+
+  width: 100%;
+  height: 1px;
+
+  background: var(--color-forest);
+
+  transform: scaleX(0);
+  transform-origin: right;
+
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .navbar__links a:hover {
   color: var(--color-forest);
 }
 
+.navbar__links a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
 
 /* ========================================
    DESKTOP CTA

@@ -45,6 +45,7 @@
 .button--secondary:hover {
   background: var(--color-forest);
   color: var(--color-white);
+  transform: translateY(-2px);
 }
 
 /* Light */
@@ -67,4 +68,5 @@
 .button--outline-light:hover {
   background: var(--color-white);
   color: var(--color-forest);
+  transform: translateY(-2px);
 }

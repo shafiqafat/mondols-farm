@@ -18,10 +18,7 @@ function Farm() {
 
       <section className="farm-hero">
         <div className="farm-hero__image">
-          <img
-            src={mustardCultivation}
-            alt="Countryside farm landscape"
-          />
+          <img src={mustardCultivation} alt="Countryside farm landscape" />
         </div>
 
         <div className="farm-hero__overlay"></div>
@@ -135,7 +132,7 @@ function Farm() {
               <p>Farm-raised meat available in limited quantities.</p>
             </div>
           </div>
-          <div className="produce__footer">
+          <div className="farm-grow__footer">
             <Link to="/shop">
               Explore Our Produce
               <span>→</span>
@@ -167,6 +164,7 @@ function Farm() {
               View Farm Memories
               <span>→</span>
             </Link>
+            
           </div>
         </div>
       </section>

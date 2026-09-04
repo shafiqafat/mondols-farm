@@ -24,7 +24,7 @@ function GallerySection({ home = false }) {
         </div>
 
         <div className="gallery-section__grid">
-          {galleryImages.slice(0, 6).map((image) => (
+          {galleryImages.slice(0, 5).map((image) => (
             <GalleryItem key={image.id} {...image} />
           ))}
         </div>

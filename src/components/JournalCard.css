@@ -176,12 +176,11 @@
 
   line-height: 1.6;
 }
-
 .journal-card__link {
   display: inline-flex;
   align-items: center;
 
-  gap: 9px;
+  gap: 8px;
 
   margin-top: auto;
   padding-top: 22px;
@@ -195,16 +194,26 @@
 
   font-size: 11px;
   font-weight: 600;
+
+  transition:
+    gap 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.35s ease;
 }
 
 .journal-card__link span {
+  display: inline-block;
   font-size: 16px;
 
-  transition: transform var(--transition);
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.journal-card__link:hover {
+  gap: 12px;
 }
 
 .journal-card__link:hover span {
-  transform: translateX(5px);
+  transform: translateX(2px);
 }
 
 

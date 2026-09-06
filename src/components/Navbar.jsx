@@ -44,6 +44,7 @@ function Navbar() {
         {/* Desktop CTA */}
         <Link to="/stay" className="navbar__cta">
           Book a Stay
+          <span>→</span>
         </Link>
 
         {/* Mobile Menu Button */}
@@ -91,6 +92,7 @@ function Navbar() {
 
         <Link to="/stay" className="mobile-menu__cta" onClick={closeMenu}>
           Book a Stay
+          <span>→</span>
         </Link>
       </div>
     </header>

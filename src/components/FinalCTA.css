@@ -16,15 +16,20 @@
 .final-cta__image {
   position: absolute;
   inset: 0;
-
   z-index: 0;
+  overflow: hidden;
 }
 
 .final-cta__image img {
   width: 100%;
   height: 100%;
-
   object-fit: cover;
+  transform: scale(1.03);
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.final-cta:hover .final-cta__image img {
+  transform: scale(1.07);
 }
 
 /* Overlay */
@@ -97,6 +102,19 @@
   gap: 14px;
 
   margin-top: 38px;
+}
+.final-cta .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.final-cta .button span {
+  transition: transform 0.3s ease;
+}
+
+.final-cta .button:hover span {
+  transform: translateX(4px);
 }
 
 .final-cta .button--outline-light {

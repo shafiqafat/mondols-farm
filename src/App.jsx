@@ -13,6 +13,7 @@ import Shop from "./pages/Shop";
 import Journal from "./pages/Journal";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import ProjectDetail from "./pages/ProjectDetail";
 import ProductDetail from "./pages/ProductDetail";
 import JournalDetail from "./pages/JournalDetail";
 import Gallery from "./pages/Gallery";
@@ -30,6 +31,7 @@ function App() {
         <Route path="/" element={<Home />} />
 
         <Route path="/farm" element={<Farm />} />
+        <Route path="/farm/:slug" element={<ProjectDetail />} />
 
         <Route path="/stay" element={<Stay />} />
 

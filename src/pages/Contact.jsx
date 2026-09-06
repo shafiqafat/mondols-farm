@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
 
+import contactHero from "../assets/image/experiences/river.jpg";
+import contactCta from "../assets/image/Memory/dust.jpg";
 import "./Contact.css";
 
 function Contact() {
@@ -15,6 +17,16 @@ function Contact() {
       ======================================== */}
 
       <section className="contact-hero">
+        <div className="contact-hero__image">
+          <img
+            src={contactHero}
+            alt="Countryside landscape at Mondol's Farm"
+            loading="eager"
+          />
+        </div>
+
+        <div className="contact-hero__overlay"></div>
+
         <div className="container contact-hero__content">
           <span>G E T &nbsp; I N &nbsp; T O U C H</span>
 
@@ -55,7 +67,7 @@ function Contact() {
                 <p>
                   Mondol's Farm
                   <br />
-                  Naugaon, Bangladesh
+                  Naogaon, Bangladesh
                 </p>
               </div>
 
@@ -195,7 +207,8 @@ function Contact() {
               </div>
 
               <button type="submit" className="button">
-                Send Inquiry →
+                Send Inquiry
+                <span>→</span>
               </button>
             </form>
           </div>
@@ -235,6 +248,16 @@ function Contact() {
       ======================================== */}
 
       <section className="contact-cta">
+        <div className="contact-cta__image">
+          <img
+            src={contactCta}
+            alt="Countryside at Mondol's Farm"
+            loading="lazy"
+          />
+        </div>
+
+        <div className="contact-cta__overlay"></div>
+
         <div className="container">
           <span>M O N D O L ' S &nbsp; F A R M</span>
 
@@ -247,6 +270,7 @@ function Contact() {
           <div className="contact-cta__buttons">
             <Link to="/stay" className="button button--light">
               Book a Stay
+              <span>→</span>
             </Link>
 
             <a
@@ -256,6 +280,7 @@ function Contact() {
               className="button button--outline-light"
             >
               WhatsApp Us
+              <span>→</span>
             </a>
           </div>
         </div>

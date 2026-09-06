@@ -33,10 +33,12 @@ function FinalCTA() {
         <div className="final-cta__actions">
           <Link to="/stay" className="button button--light">
             Book a Stay
+            <span>→</span>
           </Link>
 
           <Link to="/contact" className="button button--outline-light">
             Get in Touch
+            <span>→</span>
           </Link>
         </div>
       </div>

@@ -68,15 +68,6 @@ h5,
 h6 {
   overflow-wrap: break-word;
 }
-.container {
-  width: min(
-    100% - (var(--container-padding) * 2),
-    var(--container-width)
-  );
-
-  margin-inline: auto;
-}
-
 .section {
   padding-block: 100px;
 }
@@ -96,8 +87,10 @@ h6 {
   justify-content: space-between;
 }
 .container {
-  width: min(1200px, calc(100% - 48px));
-
+  width: min(
+    100% - (var(--container-padding) * 2),
+    var(--container-width)
+  );
   margin-inline: auto;
 }
 @media (max-width: 767px) {

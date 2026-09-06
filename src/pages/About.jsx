@@ -10,8 +10,20 @@ function About() {
       ======================================== */}
 
       <section className="about-hero">
+        <div className="about-hero__image">
+          <img
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"
+            alt="Countryside farmland"
+            loading="eager"
+          />
+        </div>
+
+        <div className="about-hero__overlay"></div>
+
         <div className="container about-hero__content">
-          <span className="about-hero__eyebrow">A B O U T &nbsp; M O N D O L ' S &nbsp; F A R M</span>
+          <span className="about-hero__eyebrow">
+            A B O U T &nbsp; M O N D O L ' S &nbsp; F A R M
+          </span>
 
           <h1>
             Built from
@@ -73,7 +85,9 @@ function About() {
       <section className="about-philosophy section">
         <div className="container">
           <div className="about-philosophy__heading">
-            <span className="about-eyebrow">O U R &nbsp; P H I L O S O P H Y</span>
+            <span className="about-eyebrow">
+              O U R &nbsp; P H I L O S O P H Y
+            </span>
 
             <h2>
               Grow locally.
@@ -110,7 +124,9 @@ function About() {
       <section className="about-values section">
         <div className="container">
           <div className="about-section-heading">
-            <span className="about-eyebrow">W H A T &nbsp; M A T T E R S &nbsp; T O &nbsp; U S</span>
+            <span className="about-eyebrow">
+              W H A T &nbsp; M A T T E R S &nbsp; T O &nbsp; U S
+            </span>
 
             <h2>
               The principles behind
@@ -246,32 +262,26 @@ function About() {
       </section>
 
       {/* ========================================
-          FUTURE VISION
+          VISION
       ======================================== */}
 
       <section className="about-vision">
-        <div className="about-vision__image">
-          <img
-            src="https://images.unsplash.com/photo-1473445361085-b9a07f55608b?auto=format&fit=crop&w=2000&q=85"
-            alt="Trees and countryside"
-          />
-        </div>
 
         <div className="about-vision__overlay"></div>
 
         <div className="container about-vision__content">
-          <span>L O O K I N G &nbsp; A H E A D</span>
+          <span>W H E R E &nbsp; W E ' R E &nbsp; H E A D E D</span>
 
           <h2>
-            A little more
+            A farm that
             <br />
-            connected to nature.
+            keeps growing.
           </h2>
 
           <p>
-            Our vision is simple: grow the farm gradually, create a meaningful
-            countryside experience, and build something that can be enjoyed for
-            generations.
+            There's still a lot to build. More crops to grow, animals to raise,
+            experiences to create, and ways to make the farm a meaningful part
+            of rural life.
           </p>
         </div>
       </section>
@@ -281,18 +291,32 @@ function About() {
       ======================================== */}
 
       <section className="about-cta">
-        <div className="container">
-          <span>C O M E &nbsp; S E E &nbsp; I T &nbsp; F O R &nbsp; Y O U R S E L F</span>
+        <div className="about-cta__image">
+          <img
+            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"
+            alt="Countryside farmland"
+            loading="lazy"
+          />
+        </div>
+
+        <div className="about-cta__overlay"></div>
+
+        <div className="container about-cta__content">
+          <span>
+            C O M E &nbsp; S E E &nbsp; I T &nbsp; F O R &nbsp; Y O U R S E L F
+          </span>
 
           <h2>The farm is waiting.</h2>
 
           <div className="about-cta__buttons">
             <Link to="/stay" className="button button--light">
               Stay With Us
+              <span>→</span>
             </Link>
 
             <Link to="/farm" className="button button--outline-light">
               Explore the Farm
+              <span>→</span>
             </Link>
           </div>
         </div>

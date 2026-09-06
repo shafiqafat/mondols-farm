@@ -2,9 +2,8 @@ import { Link } from "react-router-dom";
 
 import SectionHeading from "../components/SectionHeading";
 import StayCard from "../components/StayCard";
-import mudHouse from "../assets/image/stay/mud-house.jpg";
-
 import stays from "../data/stays";
+import mudHouse from "../assets/image/stay/mud-house.jpg";
 
 import "./Stay.css";
 
@@ -17,16 +16,15 @@ function Stay() {
 
       <section className="stay-hero">
         <div className="stay-hero__image">
-          <img
-            src={mudHouse}
-            alt="Countryside accommodation"
-          />
+          <img src={mudHouse} alt="Countryside accommodation" />
         </div>
 
         <div className="stay-hero__overlay"></div>
 
         <div className="container stay-hero__content">
-          <span className="stay-hero__eyebrow">S T A Y &nbsp; W I T H &nbsp; U S</span>
+          <span className="stay-hero__eyebrow">
+            S T A Y &nbsp; W I T H &nbsp; U S
+          </span>
 
           <h1>
             Stay close
@@ -47,11 +45,19 @@ function Stay() {
 
       <section className="stay-intro section">
         <div className="container stay-intro__grid">
-          <div className="stay-intro__label">
-            <span>T H E &nbsp; E X P E R I E N C E</span>
+          <div className="stay-intro__image">
+            <img
+              src={mudHouse}
+              alt="Traditional countryside homestay"
+              loading="lazy"
+            />
           </div>
 
           <div className="stay-intro__content">
+            <span className="stay-intro__eyebrow">
+              T H E &nbsp; E X P E R I E N C E
+            </span>
+
             <h2>
               Not a hotel.
               <br />A place to slow down.
@@ -99,54 +105,70 @@ function Stay() {
 
       <section className="stay-expect section">
         <div className="container">
-          <SectionHeading
-            eyebrow="W H A T &nbsp; T O &nbsp; E X P E C T"
-            title="Simple things. Done well."
-            description="Our stay is about comfort without losing the feeling of being in the countryside."
-          />
+          <div className="stay-expect__layout">
+            <div className="stay-expect__heading">
+              <span>W H A T &nbsp; T O &nbsp; E X P E C T</span>
 
-          <div className="stay-expect__grid">
-            <div className="stay-expect__item">
-              <span>01</span>
-
-              <h3>Fresh Farm Food</h3>
+              <h2>
+                Simple things.
+                <br />
+                Done well.
+              </h2>
 
               <p>
-                Enjoy seasonal ingredients and simple meals inspired by what
-                grows around us.
+                Our stay is about comfort without losing the feeling of being in
+                the countryside.
               </p>
             </div>
 
-            <div className="stay-expect__item">
-              <span>02</span>
+            <div className="stay-expect__list">
+              <article className="stay-expect__item">
+                <span>01</span>
 
-              <h3>Quiet Mornings</h3>
+                <div>
+                  <h3>Fresh Farm Food</h3>
+                  <p>
+                    Enjoy seasonal ingredients and simple meals inspired by what
+                    grows around us.
+                  </p>
+                </div>
+              </article>
 
-              <p>
-                Wake up to birds, open fields, fresh air, and a slower start to
-                the day.
-              </p>
-            </div>
+              <article className="stay-expect__item">
+                <span>02</span>
 
-            <div className="stay-expect__item">
-              <span>03</span>
+                <div>
+                  <h3>Quiet Mornings</h3>
+                  <p>
+                    Wake up to birds, open fields, fresh air, and a slower start
+                    to the day.
+                  </p>
+                </div>
+              </article>
 
-              <h3>Open Countryside</h3>
+              <article className="stay-expect__item">
+                <span>03</span>
 
-              <p>
-                Explore the farm, surrounding paths, fields, and nearby village.
-              </p>
-            </div>
+                <div>
+                  <h3>Open Countryside</h3>
+                  <p>
+                    Explore the farm, surrounding paths, fields, and nearby
+                    village.
+                  </p>
+                </div>
+              </article>
 
-            <div className="stay-expect__item">
-              <span>04</span>
+              <article className="stay-expect__item">
+                <span>04</span>
 
-              <h3>Farm Life</h3>
-
-              <p>
-                Get involved if you want, or simply watch the farm come alive
-                around you.
-              </p>
+                <div>
+                  <h3>Farm Life</h3>
+                  <p>
+                    Get involved if you want, or simply watch the farm come
+                    alive around you.
+                  </p>
+                </div>
+              </article>
             </div>
           </div>
         </div>
@@ -205,56 +227,62 @@ function Stay() {
             />
           </div>
 
-          <div className="guest-journey__steps">
-            <div className="guest-journey__step">
+          <div className="guest-journey__timeline">
+            <article className="guest-journey__step">
               <span>01</span>
 
-              <h3>Arrive</h3>
+              <div>
+                <h3>Arrive</h3>
+                <p>
+                  Leave the busy routine behind and settle into the countryside.
+                </p>
+              </div>
+            </article>
 
-              <p>
-                Leave the busy routine behind and settle into the countryside.
-              </p>
-            </div>
-
-            <div className="guest-journey__step">
+            <article className="guest-journey__step">
               <span>02</span>
 
-              <h3>Explore</h3>
+              <div>
+                <h3>Explore</h3>
+                <p>Walk around the farm and discover what's growing.</p>
+              </div>
+            </article>
 
-              <p>Walk around the farm and discover what's growing.</p>
-            </div>
-
-            <div className="guest-journey__step">
+            <article className="guest-journey__step">
               <span>03</span>
 
-              <h3>Eat</h3>
+              <div>
+                <h3>Eat</h3>
+                <p>Enjoy simple food connected to the farm and the season.</p>
+              </div>
+            </article>
 
-              <p>Enjoy simple food connected to the farm and the season.</p>
-            </div>
-
-            <div className="guest-journey__step">
+            <article className="guest-journey__step">
               <span>04</span>
 
-              <h3>Relax</h3>
+              <div>
+                <h3>Relax</h3>
+                <p>Find a quiet corner and let the day move at its own pace.</p>
+              </div>
+            </article>
 
-              <p>Find a quiet corner and let the day move at its own pace.</p>
-            </div>
-
-            <div className="guest-journey__step">
+            <article className="guest-journey__step">
               <span>05</span>
 
-              <h3>Experience</h3>
+              <div>
+                <h3>Experience</h3>
+                <p>Join farm activities or explore the surrounding village.</p>
+              </div>
+            </article>
 
-              <p>Join farm activities or explore the surrounding village.</p>
-            </div>
-
-            <div className="guest-journey__step">
+            <article className="guest-journey__step">
               <span>06</span>
 
-              <h3>Leave</h3>
-
-              <p>Take a few memories of the countryside home with you.</p>
-            </div>
+              <div>
+                <h3>Leave</h3>
+                <p>Take a few memories of the countryside home with you.</p>
+              </div>
+            </article>
           </div>
         </div>
       </section>
@@ -285,6 +313,7 @@ function Stay() {
 
           <Link to="/contact" className="button button--light">
             Check Availability
+            <span>→</span>
           </Link>
         </div>
       </section>

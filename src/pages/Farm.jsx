@@ -164,7 +164,6 @@ function Farm() {
               View Farm Memories
               <span>→</span>
             </Link>
-            
           </div>
         </div>
       </section>
@@ -232,6 +231,7 @@ function Farm() {
 
           <Link to="/stay" className="button button--light">
             Stay With Us
+            <span>→</span>
           </Link>
         </div>
       </section>

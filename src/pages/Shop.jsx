@@ -155,6 +155,7 @@ function Shop() {
 
           <Link to="/contact" className="button button--light">
             Get in Touch
+            <span>→</span>
           </Link>
         </div>
       </section>

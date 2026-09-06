@@ -46,7 +46,7 @@
 }
 
 .project-card__image:hover img {
-  transform: scale(1.1);
+  transform: scale(1.06);
 }
 
 
@@ -214,6 +214,25 @@
 
 .project-card__link:hover span {
   transform: translateX(2px);
+}
+
+.project-card__status {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 2;
+
+  padding: 7px 10px;
+
+  background: var(--color-cream);
+  color: var(--color-forest);
+
+  border-radius: var(--radius-sm);
+
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 /* ========================================
    MOBILE

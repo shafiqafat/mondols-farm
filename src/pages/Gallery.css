@@ -294,9 +294,8 @@
 }
 
 .gallery-item:hover img {
-  transform: scale(1.045);
-
-  filter: brightness(0.75);
+  transform: scale(1.05);
+  filter: brightness(0.72);
 }
 
 .gallery-item__overlay {
@@ -434,7 +433,19 @@
 
   line-height: 0.98;
 }
+.gallery-cta .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 
+.gallery-cta .button span {
+  transition: transform 0.3s ease;
+}
+
+.gallery-cta .button:hover span {
+  transform: translateX(4px);
+}
 
 /* ========================================
    LIGHTBOX
@@ -460,18 +471,28 @@
 
 .gallery-lightbox__content {
   width: min(1000px, 100%);
-
   max-height: 90vh;
+  animation: galleryLightboxContentIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes galleryLightboxContentIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .gallery-lightbox__content img {
   display: block;
-
   width: 100%;
-
   max-height: 78vh;
-
   object-fit: contain;
+  border-radius: 10px;
 }
 
 .gallery-lightbox__content div {
@@ -632,55 +653,5 @@
 
     width: 40px;
     height: 40px;
-  }
-
-}
-  /* CURSOR */
-.gallery-item__cursor {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  min-width: 105px;
-  height: 34px;
-  padding: 0 14px;
-
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 999px;
-
-  background: rgba(28, 48, 35, 0.28);
-  backdrop-filter: blur(12px);
-
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.08),
-    inset 0 1px 1px rgba(255, 255, 255, 0.3);
-
-  color: white;
-  font-size: 8px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-
-  opacity: 0;
-  pointer-events: none;
-
-  transition:
-    opacity 0.3s ease,
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.gallery-item:hover .gallery-item__cursor {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-@media (max-width: 767px) {
-  .gallery-item__cursor {
-    display: none;
   }
 }

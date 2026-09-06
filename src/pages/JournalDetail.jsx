@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import journalArticles from "../data/journal";
 
 import "./JournalDetail.css";
+import journalCta from "../assets/image/journal/journal-cta.jpg";
 
 function JournalDetail() {
   const { slug } = useParams();
@@ -160,7 +161,13 @@ function JournalDetail() {
       ======================================== */}
 
       <section className="journal-detail__cta">
-        <div className="container">
+        <div className="journal-detail__cta-image">
+          <img src={journalCta} alt="Countryside landscape" loading="lazy" />
+        </div>
+
+        <div className="journal-detail__cta-overlay"></div>
+
+        <div className="container journal-detail__cta-content">
           <span>E X P E R I E N C E &nbsp; I T &nbsp; Y O U R S E L F</span>
 
           <h2>
@@ -171,6 +178,7 @@ function JournalDetail() {
 
           <Link to="/stay" className="button button--light">
             Stay With Us
+            <span>→</span>
           </Link>
         </div>
       </section>

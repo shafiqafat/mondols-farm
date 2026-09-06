@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import SectionHeading from "../components/SectionHeading";
 
 import journalArticles from "../data/journal";
+import journalCta from "../assets/image/journal/journal-cta.jpg";
 
 import "./Journal.css";
 
@@ -34,8 +35,16 @@ function Journal() {
       {/* HERO */}
 
       <section className="journal-hero">
+        <div className="journal-hero__image">
+          <img src={featuredArticle.image} alt={featuredArticle.title} />
+        </div>
+
+        <div className="journal-hero__overlay"></div>
+
         <div className="container journal-hero__content">
-          <span className="journal-hero__eyebrow">T H E &nbsp; J O U R N A L</span>
+          <span className="journal-hero__eyebrow">
+            T H E &nbsp; J O U R N A L
+          </span>
 
           <h1>
             Stories
@@ -148,7 +157,13 @@ function Journal() {
       {/* CTA */}
 
       <section className="journal-cta">
-        <div className="container">
+        <div className="journal-cta__image">
+          <img src={journalCta} alt="Countryside landscape" loading="lazy" />
+        </div>
+
+        <div className="journal-cta__overlay"></div>
+
+        <div className="container journal-cta__content">
           <span>K E E P &nbsp; E X P L O R I N G</span>
 
           <h2>
@@ -159,6 +174,7 @@ function Journal() {
 
           <Link to="/stay" className="button button--light">
             Stay With Us
+            <span>→</span>
           </Link>
         </div>
       </section>

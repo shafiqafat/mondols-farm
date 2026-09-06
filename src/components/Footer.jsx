@@ -62,12 +62,12 @@ function Footer() {
             <address>
               Mondol's Farm
               <br />
-              Naugaon, Bangladesh
+              Naogaon, Bangladesh
             </address>
 
             <a href="mailto:hello@mondolsfarm.com">hello@mondolsfarm.com</a>
 
-            <a href="tel:+8801000000000">+880 1000-000000</a>
+            <a href="tel:+8801534282793">+880 1534282793</a>
           </div>
         </div>
 
@@ -77,7 +77,9 @@ function Footer() {
 
         <div className="footer__newsletter">
           <div>
-            <span className="footer__heading">F A R M &nbsp; J O U R N A L</span>
+            <span className="footer__heading">
+              F A R M &nbsp; J O U R N A L
+            </span>
 
             <h3>
               Stories from the farm,
@@ -86,14 +88,17 @@ function Footer() {
             </h3>
           </div>
 
-          <form className="footer__form">
+          <form className="footer__form" onSubmit={(e) => e.preventDefault()}>
             <input
               type="email"
               placeholder="Your email address"
               aria-label="Email address"
             />
 
-            <button type="submit">Subscribe →</button>
+            <button type="submit">
+              Subscribe
+              <span>→</span>
+            </button>
           </form>
         </div>
 

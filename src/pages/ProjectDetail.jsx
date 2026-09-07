@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import projects from "../data/projects";
+import PageMeta from "../components/PageMeta";
 import "./ProjectDetail.css";
 
 function ProjectDetail() {
@@ -31,9 +32,41 @@ function ProjectDetail() {
     .filter((item) => item.id !== project.id)
     .slice(0, 2);
 
+  const details = project.details || {};
+
+  const facts = [
+    { label: "Status", value: project.status },
+    { label: "Started", value: details.startDate },
+    { label: "Area", value: details.area },
+    { label: "Variety", value: details.variety },
+    { label: "Breed", value: details.breed },
+    { label: "Season", value: details.season },
+    { label: "Current Scale", value: details.currentScale },
+    { label: "Target Scale", value: details.targetScale },
+    { label: "Current Birds", value: details.currentCount },
+    { label: "Male", value: details.maleCount },
+    { label: "Female", value: details.femaleCount },
+    { label: "Kids", value: details.kidCount },
+    { label: "Expected Harvest", value: details.expectedHarvest },
+    { label: "Output", value: details.output },
+    { label: "Purpose", value: details.purpose },
+  ].filter((fact) => fact.value);
+
+  const methods = [
+    { label: "Irrigation", value: details.irrigation },
+    { label: "Fertilizer / Manure", value: details.fertilizer },
+    { label: "Housing", value: details.housing },
+    { label: "Feed", value: details.feed },
+    { label: "Breeding Plan", value: details.breedingPlan },
+  ].filter((item) => item.value);
+
   return (
     <main className="project-detail">
-      {/* PROJECT */}
+      <PageMeta title={project.title} description={project.description} />
+      
+      {/* ========================================
+          PROJECT INTRO
+      ======================================== */}
 
       <section className="project-detail__main section">
         <div className="container">
@@ -42,13 +75,9 @@ function ProjectDetail() {
           </Link>
 
           <div className="project-detail__grid">
-            {/* IMAGE */}
-
             <div className="project-detail__image">
               <img src={project.image} alt={project.title} />
             </div>
-
-            {/* INFORMATION */}
 
             <div className="project-detail__content">
               <span className="project-detail__category">
@@ -66,18 +95,50 @@ function ProjectDetail() {
               <div className="project-detail__intro">
                 <h2>Part of life at the farm.</h2>
 
-                <p>
-                  This project is one of the things we're growing and developing
-                  at Mondol's Farm, alongside the land, animals, and everyday
-                  rhythm of countryside life.
-                </p>
+                <p>{project.overview}</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* THE PROJECT */}
+      {/* ========================================
+          PROJECT DETAILS
+      ======================================== */}
+
+      <section className="project-detail__information section">
+        <div className="container">
+          <div className="project-detail__information-header">
+            <span> P R O J E C T &nbsp; D E T A I L S </span>
+
+            <h2>
+              The numbers
+              <br />
+              behind the project.
+            </h2>
+          </div>
+
+          {facts.length > 0 && (
+            <div className="project-detail__facts">
+              {facts.map((fact) => (
+                <div
+                  key={fact.label}
+                  className={
+                    fact.label === "Purpose" ? "project-detail__fact--wide" : ""
+                  }
+                >
+                  <span>{fact.label}</span>
+                  <strong>{fact.value}</strong>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ========================================
+          ABOUT THE PROJECT
+      ======================================== */}
 
       <section className="project-detail__story section">
         <div className="container project-detail__story-grid">
@@ -88,29 +149,69 @@ function ProjectDetail() {
           <div className="project-detail__story-content">
             <h2>Growing with purpose.</h2>
 
+            <p>{project.overview}</p>
+
             <p>
-              At Mondol's Farm, every project begins with the land and develops
-              at a scale that allows us to stay connected to the work.
+              Every project at Mondol's Farm is developed at a scale that allows
+              us to stay connected to the land, the animals, and the work
+              itself. As the farm grows, these projects will continue to evolve
+              with it.
             </p>
-
-            <p>{project.description}</p>
-
-            <div className="project-detail__facts">
-              <div>
-                <span>Category</span>
-                <strong>{project.category}</strong>
-              </div>
-
-              <div>
-                <span>Status</span>
-                <strong>{project.status}</strong>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* FROM OUR FARM */}
+      {/* ========================================
+          HOW WE DO IT
+      ======================================== */}
+
+      {(methods.length > 0 || project.approach?.length > 0) && (
+        <section className="project-detail__approach section">
+          <div className="container">
+            <div className="project-detail__approach-grid">
+              <div>
+                <span className="project-detail__eyebrow">
+                  H O W &nbsp; W E &nbsp; W O R K
+                </span>
+
+                <h2>
+                  Built around
+                  <br />
+                  the farm.
+                </h2>
+              </div>
+
+              <div className="project-detail__approach-content">
+                {methods.length > 0 && (
+                  <div className="project-detail__methods">
+                    {methods.map((method) => (
+                      <div key={method.label}>
+                        <span>{method.label}</span>
+                        <p>{method.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {project.approach?.length > 0 && (
+                  <div className="project-detail__approach-list">
+                    {project.approach.map((item, index) => (
+                      <div key={item}>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <strong>{item}</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ========================================
+          FARM CONTEXT
+      ======================================== */}
 
       <section className="project-detail__farm section">
         <div className="container project-detail__farm-grid">
@@ -140,13 +241,16 @@ function ProjectDetail() {
         </div>
       </section>
 
-      {/* RELATED PROJECTS */}
+      {/* ========================================
+          RELATED PROJECTS
+      ======================================== */}
 
       <section className="project-detail__related section">
         <div className="container">
           <div className="project-detail__related-header">
             <div>
               <span>M O R E &nbsp; F R O M &nbsp; T H E &nbsp; F A R M</span>
+
               <h2>Other projects.</h2>
             </div>
 
@@ -189,7 +293,9 @@ function ProjectDetail() {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* ========================================
+          CTA
+      ======================================== */}
 
       <section className="project-detail__cta">
         <div className="project-detail__cta-image">

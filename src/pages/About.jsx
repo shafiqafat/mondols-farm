@@ -1,10 +1,15 @@
 import { Link } from "react-router-dom";
+import PageMeta from "../components/PageMeta";
 
 import "./About.css";
 
 function About() {
   return (
     <main className="about-page">
+      <PageMeta
+        title="About"
+        description="Learn about Mondol's Farm, our approach to farming, rural living, and building the farm step by step."
+      />
       {/* ========================================
           HERO
       ======================================== */}
@@ -266,7 +271,6 @@ function About() {
       ======================================== */}
 
       <section className="about-vision">
-
         <div className="about-vision__overlay"></div>
 
         <div className="container about-vision__content">

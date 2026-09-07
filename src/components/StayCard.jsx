@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import "./StayCard.css";
 
 function StayCard({
+  slug,
   name,
   description,
   guests,
@@ -54,8 +55,9 @@ function StayCard({
 
   return (
     <article className="stay-card">
+      {/* HOUSE IMAGE */}
       <Link
-        to={`/contact?stay=${encodeURIComponent(name)}`}
+        to={`/stay/${slug}`}
         className="stay-card__image"
         onMouseEnter={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
@@ -82,10 +84,11 @@ function StayCard({
             isHovering ? "stay-card__cursor--visible" : ""
           }`}
         >
-          Check Availability
+          View House
         </span>
       </Link>
 
+      {/* CONTENT */}
       <div className="stay-card__content">
         <div className="stay-card__heading">
           <h3>{name}</h3>
@@ -104,13 +107,20 @@ function StayCard({
           <span>{bathrooms}</span>
         </div>
 
-        <Link
-          to={`/contact?stay=${encodeURIComponent(name)}`}
-          className="stay-card__link"
-        >
-          Check Availability
-          <span>→</span>
-        </Link>
+        <div className="stay-card__actions">
+          <Link to={`/stay/${slug}`} className="stay-card__link">
+            View House
+            <span>→</span>
+          </Link>
+
+          <Link
+            to={`/contact?stay=${encodeURIComponent(name)}`}
+            className="stay-card__availability"
+          >
+            Check Availability
+            <span>→</span>
+          </Link>
+        </div>
       </div>
     </article>
   );

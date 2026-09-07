@@ -16,7 +16,9 @@ import Contact from "./pages/Contact";
 import ProjectDetail from "./pages/ProjectDetail";
 import ProductDetail from "./pages/ProductDetail";
 import JournalDetail from "./pages/JournalDetail";
+import StayDetail from "./pages/StayDetail";
 import Gallery from "./pages/Gallery";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
         <Route path="/farm/:slug" element={<ProjectDetail />} />
 
         <Route path="/stay" element={<Stay />} />
+        <Route path="/stay/:slug" element={<StayDetail />} />
 
         <Route path="/shop" element={<Shop />} />
         <Route path="/shop/:slug" element={<ProductDetail />} />
@@ -46,6 +49,8 @@ function App() {
         <Route path="/about" element={<About />} />
 
         <Route path="/contact" element={<Contact />} />
+
+        <Route path="*" element={<NotFound />} />
       </Routes>
 
       <Footer />

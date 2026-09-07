@@ -224,53 +224,246 @@
   margin-top: 20px;
 }
 
-
 /* ========================================
-   FACTS
+   PROJECT INFORMATION
 ======================================== */
 
-.project-detail__facts {
+.project-detail__information {
+  background: var(--color-cream);
+}
+
+.project-detail__information-header {
+  margin-bottom: 55px;
+}
+
+.project-detail__information-header > span {
+  display: block;
+  margin-bottom: 18px;
+  color: var(--color-terracotta);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+
+.project-detail__information-header h2 {
+  margin: 0;
+  font-size: clamp(46px, 5vw, 68px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+
+/* FACT GRID */
+
+.project-detail__information .project-detail__facts {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-
-  margin-top: 50px;
-
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 0;
   border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.project-detail__facts div {
-  padding: 22px 20px 0 0;
+.project-detail__information .project-detail__facts div {
+  min-height: 125px;
+  padding: 24px 20px 24px 0;
 }
 
-.project-detail__facts div + div {
+
+/* VERTICAL DIVIDERS */
+
+.project-detail__information
+  .project-detail__facts
+  div:not(:nth-child(4n + 1)) {
   padding-left: 20px;
-
   border-left: 1px solid var(--color-border);
 }
 
-.project-detail__facts span {
+
+/* FULL-WIDTH FACT */
+
+.project-detail__information
+  .project-detail__facts
+  .project-detail__fact--wide {
+  grid-column: 1 / -1;
+
+  min-height: auto;
+  padding: 24px 0;
+
+  border-left: 0;
+}
+
+
+/* LABEL */
+
+.project-detail__information .project-detail__facts span {
   display: block;
-
   color: var(--color-text-muted);
-
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
-
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.project-detail__facts strong {
+
+/* VALUE */
+
+.project-detail__information .project-detail__facts strong {
   display: block;
-
-  margin-top: 8px;
-
+  margin-top: 10px;
   color: var(--color-forest);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.4;
+}
 
+/* ========================================
+   APPROACH
+======================================== */
+
+.project-detail__approach {
+  background: var(--color-white);
+}
+
+.project-detail__approach-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 100px;
+  align-items: start;
+}
+
+.project-detail__approach h2 {
+  margin-top: 18px;
+  font-size: clamp(46px, 5vw, 68px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.project-detail__approach-content {
+  padding-top: 45px;
+}
+
+.project-detail__methods {
+  border-top: 1px solid var(--color-border);
+}
+
+.project-detail__methods > div {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 25px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.project-detail__methods span {
+  color: var(--color-terracotta);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.project-detail__methods p {
+  margin: 0;
+  color: var(--color-text);
   font-size: 14px;
+  line-height: 1.65;
+}
+
+
+/* APPROACH LIST */
+
+.project-detail__approach-list {
+  margin-top: 50px;
+  border-top: 1px solid var(--color-border);
+}
+
+.project-detail__approach-list > div {
+  display: grid;
+  grid-template-columns: 45px 1fr;
+  gap: 20px;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--color-border);
+  transition: padding-left 0.35s ease;
+}
+
+.project-detail__approach-list > div:hover {
+  padding-left: 10px;
+}
+
+.project-detail__approach-list span {
+  color: var(--color-terracotta);
+  font-size: 10px;
   font-weight: 600;
 }
 
+.project-detail__approach-list strong {
+  color: var(--color-text);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+
+/* ========================================
+   MOBILE
+======================================== */
+
+@media (max-width: 767px) {
+
+  .project-detail__information {
+    padding-block: 70px;
+  }
+
+  .project-detail__information-header {
+    margin-bottom: 40px;
+  }
+
+  .project-detail__information .project-detail__facts {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .project-detail__information .project-detail__facts div {
+    min-height: 105px;
+    padding: 20px 15px 20px 0;
+  }
+
+  .project-detail__information .project-detail__facts div:not(:nth-child(4n + 1)) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .project-detail__information .project-detail__facts div:nth-child(even) {
+    padding-left: 15px;
+    border-left: 1px solid var(--color-border);
+  }
+
+  .project-detail__information .project-detail__facts strong {
+    font-size: 14px;
+  }
+
+  .project-detail__approach {
+    padding-block: 70px;
+  }
+
+  .project-detail__approach-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .project-detail__approach-content {
+    padding-top: 0;
+  }
+
+  .project-detail__methods > div {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .project-detail__approach-list {
+    margin-top: 40px;
+  }
+}
 
 /* ========================================
    FARM CONTEXT
@@ -671,7 +864,49 @@
   .project-detail__description {
     font-size: 15px;
   }
+ .project-detail__information {
+    padding-block: 70px;
+  }
 
+  .project-detail__information-header {
+    margin-bottom: 40px;
+  }
+
+  .project-detail__information .project-detail__facts {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .project-detail__information .project-detail__facts div {
+    min-height: 105px;
+    padding: 20px 15px 20px 0;
+  }
+
+  .project-detail__information
+    .project-detail__facts
+    div:nth-child(even) {
+    padding-left: 15px;
+    border-left: 1px solid var(--color-border);
+  }
+
+  .project-detail__information
+    .project-detail__facts
+    div:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .project-detail__information
+    .project-detail__facts
+    .project-detail__fact--wide {
+    grid-column: 1 / -1;
+    min-height: auto;
+    padding: 20px 0;
+    border-left: 0;
+  }
+
+  .project-detail__information .project-detail__facts strong {
+    font-size: 14px;
+  }
   .project-detail__intro {
     margin-top: 40px;
   }

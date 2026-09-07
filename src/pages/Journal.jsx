@@ -5,6 +5,7 @@ import SectionHeading from "../components/SectionHeading";
 
 import journalArticles from "../data/journal";
 import journalCta from "../assets/image/journal/journal-cta.jpg";
+import PageMeta from "../components/PageMeta";
 
 import "./Journal.css";
 
@@ -32,6 +33,10 @@ function Journal() {
 
   return (
     <main className="journal-page">
+      <PageMeta
+        title="Farm Journal"
+        description="Stories, updates, lessons, and everyday moments from Mondol's Farm."
+      />
       {/* HERO */}
 
       <section className="journal-hero">

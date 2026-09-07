@@ -4,12 +4,17 @@ import SectionHeading from "../components/SectionHeading";
 import StayCard from "../components/StayCard";
 import stays from "../data/stays";
 import mudHouse from "../assets/image/stay/mud-house.jpg";
+import PageMeta from "../components/PageMeta";
 
 import "./Stay.css";
 
 function Stay() {
   return (
     <main className="stay-page">
+      <PageMeta
+        title="Stay With Us"
+        description="Stay close to the land and experience the slower rhythm of countryside life at Mondol's Farm."
+      />
       {/* ========================================
           HERO
       ======================================== */}

@@ -8,12 +8,17 @@ import projects from "../data/projects";
 import galleryImages from "../data/gallery";
 
 import mustardCultivation from "../assets/image/projects/mustard-cultivation.jpg";
+import PageMeta from "../components/PageMeta";
 
 import "./Farm.css";
 
 function Farm() {
   return (
     <main className="farm-page">
+      <PageMeta
+        title="The Farm"
+        description="Explore the crops, livestock, and farming projects growing at Mondol's Farm."
+      />
       {/* Hero */}
 
       <section className="farm-hero">

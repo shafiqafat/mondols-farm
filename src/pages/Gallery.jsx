@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import galleryItems from "../data/gallery";
 import galleryHero from "../assets/image/Memory/mustard-field.avif";
 import galleryCta from "../assets/image/Memory/dust.jpg";
+import PageMeta from "../components/PageMeta";
 
 import "./Gallery.css";
 
@@ -28,6 +29,10 @@ function Gallery() {
 
   return (
     <main className="gallery-page">
+      <PageMeta
+        title="Farm Memories"
+        description="A visual collection of the land, projects, animals, and everyday life at Mondol's Farm."
+      />
       {/* ========================================
           HERO
       ======================================== */}

@@ -5,6 +5,7 @@ import SectionHeading from "../components/SectionHeading";
 import ProductCard from "../components/ProductCard";
 
 import products from "../data/products";
+import PageMeta from "../components/PageMeta";
 
 import "./Shop.css";
 
@@ -20,6 +21,10 @@ function Shop() {
 
   return (
     <main className="shop-page">
+      <PageMeta
+        title="Farm Produce"
+        description="Explore seasonal produce and farm products from Mondol's Farm."
+      />
       {/* HERO */}
 
       <section className="shop-hero">

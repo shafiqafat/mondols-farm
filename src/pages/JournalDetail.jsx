@@ -1,9 +1,10 @@
 import { Link, useParams } from "react-router-dom";
 
 import journalArticles from "../data/journal";
+import PageMeta from "../components/PageMeta";
+import journalCta from "../assets/image/journal/journal-cta.jpg";
 
 import "./JournalDetail.css";
-import journalCta from "../assets/image/journal/journal-cta.jpg";
 
 function JournalDetail() {
   const { slug } = useParams();
@@ -39,6 +40,8 @@ function JournalDetail() {
 
   return (
     <main className="journal-detail">
+      <PageMeta title={article.title} description={article.excerpt} />
+      
       {/* ========================================
           HERO
       ======================================== */}

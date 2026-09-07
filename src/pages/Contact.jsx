@@ -1,17 +1,98 @@
 import { Link } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
 
+import stays from "../data/stays";
 import contactHero from "../assets/image/experiences/river.jpg";
 import contactCta from "../assets/image/Memory/dust.jpg";
+import { openWhatsApp } from "../data/whatsapp";
+import PageMeta from "../components/PageMeta";
+
 import "./Contact.css";
 
 function Contact() {
   const [searchParams] = useSearchParams();
+  const [submitted, setSubmitted] = useState(false);
+  const [checkIn, setCheckIn] = useState("");
 
   const product = searchParams.get("product");
   const stay = searchParams.get("stay");
+  const selectedStay = stays.find((item) => item.name === stay);
+
+  const maxGuests = selectedStay
+    ? parseInt(selectedStay.guests.split("–").pop(), 10)
+    : 10;
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+
+    const name = formData.get("name");
+    const phone = formData.get("phone");
+    const email = formData.get("email");
+    const interest = formData.get("interest");
+    const quantity = formData.get("quantity");
+    const delivery = formData.get("delivery");
+    const message = formData.get("message");
+
+    let whatsappMessage = "Hello Mondol's Farm,\n\n";
+
+    if (product) {
+      whatsappMessage += `I'd like to place an order.\n\n`;
+      whatsappMessage += `Product: ${product}\n`;
+      whatsappMessage += `Quantity: ${quantity}\n`;
+      whatsappMessage += `Delivery/Pickup: ${delivery}\n\n`;
+    } else if (stay) {
+      const checkIn = formData.get("checkIn");
+      const checkOut = formData.get("checkOut");
+      const guests = formData.get("guests");
+      
+      if (stay) {
+        if (checkOut <= checkIn) {
+          alert("Check-out date must be after the check-in date.");
+          return;
+        }
+
+        if (Number(guests) > maxGuests) {
+          alert(`This accommodation allows a maximum of ${maxGuests} guests.`);
+          return;
+        }
+      }
+      
+      whatsappMessage += `I'd like to check availability for a stay.\n\n`;
+      whatsappMessage += `Accommodation: ${stay}\n`;
+      whatsappMessage += `Check-in: ${checkIn}\n`;
+      whatsappMessage += `Check-out: ${checkOut}\n`;
+      whatsappMessage += `Guests: ${guests}\n\n`;
+    } else {
+      whatsappMessage += `I'd like to get in touch.\n\n`;
+      whatsappMessage += `Interest: ${interest}\n\n`;
+    }
+
+    whatsappMessage += `Name: ${name}\n`;
+    whatsappMessage += `Phone: ${phone}\n`;
+
+    if (email) {
+      whatsappMessage += `Email: ${email}\n`;
+    }
+
+    if (message) {
+      whatsappMessage += `\nMessage:\n${message}`;
+    }
+
+    openWhatsApp(whatsappMessage);
+    setSubmitted(true);
+  };
+
   return (
     <main className="contact-page">
+      <PageMeta
+        title="Contact"
+        description="Get in touch with Mondol's Farm about stays, farm produce, projects, or general enquiries."
+      />
       {/* ========================================
           HERO
       ======================================== */}
@@ -130,14 +211,8 @@ function Contact() {
                 <strong>{product}</strong>
               </div>
             )}
-            {stay && (
-              <div className="contact-form__product">
-                <span>STAY INQUIRY</span>
-                <strong>{stay}</strong>
-              </div>
-            )}
 
-            <form className="contact-form">
+            <form className="contact-form" onSubmit={handleSubmit}>
               <div className="contact-form__row">
                 <div className="contact-field">
                   <label htmlFor="name">Name</label>
@@ -147,6 +222,7 @@ function Contact() {
                     id="name"
                     name="name"
                     placeholder="Your name"
+                    required
                   />
                 </div>
 
@@ -158,6 +234,7 @@ function Contact() {
                     id="phone"
                     name="phone"
                     placeholder="Your phone number"
+                    required
                   />
                 </div>
               </div>
@@ -186,14 +263,93 @@ function Contact() {
                   </option>
 
                   <option value="homestay">Homestay</option>
-
                   <option value="farm-visit">Farm Visit</option>
-
                   <option value="produce">Farm Produce</option>
-
                   <option value="other">Something Else</option>
                 </select>
               </div>
+
+              {/* STAY FIELDS */}
+
+              {stay && (
+                <>
+                  <div className="contact-field">
+                    <label htmlFor="checkIn">Check-in</label>
+
+                    <input
+                      type="date"
+                      id="checkIn"
+                      name="checkIn"
+                      min={today}
+                      value={checkIn}
+                      onChange={(event) => setCheckIn(event.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="contact-field">
+                    <label htmlFor="checkOut">Check-out</label>
+
+                    <input
+                      type="date"
+                      id="checkOut"
+                      name="checkOut"
+                      min={checkIn || today}
+                      required
+                    />
+                  </div>
+
+                  <div className="contact-field">
+                    <label htmlFor="guests">Guests</label>
+
+                    <input
+                      type="number"
+                      id="guests"
+                      name="guests"
+                      min="1"
+                      max={maxGuests}
+                      placeholder={`Up to ${maxGuests} guests`}
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* PRODUCT FIELDS */}
+
+              {product && (
+                <>
+                  <div className="contact-field">
+                    <label htmlFor="quantity">Quantity</label>
+
+                    <input
+                      type="text"
+                      id="quantity"
+                      name="quantity"
+                      placeholder="e.g. 2 kg, 1 dozen"
+                      required
+                    />
+                  </div>
+
+                  <div className="contact-field">
+                    <label htmlFor="delivery">Delivery / Pickup</label>
+
+                    <select
+                      id="delivery"
+                      name="delivery"
+                      defaultValue=""
+                      required
+                    >
+                      <option value="" disabled>
+                        Select an option
+                      </option>
+
+                      <option value="delivery">Delivery</option>
+                      <option value="farm-pickup">Farm Pickup</option>
+                    </select>
+                  </div>
+                </>
+              )}
 
               <div className="contact-field">
                 <label htmlFor="message">Message</label>
@@ -206,14 +362,28 @@ function Contact() {
                 ></textarea>
               </div>
 
-              <button type="submit" className="button">
-                Send Inquiry
+              <button type="submit" className="button button--primary">
+                {product
+                  ? "Place Order"
+                  : stay
+                    ? "Check Availability"
+                    : "Send Inquiry"}
                 <span>→</span>
               </button>
             </form>
           </div>
         </div>
       </section>
+
+      {submitted && (
+        <p className="contact-form__success">
+          {product
+            ? "Your order details have been prepared. Please complete the conversation with us on WhatsApp."
+            : stay
+              ? "Your stay inquiry has been prepared. Please complete the conversation with us on WhatsApp."
+              : "Your inquiry has been prepared. Please complete the conversation with us on WhatsApp."}
+        </p>
+      )}
 
       {/* ========================================
           MAP
@@ -232,13 +402,13 @@ function Contact() {
           </div>
 
           <div className="contact-location__map">
-            {/* Temporary map placeholder */}
-
-            <div className="contact-location__placeholder">
-              <span>GOOGLE MAP</span>
-
-              <p>Our exact farm location will be displayed here.</p>
-            </div>
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d1572.1487872393052!2d88.91689445516735!3d25.073662098699195!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e1!3m2!1sen!2sbd!4v1788778496265!5m2!1sen!2sbd"
+              title="Mondol's Farm location"
+              loading="lazy"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
           </div>
         </div>
       </section>

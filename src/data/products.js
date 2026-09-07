@@ -12,7 +12,7 @@ const products = [
     description:
       "Cold-pressed mustard oil made from our farm-grown mustard seeds, known for its pungent flavor and distinctive character.",
     price: "৳300",
-    unit: "per kg",
+    unit: "per Litter",
     availability: "Available",
     image: mustardOil,
 
@@ -50,7 +50,7 @@ const products = [
 
     details: {
       source: "Our chicken rearing project",
-      breed: "",
+      breed: "Deshi Chicken",
       currentProduction: "",
       collectionFrequency: "",
       packaging: "Dozen",

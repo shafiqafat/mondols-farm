@@ -20,6 +20,8 @@ import StayDetail from "./pages/StayDetail";
 import Gallery from "./pages/Gallery";
 import NotFound from "./pages/NotFound";
 
+import { Analytics } from "@vercel/analytics/react";
+
 function App() {
   return (
     <>
@@ -54,6 +56,7 @@ function App() {
       </Routes>
 
       <Footer />
+      <Analytics />
     </>
   );
 }

@@ -75,7 +75,7 @@ const stays = [
     description:
       "A comfortable brick-built home surrounded by the quiet landscape of the farm.",
 
-    price: "৳4,500",
+    price: "৳2,500",
     unit: "per night",
 
     guests: "2–4 guests",

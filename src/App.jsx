@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 
 import ScrollToTop from "./components/ScrollToTop";
 import PageLoader from "./components/PageLoader";

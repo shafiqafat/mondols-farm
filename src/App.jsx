@@ -10,6 +10,8 @@ import Home from "./pages/Home";
 import Farm from "./pages/Farm";
 import Stay from "./pages/Stay";
 import Shop from "./pages/Shop";
+import Invest from "./pages/Invest";
+import Gallery from "./pages/Gallery";
 import Journal from "./pages/Journal";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -17,7 +19,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import ProductDetail from "./pages/ProductDetail";
 import JournalDetail from "./pages/JournalDetail";
 import StayDetail from "./pages/StayDetail";
-import Gallery from "./pages/Gallery";
+import InvestmentDetail from "./pages/InvestmentDetail";
 import NotFound from "./pages/NotFound";
 
 import { Analytics } from "@vercel/analytics/react";
@@ -36,6 +38,9 @@ function App() {
 
         <Route path="/farm" element={<Farm />} />
         <Route path="/farm/:slug" element={<ProjectDetail />} />
+
+        <Route path="/invest" element={<Invest />} />
+        <Route path="/invest/:slug" element={<InvestmentDetail />} />
 
         <Route path="/stay" element={<Stay />} />
         <Route path="/stay/:slug" element={<StayDetail />} />

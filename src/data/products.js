@@ -9,7 +9,7 @@ const products = [
     id: 1,
     slug: "mustard-oil",
     name: "Mustard Oil",
-    category: "O i l s",
+    category: "Oils",
     description:
       "Cold-pressed mustard oil made from our farm-grown mustard seeds, known for its pungent flavor and distinctive character.",
     price: "৳300",
@@ -40,7 +40,7 @@ const products = [
     id: 2,
     slug: "chicken-eggs",
     name: "Chicken Eggs",
-    category: "E g g s",
+    category: "Eggs",
     description:
       "Fresh eggs from our small-scale poultry project, collected regularly to ensure quality and freshness.",
     price: "৳160",
@@ -71,7 +71,7 @@ const products = [
     id: 3,
     slug: "harivanga-mangoes",
     name: "Harivanga Mangoes",
-    category: "F r u i t s",
+    category: "Fruits",
     description:
       "A rare and aromatic mango variety known for its unique flavor and fragrance, grown seasonally on our farm.",
     price: "৳75",
@@ -102,7 +102,7 @@ const products = [
     id: 4,
     slug: "farm-raised-goat-meat",
     name: "Farm-Raised Goat Meat",
-    category: "M e a t",
+    category: "Meat",
     description:
       "Fresh goat meat from our small-scale goat rearing project, raised with care and attention to quality.",
     price: "৳950",
@@ -133,7 +133,7 @@ const products = [
     id: 5,
     slug: "quail-meat",
     name: "Quail Meat",
-    category: "M e a t",
+    category: "Meat",
     description:
       "Fresh quail meat from our small-scale quail farming project, known for its tenderness and flavor.",
     price: "৳450",
@@ -164,7 +164,7 @@ const products = [
     id: 6,
     slug: "quail-eggs",
     name: "Quail Eggs",
-    category: "E g g s",
+    category: "Eggs",
     description:
       "Fresh quail eggs from our small-scale quail farming project, known for their delicate flavor and nutritional value.",
     price: "৳40",

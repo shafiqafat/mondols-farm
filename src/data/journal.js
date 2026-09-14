@@ -4,14 +4,12 @@ import mudHouse from "../assets/image/stay/mud-house.jpg"
 import lifeAroundtheFarm from "../assets/image/hero/intro-image.jpg";
 import buildingTheFarmStepbyStep from "../assets/image/hero/invest-hero.png";
 
-
-
 const journalArticles = [
   {
     id: 1,
     slug: "starting-our-vegetable-garden",
     title: "Starting Our Vegetable Garden",
-    category: "F a r m i n g",
+    category: "Farming",
     date: "March 12, 2026",
     excerpt:
       "A look at how we're preparing the soil and starting our first seasonal vegetable garden.",
@@ -27,7 +25,7 @@ const journalArticles = [
     id: 2,
     slug: "life-around-the-farm",
     title: "Life Around the Farm",
-    category: "F a r m \u00A0 U p d a t e s",
+    category: "Farm Updates",
     date: "March 5, 2026",
     excerpt:
       "The small routines, unexpected moments, and everyday work that make up life on the farm.",
@@ -43,7 +41,7 @@ const journalArticles = [
     id: 3,
     slug: "why-we-chose-a-mud-house",
     title: "Why We Chose a Mud House",
-    category: "H o m e s t a y",
+    category: "Homestay",
     date: "February 24, 2026",
     excerpt:
       "The story behind creating a traditional mud house for guests visiting the farm.",
@@ -59,7 +57,7 @@ const journalArticles = [
     id: 4,
     slug: "growing-with-the-seasons",
     title: "Growing With the Seasons",
-    category: "S u s t a i n a b i l i t y",
+    category: "Sustainability",
     date: "February 15, 2026",
     excerpt:
       "Why seasonal farming is at the heart of how we're developing Mondol's Farm.",
@@ -75,7 +73,7 @@ const journalArticles = [
     id: 5,
     slug: "from-farm-to-table",
     title: "From Farm to Table",
-    category: "F o o d",
+    category: "Food",
     date: "February 8, 2026",
     excerpt:
       "Exploring the connection between what we grow and what eventually reaches the table.",
@@ -92,7 +90,7 @@ const journalArticles = [
     id: 6,
     slug: "building-the-farm-step-by-step",
     title: "Building the Farm Step by Step",
-    category: "F a r m \u00A0 U p d a t e s",
+    category: "Farm Updates",
     date: "January 30, 2026",
     excerpt:
       "We're starting small, learning as we go, and building the farm one project at a time.",

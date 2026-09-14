@@ -1,13 +1,20 @@
 import { Link } from "react-router-dom";
 
 import PageMeta from "../components/PageMeta";
-import { getOpenInvestmentOpportunities } from "../data/investmentUtils";
+import {
+  getOpenInvestmentOpportunities,
+  getInvestmentOpportunities,
+} from "../data/investmentUtils";
 import InvestmentOpportunityCard from "../components/InvestmentOpportunityCard";
+import investHero from "../assets/image/hero/invest-hero.png";
 
 import "./Invest.css";
 
 function Invest() {
   const opportunities = getOpenInvestmentOpportunities();
+  const upcomingOpportunities = getInvestmentOpportunities().filter(
+    (opportunity) => opportunity.status === "COMING_SOON",
+  );
 
   return (
     <main className="invest-page">
@@ -19,6 +26,12 @@ function Invest() {
       {/* HERO */}
 
       <section className="invest-hero">
+        <div className="invest-hero__image">
+          <img src={investHero} alt="Countryside farm landscape" />
+        </div>
+
+        <div className="invest-hero__overlay"></div>
+
         <div className="container invest-hero__content">
           <Link to="/farm" className="invest-hero__back">
             ← Back to Farm
@@ -97,6 +110,42 @@ function Invest() {
         </div>
       </section>
 
+      {/* UPCOMING OPPORTUNITIES */}
+
+      {upcomingOpportunities.length > 0 && (
+        <section className="invest-upcoming section">
+          <div className="container">
+            <div className="invest-upcoming__header">
+              <div>
+                <span className="invest-upcoming__eyebrow">
+                  U P C O M I N G &nbsp; O P P O R T U N I T I E S
+                </span>
+
+                <h2>
+                  More projects
+                  <br />
+                  are taking shape.
+                </h2>
+              </div>
+
+              <p>
+                These projects are being developed at the farm and may become
+                available for participation as their plans take shape.
+              </p>
+            </div>
+
+            <div className="invest-upcoming__list">
+              {upcomingOpportunities.map((opportunity) => (
+                <InvestmentOpportunityCard
+                  key={opportunity.id}
+                  opportunity={opportunity}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* HOW IT WORKS */}
 
       <section className="invest-process section">
@@ -160,20 +209,33 @@ function Invest() {
         </div>
       </section>
 
-      {/* NOTE */}
+      {/* FINAL CTA */}
+      <section
+        className="invest-cta"
+        style={{ backgroundImage: `url(${investHero})` }}
+      >
+        <div className="invest-cta__overlay"></div>
 
-      <section className="invest-note section">
-        <div className="container">
-          <div className="invest-note__inner">
-            <span>I M P O R T A N T</span>
+        <div className="container invest-cta__content">
+          <span className="invest-cta__eyebrow">
+            G R O W &nbsp; W I T H &nbsp; U S
+          </span>
 
-            <p>
-              Farm projects involve normal agricultural risks, and project
-              outcomes may vary. Full participation terms and return methodology
-              will be provided for each opportunity before any commitment is
-              made.
-            </p>
-          </div>
+          <h2>
+            Interested in
+            <br />
+            participating?
+          </h2>
+
+          <p>
+            Explore an opportunity, understand the project, and start a
+            conversation with us before making any commitment.
+          </p>
+
+          <Link to="/contact" className="invest-cta__link">
+            Start a Conversation
+            <span>→</span>
+          </Link>
         </div>
       </section>
     </main>

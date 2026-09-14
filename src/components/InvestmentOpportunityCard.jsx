@@ -3,72 +3,36 @@ import { useEffect, useRef, useState } from "react";
 
 function InvestmentOpportunityCard({ opportunity }) {
   const cursorRef = useRef(null);
-
-  const targetPosition = useRef({ x: 0, y: 0 });
-  const currentPosition = useRef({ x: 0, y: 0 });
-  const animationFrame = useRef(null);
-
   const [isHovering, setIsHovering] = useState(false);
 
   const project = opportunity.project;
 
   useEffect(() => {
-    const animateCursor = () => {
-      const ease = 0.08;
+    const moveCursor = (event) => {
+      if (!cursorRef.current) return;
 
-      currentPosition.current.x +=
-        (targetPosition.current.x - currentPosition.current.x) * ease;
+      const rect = cursorRef.current.parentElement.getBoundingClientRect();
 
-      currentPosition.current.y +=
-        (targetPosition.current.y - currentPosition.current.y) * ease;
-
-      if (cursorRef.current) {
-        cursorRef.current.style.left = `${currentPosition.current.x}px`;
-        cursorRef.current.style.top = `${currentPosition.current.y}px`;
-      }
-
-      animationFrame.current = requestAnimationFrame(animateCursor);
+      cursorRef.current.style.left = `${event.clientX - rect.left}px`;
+      cursorRef.current.style.top = `${event.clientY - rect.top}px`;
     };
 
-    animationFrame.current = requestAnimationFrame(animateCursor);
+    window.addEventListener("mousemove", moveCursor);
 
     return () => {
-      cancelAnimationFrame(animationFrame.current);
+      window.removeEventListener("mousemove", moveCursor);
     };
   }, []);
 
-  const handleMouseEnter = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    targetPosition.current.x = x;
-    targetPosition.current.y = y;
-
-    currentPosition.current.x = x;
-    currentPosition.current.y = y;
-
-    setIsHovering(true);
-  };
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-
-    targetPosition.current.x = e.clientX - rect.left;
-    targetPosition.current.y = e.clientY - rect.top;
-  };
+  if (!project) return null;
 
   return (
     <article className="invest-opportunity">
-      {/* Image */}
-
       <Link
-        to={`/invest/${opportunity.projectSlug}`}
+        to={`/invest/${opportunity.slug}`}
         className="invest-opportunity__image"
-        onMouseEnter={handleMouseEnter}
+        onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
-        onMouseMove={handleMouseMove}
       >
         <img src={project.image} alt={project.title} loading="lazy" />
 
@@ -78,11 +42,9 @@ function InvestmentOpportunityCard({ opportunity }) {
             isHovering ? "invest-opportunity__cursor--visible" : ""
           }`}
         >
-          View Opportunity
+          View Opportunity <span>↗</span>
         </span>
       </Link>
-
-      {/* Content */}
 
       <div className="invest-opportunity__content">
         <div className="invest-opportunity__top">
@@ -90,7 +52,7 @@ function InvestmentOpportunityCard({ opportunity }) {
 
           <span className="invest-opportunity__status">
             <span></span>
-            OPEN
+            {opportunity.status}
           </span>
         </div>
 
@@ -101,19 +63,16 @@ function InvestmentOpportunityCard({ opportunity }) {
         <div className="invest-opportunity__details">
           <div>
             <span>Minimum</span>
-
             <strong>৳{opportunity.funding.minimum.toLocaleString()}</strong>
           </div>
 
           <div>
             <span>Funding Target</span>
-
             <strong>৳{opportunity.funding.target.toLocaleString()}</strong>
           </div>
 
           <div>
             <span>Duration</span>
-
             <strong>
               {opportunity.duration.value} {opportunity.duration.unit}
             </strong>
@@ -121,7 +80,7 @@ function InvestmentOpportunityCard({ opportunity }) {
         </div>
 
         <Link
-          to={`/invest/${opportunity.projectSlug}`}
+          to={`/invest/${opportunity.slug}`}
           className="invest-opportunity__link"
         >
           Explore Opportunity

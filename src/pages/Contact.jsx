@@ -7,6 +7,7 @@ import contactHero from "../assets/image/experiences/river.jpg";
 import contactCta from "../assets/image/Memory/dust.jpg";
 import { openWhatsApp } from "../data/whatsapp";
 import PageMeta from "../components/PageMeta";
+import { getInvestmentOpportunityBySlug } from "../data/investmentUtils";
 
 import "./Contact.css";
 
@@ -17,7 +18,12 @@ function Contact() {
 
   const product = searchParams.get("product");
   const stay = searchParams.get("stay");
+  const investment = searchParams.get("investment");
+  
   const selectedStay = stays.find((item) => item.name === stay);
+  const selectedInvestment = investment
+    ? getInvestmentOpportunityBySlug(investment)
+    : null;
 
   const maxGuests = selectedStay
     ? parseInt(selectedStay.guests.split("–").pop(), 10)
@@ -49,24 +55,16 @@ function Contact() {
       const checkIn = formData.get("checkIn");
       const checkOut = formData.get("checkOut");
       const guests = formData.get("guests");
-      
-      if (stay) {
-        if (checkOut <= checkIn) {
-          alert("Check-out date must be after the check-in date.");
-          return;
-        }
 
-        if (Number(guests) > maxGuests) {
-          alert(`This accommodation allows a maximum of ${maxGuests} guests.`);
-          return;
-        }
-      }
-      
       whatsappMessage += `I'd like to check availability for a stay.\n\n`;
       whatsappMessage += `Accommodation: ${stay}\n`;
       whatsappMessage += `Check-in: ${checkIn}\n`;
       whatsappMessage += `Check-out: ${checkOut}\n`;
       whatsappMessage += `Guests: ${guests}\n\n`;
+    } else if (selectedInvestment) {
+      whatsappMessage += `I'd like to learn more about an investment opportunity.\n\n`;
+      whatsappMessage += `Opportunity: ${selectedInvestment.project.title}\n`;
+      whatsappMessage += `Opportunity ID: ${selectedInvestment.slug}\n\n`;
     } else {
       whatsappMessage += `I'd like to get in touch.\n\n`;
       whatsappMessage += `Interest: ${interest}\n\n`;
@@ -108,20 +106,22 @@ function Contact() {
 
         <div className="contact-hero__overlay"></div>
 
-        <div className="container contact-hero__content">
-          <span>G E T &nbsp; I N &nbsp; T O U C H</span>
+        <div className="contact-hero__content">
+          <div className="contact-hero__inner">
+            <span>G E T &nbsp; I N &nbsp; T O U C H</span>
 
-          <h1>
-            Come
-            <br />
-            visit us.
-          </h1>
+            <h1>
+              Come
+              <br />
+              visit us.
+            </h1>
 
-          <p>
-            Whether you're interested in staying at the farm, visiting, ordering
-            produce, or simply learning more about what we're building, we'd
-            love to hear from you.
-          </p>
+            <p>
+              Whether you're interested in staying at the farm, visiting,
+              ordering produce, or simply learning more about what we're
+              building, we'd love to hear from you.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -212,6 +212,16 @@ function Contact() {
               </div>
             )}
 
+            {selectedInvestment && (
+              <div className="contact-form__investment">
+                <span>INVESTMENT OPPORTUNITY</span>
+
+                <strong>{selectedInvestment.project.title}</strong>
+
+                <p>{selectedInvestment.projectBrief}</p>
+              </div>
+            )}
+
             <form className="contact-form" onSubmit={handleSubmit}>
               <div className="contact-form__row">
                 <div className="contact-field">
@@ -256,7 +266,15 @@ function Contact() {
                 <select
                   id="interest"
                   name="interest"
-                  defaultValue={product ? "produce" : stay ? "homestay" : ""}
+                  defaultValue={
+                    product
+                      ? "produce"
+                      : stay
+                        ? "homestay"
+                        : selectedInvestment
+                          ? "investment"
+                          : ""
+                  }
                 >
                   <option value="" disabled>
                     Select an option
@@ -265,6 +283,7 @@ function Contact() {
                   <option value="homestay">Homestay</option>
                   <option value="farm-visit">Farm Visit</option>
                   <option value="produce">Farm Produce</option>
+                  <option value="investment">Investment Opportunity</option>
                   <option value="other">Something Else</option>
                 </select>
               </div>

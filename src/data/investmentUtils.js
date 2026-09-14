@@ -26,9 +26,16 @@ export function getInvestmentOpportunityByProjectSlug(slug) {
   );
 }
 
+export function getInvestmentOpportunityBySlug(slug) {
+  return getInvestmentOpportunities().find(
+    (opportunity) => opportunity.slug === slug,
+  );
+}
+
 export default {
   getProjectForInvestment,
   getInvestmentOpportunities,
   getOpenInvestmentOpportunities,
   getInvestmentOpportunityByProjectSlug,
+  getInvestmentOpportunityBySlug,
 };

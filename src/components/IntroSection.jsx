@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import "./IntroSection.css";
+import introImage from "../assets/image/hero/intro-image.jpg";
 
 function IntroSection() {
   return (
@@ -8,10 +9,7 @@ function IntroSection() {
         {/* Image */}
 
         <div className="intro__image">
-          <img
-            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1400&q=85"
-            alt="Countryside farmland"
-          />
+          <img src={introImage} alt="Countryside mustard farm landscape" />
         </div>
 
         {/* Content */}

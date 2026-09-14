@@ -1,3 +1,11 @@
+import startingOurVegetableGarden from "../assets/image/journal/vegi.jpg"
+import growingWiththeSeasons from "../assets/image/journal/hervest.jpg";
+import mudHouse from "../assets/image/stay/mud-house.jpg"
+import lifeAroundtheFarm from "../assets/image/hero/intro-image.jpg";
+import buildingTheFarmStepbyStep from "../assets/image/hero/invest-hero.png";
+
+
+
 const journalArticles = [
   {
     id: 1,
@@ -7,8 +15,7 @@ const journalArticles = [
     date: "March 12, 2026",
     excerpt:
       "A look at how we're preparing the soil and starting our first seasonal vegetable garden.",
-    image:
-      "https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?auto=format&fit=crop&w=1600&q=85",
+    image: startingOurVegetableGarden,
     content: [
       "Every season begins with preparation. Before anything is planted, we spend time understanding the soil, choosing what makes sense for the season, and preparing the beds.",
       "Our vegetable garden is intentionally small. The goal isn't to produce everything at once, but to learn what grows well and gradually build a sustainable rhythm.",
@@ -24,8 +31,7 @@ const journalArticles = [
     date: "March 5, 2026",
     excerpt:
       "The small routines, unexpected moments, and everyday work that make up life on the farm.",
-    image:
-      "https://images.unsplash.com/photo-1500076656116-558758c991c1?auto=format&fit=crop&w=1600&q=85",
+    image: lifeAroundtheFarm,
     content: [
       "Farm life rarely follows exactly the same routine every day. There is always something that needs attention, whether it is a garden bed, an animal, or a small repair.",
       "These ordinary moments are a big part of what makes the farm special.",
@@ -41,8 +47,7 @@ const journalArticles = [
     date: "February 24, 2026",
     excerpt:
       "The story behind creating a traditional mud house for guests visiting the farm.",
-    image:
-      "https://images.unsplash.com/photo-1510798831971-661eb04b3739?auto=format&fit=crop&w=1600&q=85",
+    image: mudHouse,
     content: [
       "The Mud House is one of the most personal parts of our homestay project.",
       "Instead of creating a conventional accommodation experience, we wanted to preserve something connected to the character of rural living.",
@@ -58,8 +63,7 @@ const journalArticles = [
     date: "February 15, 2026",
     excerpt:
       "Why seasonal farming is at the heart of how we're developing Mondol's Farm.",
-    image:
-      "https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=1600&q=85",
+    image: growingWiththeSeasons,
     content: [
       "A farm is always changing. What grows successfully depends on the weather, the soil, and the time of year.",
       "Rather than fighting those natural cycles, we're trying to work with them.",
@@ -92,8 +96,7 @@ const journalArticles = [
     date: "January 30, 2026",
     excerpt:
       "We're starting small, learning as we go, and building the farm one project at a time.",
-    image:
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85",
+    image: buildingTheFarmStepbyStep,
     content: [
       "Mondol's Farm isn't being built overnight.",
       "Each project gives us another opportunity to learn, experiment, and understand what works in our environment.",

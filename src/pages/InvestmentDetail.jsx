@@ -1,14 +1,39 @@
 import { Link, useParams } from "react-router-dom";
 
 import PageMeta from "../components/PageMeta";
-import { getInvestmentOpportunityByProjectSlug } from "../data/investmentUtils";
+import { getInvestmentOpportunityBySlug } from "../data/investmentUtils";
+import investHero from "../assets/image/hero/invest-hero.png";
+
 
 import "./InvestmentDetail.css";
+import { useEffect } from "react";
 
 function InvestmentDetail() {
   const { slug } = useParams();
 
-  const opportunity = getInvestmentOpportunityByProjectSlug(slug);
+  const opportunity = getInvestmentOpportunityBySlug(slug);
+
+  useEffect(() => {
+    const timeline = document.querySelector("[data-timeline]");
+
+    if (!timeline) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          timeline.classList.add("is-visible");
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.2,
+      },
+    );
+
+    observer.observe(timeline);
+
+    return () => observer.disconnect();
+  }, []);
 
   if (!opportunity) {
     return (
@@ -31,19 +56,6 @@ function InvestmentDetail() {
   }
 
   const project = opportunity.project;
-  const details = project.details || {};
-
-  const projectFacts = [
-    { label: "Project Status", value: project.status },
-    { label: "Started", value: details.startDate },
-    { label: "Area", value: details.area },
-    { label: "Breed", value: details.breed },
-    { label: "Variety", value: details.variety },
-    { label: "Season", value: details.season },
-    { label: "Current Scale", value: details.currentScale },
-    { label: "Target Scale", value: details.targetScale },
-    { label: "Expected Output", value: details.output },
-  ].filter((item) => item.value);
 
   const investmentFacts = [
     {
@@ -55,7 +67,7 @@ function InvestmentDetail() {
       value: `৳${opportunity.funding.target.toLocaleString()}`,
     },
     {
-      label: "Duration",
+      label: "Investment Period",
       value: `${opportunity.duration.value} ${opportunity.duration.unit}`,
     },
     {
@@ -68,12 +80,12 @@ function InvestmentDetail() {
     <main className="investment-detail">
       <PageMeta
         title={`${project.title} — Investment Opportunity`}
-        description={opportunity.description || project.description}
+        description={opportunity.projectBrief}
         image={project.image}
       />
 
       {/* ========================================
-          INVESTMENT INTRO
+          HEADER / PROJECT BRIEF
       ======================================== */}
 
       <section className="investment-detail__main section">
@@ -102,24 +114,13 @@ function InvestmentDetail() {
               <h1>{project.title}</h1>
 
               <p className="investment-detail__description">
-                {opportunity.description || project.description}
+                {opportunity.projectBrief}
               </p>
 
-              <div className="investment-detail__intro">
-                <h2>
-                  Participate in
-                  <br />
-                  the project's growth.
-                </h2>
-
-                <p>
-                  This opportunity is connected to an actual project being
-                  developed at Mondol's Farm.
-                </p>
-              </div>
-
               <Link
-                to={`/contact?investment=${encodeURIComponent(project.title)}`}
+                to={`/contact?investment=${encodeURIComponent(
+                  opportunity.slug,
+                )}`}
                 className="investment-detail__primary-link"
               >
                 Express Your Interest
@@ -131,18 +132,18 @@ function InvestmentDetail() {
       </section>
 
       {/* ========================================
-          OPPORTUNITY DETAILS
+          INVESTMENT DETAILS
       ======================================== */}
 
       <section className="investment-detail__information section">
         <div className="container">
-          <div className="investment-detail__information-header">
+          <div className="investment-detail__section-header">
             <span>I N V E S T M E N T &nbsp; D E T A I L S</span>
 
             <h2>
-              The numbers
+              The terms
               <br />
-              behind the opportunity.
+              at a glance.
             </h2>
           </div>
 
@@ -158,187 +159,212 @@ function InvestmentDetail() {
       </section>
 
       {/* ========================================
-          ABOUT THE OPPORTUNITY
-      ======================================== */}
-
-      <section className="investment-detail__story section">
-        <div className="container investment-detail__story-grid">
-          <div className="investment-detail__story-label">
-            <span>T H E &nbsp; O P P O R T U N I T Y</span>
-          </div>
-
-          <div className="investment-detail__story-content">
-            <h2>
-              Grow alongside
-              <br />
-              the farm.
-            </h2>
-
-            <p>{opportunity.description || project.description}</p>
-
-            <p>
-              Your participation is connected to the development of this
-              specific farm project. The project has its own requirements,
-              timeline, risks, and participation terms.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================
-          THE FARM PROJECT
+          PROJECT DETAILS
       ======================================== */}
 
       <section className="investment-detail__project section">
-        <div className="container">
-          <div className="investment-detail__section-header">
-            <span>T H E &nbsp; F A R M &nbsp; P R O J E C T</span>
+        <div className="container investment-detail__project-grid">
+          <div>
+            <span>P R O J E C T &nbsp; D E T A I L S</span>
 
             <h2>
-              Understand what
+              Understand
               <br />
-              you're supporting.
+              the project.
             </h2>
           </div>
 
-          {projectFacts.length > 0 && (
-            <div className="investment-detail__project-facts">
-              {projectFacts.map((fact) => (
-                <div key={fact.label}>
-                  <span>{fact.label}</span>
-                  <strong>{fact.value}</strong>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="investment-detail__project-content">
+            <p className="investment-detail__project-overview">
+              {opportunity.projectDetails.overview}
+            </p>
 
-          <div className="investment-detail__project-story">
-            <p>{project.overview}</p>
+            <div className="investment-detail__project-block">
+              <span>WHAT THE PROJECT INVOLVES</span>
+
+              <div className="investment-detail__list">
+                {opportunity.projectDetails.activities.map(
+                  (activity, index) => (
+                    <div key={activity}>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <strong>{activity}</strong>
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="investment-detail__project-block">
+              <span>WHERE THE FUNDS GO</span>
+
+              <div className="investment-detail__list">
+                {opportunity.projectDetails.fundUsage.map((item, index) => (
+                  <div key={item}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <strong>{item}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="investment-detail__project-block">
+              <span>HOW THE PROJECT CREATES VALUE</span>
+
+              <p>{opportunity.projectDetails.valueCreation}</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ========================================
-          USE OF FUNDS
+          INVESTMENT JUSTIFICATION
       ======================================== */}
 
-      {opportunity.useOfFunds?.length > 0 && (
-        <section className="investment-detail__funds section">
-          <div className="container investment-detail__funds-grid">
-            <div>
-              <span>U S E &nbsp; O F &nbsp; F U N D S</span>
+      <section className="investment-detail__justification section">
+        <div className="container investment-detail__justification-grid">
+          <div>
+            <span>W H Y &nbsp; T H I S &nbsp; O P P O R T U N I T Y</span>
 
-              <h2>
-                Where the
-                <br />
-                participation goes.
-              </h2>
+            <h2>
+              Why this
+              <br />
+              project?
+            </h2>
+          </div>
+
+          <div className="investment-detail__justification-list">
+            <div>
+              <span>01</span>
+
+              <div>
+                <h3>Market Opportunity</h3>
+                <p>{opportunity.investmentJustification.marketOpportunity}</p>
+              </div>
             </div>
 
-            <div className="investment-detail__fund-list">
-              {opportunity.useOfFunds.map((item, index) => (
-                <div key={item}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
+            <div>
+              <span>02</span>
 
-                  <strong>{item}</strong>
-                </div>
-              ))}
+              <div>
+                <h3>Farm Advantage</h3>
+                <p>{opportunity.investmentJustification.farmAdvantage}</p>
+              </div>
+            </div>
+
+            <div>
+              <span>03</span>
+
+              <div>
+                <h3>Project Economics</h3>
+                <p>{opportunity.investmentJustification.projectEconomics}</p>
+              </div>
+            </div>
+
+            <div>
+              <span>04</span>
+
+              <div>
+                <h3>Timing</h3>
+                <p>{opportunity.investmentJustification.timing}</p>
+              </div>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* ========================================
           TIMELINE
       ======================================== */}
 
-      <section className="investment-detail__timeline section">
+      <section className="investment-detail__timeline section" data-timeline>
         <div className="container">
           <div className="investment-detail__section-header">
             <span>P R O J E C T &nbsp; T I M E L I N E</span>
 
             <h2>
-              From participation
+              From payment
               <br />
               to settlement.
             </h2>
           </div>
 
           <div className="investment-detail__timeline-list">
-            <div>
-              <span>01</span>
+            <div className="investment-detail__timeline-line"></div>
 
-              <h3>Participation</h3>
+            {opportunity.timeline.map((item, index) => (
+              <div
+                key={item.key}
+                className="investment-detail__timeline-item"
+                style={{ "--timeline-index": index }}
+              >
+                <span className="investment-detail__timeline-number">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
 
-              <p>
-                Review the opportunity and discuss the applicable participation
-                terms with Mondol's Farm.
-              </p>
-            </div>
+                <h3>{item.title}</h3>
 
-            <div>
-              <span>02</span>
-
-              <h3>Project Development</h3>
-
-              <p>
-                The farm develops the project according to its planned
-                production cycle.
-              </p>
-            </div>
-
-            <div>
-              <span>03</span>
-
-              <h3>Project Completion</h3>
-
-              <p>
-                The project reaches the end of its stated duration and its
-                outcome can be assessed.
-              </p>
-            </div>
-
-            <div>
-              <span>04</span>
-
-              <h3>Settlement</h3>
-
-              <p>
-                Settlement takes place according to the final agreed
-                participation terms.
-              </p>
-            </div>
+                <p>{item.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ========================================
-          RETURN METHODOLOGY
+          RETURN METHOD
       ======================================== */}
 
       <section className="investment-detail__return section">
-        <div className="container investment-detail__return-grid">
-          <div>
-            <span>R E T U R N &nbsp; M E T H O D O L O G Y</span>
+        <div className="container">
+          <div className="investment-detail__section-header">
+            <span>
+              H O W &nbsp; Y O U R &nbsp; I N V E S T M E N T &nbsp; I S &nbsp;
+              R E T U R N E D
+            </span>
 
             <h2>
-              Returns should
+              A clear path
               <br />
-              follow the project.
+              to settlement.
             </h2>
           </div>
 
-          <div className="investment-detail__return-content">
-            <p>
-              The expected return methodology for each opportunity will be
-              explained before any participation is confirmed.
-            </p>
+          <div className="investment-detail__return-intro">
+            <p>{opportunity.returnMethod.description}</p>
+          </div>
 
-            <p>
-              Project performance can vary. The final settlement is therefore
-              based on the applicable terms and the outcome of the project
-              rather than being presented as a fixed guaranteed return.
-            </p>
+          <div className="investment-detail__return-options">
+            {opportunity.returnMethod.options.map((option, index) => (
+              <div key={option.type}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+
+                <h3>{option.title}</h3>
+
+                <p>{option.description}</p>
+
+                <div className="investment-detail__payment-methods">
+                  <span>PAYMENT / SETTLEMENT METHOD</span>
+
+                  {option.paymentMethods.map((method) => (
+                    <strong key={method}>{method}</strong>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="investment-detail__return-process">
+            <span>SETTLEMENT PROCESS</span>
+
+            <div>
+              {opportunity.returnMethod.process.map((step, index) => (
+                <div key={step}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+
+                  <strong>{step}</strong>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -347,40 +373,54 @@ function InvestmentDetail() {
           RISKS
       ======================================== */}
 
-      {opportunity.risks?.length > 0 && (
-        <section className="investment-detail__risks section">
-          <div className="container investment-detail__risks-grid">
-            <div>
-              <span>R I S K S</span>
+      <section className="investment-detail__risks section">
+        <div className="container investment-detail__risks-grid">
+          <div>
+            <span>U N D E R S T A N D I N G &nbsp; T H E &nbsp; R I S K S</span>
 
-              <h2>
-                Farming
-                <br />
-                carries uncertainty.
-              </h2>
-            </div>
+            <h2>
+              Investment
+              <br />
+              carries risk.
+            </h2>
 
-            <div className="investment-detail__risk-list">
-              {opportunity.risks.map((risk, index) => (
-                <div key={risk}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-
-                  <p>{risk}</p>
-                </div>
-              ))}
-            </div>
+            <p className="investment-detail__risk-intro">
+              Participation in a farm project involves genuine agricultural and
+              business risk. Project performance and final outcomes are not
+              guaranteed.
+            </p>
           </div>
-        </section>
-      )}
+
+          <div className="investment-detail__risk-list">
+            {opportunity.risks.map((risk, index) => (
+              <div key={risk.type}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+
+                <div>
+                  <h3>{risk.title}</h3>
+                  <p>{risk.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ========================================
           CTA
       ======================================== */}
 
-      <section className="investment-detail__cta section">
-        <div className="container">
+      <section className="investment-detail__cta">
+        <div className="investment-detail__cta-image">
+          <img src={investHero} alt="" aria-hidden="true" />
+        </div>
+
+        <div className="investment-detail__cta-overlay"></div>
+
+        <div className="container investment-detail__cta-content">
           <span>
-            I N T E R E S T E D &nbsp; I N &nbsp; T H I S &nbsp; P R O J E C T ?
+            I N T E R E S T E D &nbsp; I N &nbsp; T H I S &nbsp; O P P O R T U N
+            I T Y ?
           </span>
 
           <h2>
@@ -390,13 +430,12 @@ function InvestmentDetail() {
           </h2>
 
           <p>
-            For now, participation begins with a direct enquiry. We'll discuss
-            the project, its terms, risks, and the participation process with
-            you.
+            We'll discuss the project, applicable terms, risks, settlement
+            options and participation process with you.
           </p>
 
           <Link
-            to={`/contact?investment=${encodeURIComponent(project.title)}`}
+            to={`/contact?investment=${encodeURIComponent(opportunity.slug)}`}
             className="button button--primary"
           >
             Express Your Interest

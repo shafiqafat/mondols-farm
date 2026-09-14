@@ -2,7 +2,8 @@ import quailMeat from "../assets/image/products/quail-meat.jpg";
 import quailEggs from "../assets/image/products/quail-eggs.jpg";
 import mustardOil from "../assets/image/products/mustard-oil.jpg";
 import harivangaMangoes from "../assets/image/products/mango.jpg";
-
+import goatMeat from "../assets/image/products/goat-meat.jpg";
+import chickenEggs from "../assets/image/products/chicken-eggs.jpg";
 const products = [
   {
     id: 1,
@@ -45,8 +46,7 @@ const products = [
     price: "৳160",
     unit: "per dozen",
     availability: "Available",
-    image:
-      "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?auto=format&fit=crop&w=1200&q=85",
+    image: chickenEggs,
 
     details: {
       source: "Our chicken rearing project",
@@ -108,8 +108,7 @@ const products = [
     price: "৳950",
     unit: "per kg",
     availability: "Limited",
-    image:
-      "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=1200&q=85",
+    image: goatMeat,
 
     details: {
       source: "Our goat rearing project",

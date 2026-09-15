@@ -1,6 +1,6 @@
 .farmos {
   min-height: 100vh;
-  background: var(--color-cream);
+  background: var(--color-white);
   color: var(--color-text);
 }
 
@@ -94,6 +94,7 @@
   max-width: var(--container-width);
   margin: 0 auto;
   padding: 24px var(--container-padding) 48px;
+
 }
 
 .farmos-loading {

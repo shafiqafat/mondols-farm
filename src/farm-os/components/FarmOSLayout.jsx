@@ -4,7 +4,7 @@ import "./FarmOSLayout.css";
 
 const NAV_ITEMS = [
   { to: "/farm-os", label: "Overview", end: true, ready: true },
-  { to: "/farm-os/daily-log", label: "Daily Log", ready: false },
+  { to: "/farm-os/daily-log", label: "Daily Log", ready: true },
   { to: "/farm-os/inventory", label: "Inventory", ready: false },
   { to: "/farm-os/finance", label: "Finance", ready: false },
   { to: "/farm-os/tasks", label: "Tasks", ready: false },
@@ -39,11 +39,14 @@ function FarmOSLayout() {
               {item.label}
             </NavLink>
           ) : (
-            <span key={item.to} className="farmos__nav-link farmos__nav-link--soon">
+            <span
+              key={item.to}
+              className="farmos__nav-link farmos__nav-link--soon"
+            >
               {item.label}
               <span className="farmos__soon-tag">soon</span>
             </span>
-          )
+          ),
         )}
       </nav>
 

@@ -27,6 +27,7 @@ import ProtectedRoute from "./farm-os/components/ProtectedRoute";
 import FarmOSLayout from "./farm-os/components/FarmOSLayout";
 import FarmOSLogin from "./farm-os/pages/Login";
 import FarmOSOverview from "./farm-os/pages/Overview";
+import FarmOSDailyLog from "./farm-os/pages/DailyLog";
 
 // The public marketing site — unchanged, still wrapped in its own Navbar/Footer.
 function PublicSite() {
@@ -82,6 +83,7 @@ function App() {
           }
         >
           <Route index element={<FarmOSOverview />} />
+          <Route path="daily-log" element={<FarmOSDailyLog />} />
         </Route>
 
         {/* Public site handles everything else */}

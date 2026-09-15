@@ -10,8 +10,6 @@ import Home from "./pages/Home";
 import Farm from "./pages/Farm";
 import Stay from "./pages/Stay";
 import Shop from "./pages/Shop";
-import Invest from "./pages/Invest";
-import Gallery from "./pages/Gallery";
 import Journal from "./pages/Journal";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -19,18 +17,21 @@ import ProjectDetail from "./pages/ProjectDetail";
 import ProductDetail from "./pages/ProductDetail";
 import JournalDetail from "./pages/JournalDetail";
 import StayDetail from "./pages/StayDetail";
-import InvestmentDetail from "./pages/InvestmentDetail";
+import Gallery from "./pages/Gallery";
 import NotFound from "./pages/NotFound";
 
 import { Analytics } from "@vercel/analytics/react";
 
-function App() {
+import { AuthProvider } from "./farm-os/context/AuthContext";
+import ProtectedRoute from "./farm-os/components/ProtectedRoute";
+import FarmOSLayout from "./farm-os/components/FarmOSLayout";
+import FarmOSLogin from "./farm-os/pages/Login";
+import FarmOSOverview from "./farm-os/pages/Overview";
+
+// The public marketing site — unchanged, still wrapped in its own Navbar/Footer.
+function PublicSite() {
   return (
     <>
-      <ScrollToTop />
-      <InitialLoader />
-      <PageLoader />
-
       <Navbar />
 
       <Routes>
@@ -38,9 +39,6 @@ function App() {
 
         <Route path="/farm" element={<Farm />} />
         <Route path="/farm/:slug" element={<ProjectDetail />} />
-
-        <Route path="/invest" element={<Invest />} />
-        <Route path="/invest/:slug" element={<InvestmentDetail />} />
 
         <Route path="/stay" element={<Stay />} />
         <Route path="/stay/:slug" element={<StayDetail />} />
@@ -61,8 +59,37 @@ function App() {
       </Routes>
 
       <Footer />
-      <Analytics />
     </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <ScrollToTop />
+      <InitialLoader />
+      <PageLoader />
+
+      <Routes>
+        {/* Farm OS — private, no public Navbar/Footer */}
+        <Route path="/farm-os/login" element={<FarmOSLogin />} />
+        <Route
+          path="/farm-os/*"
+          element={
+            <ProtectedRoute>
+              <FarmOSLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<FarmOSOverview />} />
+        </Route>
+
+        {/* Public site handles everything else */}
+        <Route path="/*" element={<PublicSite />} />
+      </Routes>
+
+      <Analytics />
+    </AuthProvider>
   );
 }
 

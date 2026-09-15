@@ -42,7 +42,7 @@ function InvestmentOpportunityCard({ opportunity }) {
             isHovering ? "invest-opportunity__cursor--visible" : ""
           }`}
         >
-          View Opportunity <span>↗</span>
+          View Opportunity
         </span>
       </Link>
 

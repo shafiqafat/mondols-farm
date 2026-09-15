@@ -206,7 +206,7 @@ function Farm() {
               {/* Project Image */}
 
               <Link
-                to={`/invest/${investmentOpportunities[0].projectSlug}`}
+                to={`/invest/${investmentOpportunities[0].slug}`}
                 className="farm-investment__image"
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();

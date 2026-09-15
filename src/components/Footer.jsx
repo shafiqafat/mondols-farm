@@ -48,6 +48,8 @@ function Footer() {
             <nav>
               <Link to="/gallery">Gallery</Link>
 
+              <Link to="/invest">Invest</Link>
+
               <Link to="/about">About</Link>
 
               <Link to="/contact">Contact</Link>
@@ -65,7 +67,10 @@ function Footer() {
               Naogaon, Bangladesh
             </address>
 
-            <a href="mailto:hello@mondolsfarm.com">hello@mondolsfarm.com</a>
+            {/* <a href="mailto:hello@mondolsfarm.com">hello@mondolsfarm.com</a> */}
+            <a href="mailto:Srahman0123@gmail.com.com">
+              Srahman0123@gmail.com.com
+            </a>
 
             <a href="tel:+8801534282793">+880 1534282793</a>
           </div>

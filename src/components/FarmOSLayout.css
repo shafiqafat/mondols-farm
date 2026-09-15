@@ -1,0 +1,105 @@
+.farmos {
+  min-height: 100vh;
+  background: var(--color-cream);
+  color: var(--color-text);
+}
+
+.farmos__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px var(--container-padding);
+  background: var(--color-forest);
+  color: var(--color-white);
+}
+
+.farmos__wordmark {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.farmos__topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.farmos__user {
+  font-size: 0.85rem;
+  color: var(--color-beige);
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .farmos__user {
+    display: inline;
+  }
+}
+
+.farmos__signout {
+  background: transparent;
+  border: 1px solid var(--color-beige);
+  color: var(--color-white);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.farmos__signout:hover {
+  background: var(--color-terracotta);
+  border-color: var(--color-terracotta);
+}
+
+.farmos__nav {
+  display: flex;
+  gap: 4px;
+  padding: 8px var(--container-padding);
+  overflow-x: auto;
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.farmos__nav-link {
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.farmos__nav-link--active {
+  background: var(--color-forest);
+  color: var(--color-white);
+}
+
+.farmos__nav-link--soon {
+  color: var(--color-border);
+  cursor: default;
+}
+
+.farmos__soon-tag {
+  font-size: 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+.farmos__content {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  padding: 24px var(--container-padding) 48px;
+}
+
+.farmos-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: var(--color-text-muted);
+}

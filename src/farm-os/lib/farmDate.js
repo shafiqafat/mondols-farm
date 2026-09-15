@@ -9,10 +9,12 @@ export function todayFarmDate() {
     timeZone: "Asia/Dhaka",
     year: "numeric",
   });
+
   const month = now.toLocaleString("en-CA", {
     timeZone: "Asia/Dhaka",
     month: "2-digit",
   });
+
   const day = now.toLocaleString("en-CA", {
     timeZone: "Asia/Dhaka",
     day: "2-digit",

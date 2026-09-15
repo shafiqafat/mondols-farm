@@ -18,13 +18,14 @@ function Overview() {
         supabase.from("farm_entities").select("id", { count: "exact", head: true }),
       ]);
 
-      if (speciesRes.error) {
-        setError(speciesRes.error.message);
+      if (speciesRes.error || entitiesRes.error) {
+        setError(
+          speciesRes.error?.message ??
+            entitiesRes.error?.message ??
+            "Something went wrong loading the Farm OS overview.",
+        );
       } else {
         setSpecies(speciesRes.data ?? []);
-      }
-
-      if (!entitiesRes.error) {
         setEntityCount(entitiesRes.count ?? 0);
       }
 

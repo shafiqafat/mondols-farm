@@ -4,8 +4,9 @@ import "./FarmOSLayout.css";
 
 const NAV_ITEMS = [
   { to: "/farm-os", label: "Overview", end: true, ready: true },
+  { to: "/farm-os/species", label: "Species", ready: true },
   { to: "/farm-os/daily-log", label: "Daily Log", ready: true },
-  { to: "/farm-os/inventory", label: "Inventory", ready: false },
+  { to: "/farm-os/inventory", label: "Inventory", ready: true },
   { to: "/farm-os/finance", label: "Finance", ready: false },
   { to: "/farm-os/tasks", label: "Tasks", ready: false },
 ];

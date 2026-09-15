@@ -1,21 +1,18 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { todayFarmDate } from "../lib/farmDate";
 import {
   getQuickFieldsForCapabilities,
   buildEventRows,
 } from "../engines/dailyLogEngine";
 import "./DailyLog.css";
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function DailyLog() {
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(todayFarmDate());
   const [entityValues, setEntityValues] = useState({});
   const [expense, setExpense] = useState({ amount: "", category: "", entityId: "" });
 
@@ -71,21 +68,32 @@ function DailyLog() {
         });
       });
 
-      if (allRows.length > 0) {
-        const { error } = await supabase.from("entity_events").insert(allRows);
-        if (error) throw error;
+      const hasExpense = expense.amount !== "";
+      const expenseAmount = hasExpense ? Number(expense.amount) : null;
+
+      if (hasExpense && (!Number.isFinite(expenseAmount) || expenseAmount <= 0)) {
+        throw new Error("Expense amount must be greater than 0.");
       }
 
-      if (expense.amount !== "" && !Number.isNaN(Number(expense.amount))) {
-        const { error } = await supabase.from("finance_transactions").insert({
-          type: "expense",
-          amount: Number(expense.amount),
-          category: expense.category || null,
-          entity_id: expense.entityId || null,
-          occurred_at: date,
-        });
-        if (error) throw error;
+      if (allRows.length === 0 && !hasExpense) {
+        throw new Error("Add at least one farm log entry or expense before saving.");
       }
+
+      const expensePayload = hasExpense
+        ? {
+            amount: expenseAmount,
+            category: expense.category || null,
+            entity_id: expense.entityId || null,
+            occurred_at: date,
+          }
+        : null;
+
+      const { error } = await supabase.rpc("save_daily_log", {
+        p_events: allRows,
+        p_expense: expensePayload,
+      });
+
+      if (error) throw error;
 
       setEntityValues({});
       setExpense({ amount: "", category: "", entityId: "" });

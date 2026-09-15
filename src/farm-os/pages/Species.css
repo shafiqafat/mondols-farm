@@ -1,0 +1,210 @@
+.farmos-species__title {
+  font-size: 1.6rem;
+  color: var(--color-forest);
+  margin: 0 0 6px;
+}
+
+.farmos-species__intro {
+  color: var(--color-text-muted);
+  max-width: 60ch;
+  margin: 0 0 24px;
+}
+
+.farmos-species__status {
+  color: var(--color-text-muted);
+}
+
+.farmos-species__status--error {
+  color: #a3402f;
+}
+
+.farmos-species__section {
+  margin-bottom: 36px;
+}
+
+.farmos-species__section-title {
+  font-size: 1.1rem;
+  margin: 0 0 12px;
+}
+
+.farmos-species__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.farmos-species-row,
+.farmos-entity-row {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+}
+
+.farmos-entity-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.farmos-entity-row__label {
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.farmos-entity-row__species {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.farmos-species-row__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.farmos-species-row__name {
+  font-weight: 600;
+}
+
+.farmos-species-row__category {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+  background: var(--color-beige);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.farmos-species-row__capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.farmos-species-row__cap-tag {
+  font-size: 0.76rem;
+  background: var(--color-cream);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+.farmos-species-row__none {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.farmos-species-row__edit-btn {
+  background: none;
+  border: none;
+  color: var(--color-terracotta);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.farmos-species-row__capabilities-edit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 6px;
+  font-size: 0.82rem;
+  margin-bottom: 10px;
+}
+
+.farmos-species-row__capabilities-edit label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.farmos-species-row__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.farmos-species-row__actions button {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-forest);
+  color: var(--color-white);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.farmos-species-row__actions button:last-child {
+  background: var(--color-white);
+  color: var(--color-text);
+}
+
+.farmos-species__add-form {
+  background: var(--color-white);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.farmos-species__add-form h3 {
+  font-size: 0.95rem;
+  margin: 0 0 12px;
+}
+
+.farmos-species__add-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.farmos-species__add-fields input,
+.farmos-species__add-fields select {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  background: var(--color-cream);
+  min-height: 44px;
+}
+
+.farmos-species__add-capabilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+}
+
+.farmos-species__add-capabilities label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.farmos-species__add-form > button {
+  background: var(--color-forest);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.farmos-species__add-form > button:hover:not(:disabled) {
+  background: var(--color-terracotta);
+}
+
+.farmos-entity-row select {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-cream);
+  font-size: 0.85rem;
+}

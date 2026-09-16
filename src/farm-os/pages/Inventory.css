@@ -1,0 +1,149 @@
+.farmos-inventory__title {
+  font-size: 1.6rem;
+  color: var(--color-forest);
+  margin: 0 0 16px;
+}
+
+.farmos-inventory__status {
+  color: var(--color-text-muted);
+}
+
+.farmos-inventory__status--error {
+  color: #a3402f;
+}
+
+.farmos-inventory__items {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.farmos-inv-item {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.farmos-inv-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.farmos-inv-item__name {
+  font-weight: 600;
+}
+
+.farmos-inv-item__stock {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--color-forest);
+}
+
+.farmos-inv-item__stock--low {
+  color: #a3402f;
+}
+
+.farmos-inv-item__meta {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin: 4px 0 10px;
+}
+
+.farmos-inv-item__lots {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+}
+
+.farmos-inv-item__lots summary {
+  cursor: pointer;
+}
+
+.farmos-inv-item__lots ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.farmos-inv-item__purchase-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.farmos-inv-item__purchase-row input,
+.farmos-inv-item__purchase-row button {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  min-height: 44px;
+}
+
+.farmos-inv-item__purchase-row input {
+  background: var(--color-cream);
+}
+
+.farmos-inv-item__purchase-row button {
+  background: var(--color-forest);
+  color: var(--color-white);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.farmos-inv-item__purchase-row button:hover:not(:disabled) {
+  background: var(--color-terracotta);
+}
+
+.farmos-inv-item__purchase-row button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.farmos-inventory__add-item {
+  background: var(--color-white);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.farmos-inventory__section-title {
+  font-size: 1rem;
+  margin: 0 0 12px;
+}
+
+.farmos-inventory__add-item-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.farmos-inventory__add-item-fields input,
+.farmos-inventory__add-item-fields select,
+.farmos-inventory__add-item-fields button {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  min-height: 44px;
+}
+
+.farmos-inventory__add-item-fields input,
+.farmos-inventory__add-item-fields select {
+  background: var(--color-cream);
+}
+
+.farmos-inventory__add-item-fields button {
+  background: var(--color-forest);
+  color: var(--color-white);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.farmos-inventory__add-item-fields button:hover:not(:disabled) {
+  background: var(--color-terracotta);
+}

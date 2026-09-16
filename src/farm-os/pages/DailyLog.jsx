@@ -5,19 +5,25 @@ import {
   getQuickFieldsForCapabilities,
   buildEventRows,
 } from "../engines/dailyLogEngine";
+import { consumeFIFO } from "../engines/inventoryEngine";
 import "./DailyLog.css";
+
 
 function DailyLog() {
   const [entities, setEntities] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [lotsByItem, setLotsByItem] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
   const [date, setDate] = useState(todayFarmDate());
   const [entityValues, setEntityValues] = useState({});
+  const [feedItemSelection, setFeedItemSelection] = useState({});
   const [expense, setExpense] = useState({ amount: "", category: "", entityId: "" });
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [submitWarning, setSubmitWarning] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -25,17 +31,32 @@ function DailyLog() {
       setLoading(true);
       setLoadError("");
 
-      const { data, error } = await supabase
-        .from("farm_entities")
-        .select("id, label, quantity, species_config:species_config_id(id, name, category, capabilities)")
-        .eq("status", "active")
-        .order("label");
+      const [entitiesRes, itemsRes, lotsRes] = await Promise.all([
+        supabase
+          .from("farm_entities")
+          .select("id, label, quantity, species_config:species_config_id(id, name, category, capabilities)")
+          .eq("status", "active")
+          .order("label"),
+        supabase.from("inventory_items").select("*").order("name"),
+        supabase.from("inventory_lots").select("*"),
+      ]);
 
-      if (error) {
-        setLoadError(error.message);
-      } else {
-        setEntities(data ?? []);
+      if (entitiesRes.error) {
+        setLoadError(entitiesRes.error.message);
+        setLoading(false);
+        return;
       }
+
+      setEntities(entitiesRes.data ?? []);
+      setInventoryItems(itemsRes.data ?? []);
+
+      const grouped = {};
+      for (const lot of lotsRes.data ?? []) {
+        if (!grouped[lot.item_id]) grouped[lot.item_id] = [];
+        grouped[lot.item_id].push(lot);
+      }
+      setLotsByItem(grouped);
+
       setLoading(false);
     }
 
@@ -52,6 +73,7 @@ function DailyLog() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitError("");
+    setSubmitWarning("");
     setSubmitted(false);
     setSubmitting(true);
 
@@ -65,35 +87,76 @@ function DailyLog() {
           occurredAt: date,
           fields,
           values,
+        }).map((row) => {
+          if (row.type === "feed_given" && feedItemSelection[entity.id]) {
+            return { ...row, payload: { ...row.payload, item_id: feedItemSelection[entity.id] } };
+          }
+          return row;
         });
       });
 
-      const hasExpense = expense.amount !== "";
-      const expenseAmount = hasExpense ? Number(expense.amount) : null;
+      // Work out FIFO inventory consumption for every feed_given row that has
+      // a linked inventory item, before writing anything — so a stock
+      // problem surfaces before we commit events, not after.
+      const lotUpdatesById = {};
+      const shortfalls = [];
+      // Lots get consumed cumulatively across entities sharing one item
+      // (e.g. two quail batches drawing from the same feed bag), so track
+      // running remaining quantities locally rather than re-reading per entity.
+      const workingLots = structuredClone(lotsByItem);
 
-      if (hasExpense && (!Number.isFinite(expenseAmount) || expenseAmount <= 0)) {
-        throw new Error("Expense amount must be greater than 0.");
+      for (const row of allRows) {
+        if (row.type !== "feed_given") continue;
+        const itemId = feedItemSelection[row.entity_id];
+        if (!itemId) continue;
+
+        const result = consumeFIFO(workingLots[itemId] ?? [], row.payload.qty_kg);
+        for (const updated of result.updatedLots) {
+          lotUpdatesById[updated.id] = updated.qty_remaining;
+          const lotIndex = (workingLots[itemId] ?? []).findIndex((l) => l.id === updated.id);
+          if (lotIndex !== -1) workingLots[itemId][lotIndex].qty_remaining = updated.qty_remaining;
+        }
+        if (result.shortfall > 0) {
+          const itemName = inventoryItems.find((i) => i.id === itemId)?.name ?? "item";
+          shortfalls.push(`${itemName}: short by ${result.shortfall.toFixed(2)}`);
+        }
       }
 
-      if (allRows.length === 0 && !hasExpense) {
-        throw new Error("Add at least one farm log entry or expense before saving.");
+      const eventsToInsert = allRows;
+
+      if (eventsToInsert.length > 0) {
+        const { error } = await supabase.from("entity_events").insert(eventsToInsert);
+        if (error) throw error;
       }
 
-      const expensePayload = hasExpense
-        ? {
-            amount: expenseAmount,
-            category: expense.category || null,
-            entity_id: expense.entityId || null,
-            occurred_at: date,
-          }
-        : null;
+      const lotUpdateIds = Object.keys(lotUpdatesById);
+      if (lotUpdateIds.length > 0) {
+        const results = await Promise.all(
+          lotUpdateIds.map((lotId) =>
+            supabase
+              .from("inventory_lots")
+              .update({ qty_remaining: lotUpdatesById[lotId] })
+              .eq("id", lotId)
+          )
+        );
+        const failed = results.find((r) => r.error);
+        if (failed) throw failed.error;
+      }
 
-      const { error } = await supabase.rpc("save_daily_log", {
-        p_events: allRows,
-        p_expense: expensePayload,
-      });
+      if (expense.amount !== "" && !Number.isNaN(Number(expense.amount))) {
+        const { error } = await supabase.from("finance_transactions").insert({
+          type: "expense",
+          amount: Number(expense.amount),
+          category: expense.category || null,
+          entity_id: expense.entityId || null,
+          occurred_at: date,
+        });
+        if (error) throw error;
+      }
 
-      if (error) throw error;
+      if (shortfalls.length > 0) {
+        setSubmitWarning(`Saved, but stock ran short: ${shortfalls.join("; ")}. Record a purchase in Inventory.`);
+      }
 
       setEntityValues({});
       setExpense({ amount: "", category: "", entityId: "" });
@@ -161,6 +224,25 @@ function DailyLog() {
                             updateEntityField(entity.id, field.key, e.target.value)
                           }
                         />
+                        {field.key === "feed_kg" && inventoryItems.length > 0 && (
+                          <select
+                            className="farmos-entity-card__feed-item"
+                            value={feedItemSelection[entity.id] ?? ""}
+                            onChange={(e) =>
+                              setFeedItemSelection((prev) => ({
+                                ...prev,
+                                [entity.id]: e.target.value,
+                              }))
+                            }
+                          >
+                            <option value="">From stock…</option>
+                            {inventoryItems.map((item) => (
+                              <option key={item.id} value={item.id}>
+                                {item.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </label>
                     ))}
                   </div>
@@ -221,6 +303,11 @@ function DailyLog() {
           {submitError && (
             <p className="farmos-dailylog__status farmos-dailylog__status--error">
               {submitError}
+            </p>
+          )}
+          {submitWarning && (
+            <p className="farmos-dailylog__status farmos-dailylog__status--warning">
+              {submitWarning}
             </p>
           )}
           {submitted && (

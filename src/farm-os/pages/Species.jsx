@@ -2,6 +2,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import "./Species.css";
 
+import EntityHistory from "../components/EntityHistory";
+
+import {
+  getDefaultEventType,
+  validateEventPayload,
+} from "../lib/eventUtils";
+
 const CAPABILITY_OPTIONS = [
   { key: "feed", label: "Feed" },
   { key: "health", label: "Health" },
@@ -11,16 +18,16 @@ const CAPABILITY_OPTIONS = [
   { key: "milk", label: "Milk" },
   { key: "harvest", label: "Harvest" },
 ];
+function emptyCapabilitySet() {
+  return Object.fromEntries(
+    CAPABILITY_OPTIONS.map((capability) => [capability.key, false]),
+  );
+}
 
 const VARIANT_TYPE_OPTIONS = ["breed", "variety", "strain", "cultivar", "type"];
 
-
 const CATEGORY_OPTIONS = ["poultry", "livestock", "crop", "fodder"];
 const STATUS_OPTIONS = ["active", "sold", "deceased", "harvested"];
-
-function emptyCapabilitySet() {
-  return CAPABILITY_OPTIONS.reduce((acc, c) => ({ ...acc, [c.key]: false }), {});
-}
 
 function Species() {
   const [speciesList, setSpeciesList] = useState([]);
@@ -28,8 +35,11 @@ function Species() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
+  const [variantSearch, setVariantSearch] = useState("");
+  const [showNewVariantConfig, setShowNewVariantConfig] = useState(false);
   const [speciesSearch, setSpeciesSearch] = useState("");
   const [showNewSpeciesConfig, setShowNewSpeciesConfig] = useState(false);
+
 
   const [newVariant, setNewVariant] = useState({
     speciesConfigId: "",
@@ -65,9 +75,28 @@ function Species() {
     location: "",
     notes: "",
   });
+  const [editingEntityId, setEditingEntityId] = useState(null);
+
+  const [editingEntity, setEditingEntity] = useState({
+    entityCode: "",
+    entityName: "",
+    location: "",
+    notes: "",
+  });
   const [savingEntity, setSavingEntity] = useState(false);
   const [updatingStatusId, setUpdatingStatusId] = useState(null);
+  const [selectedEntityId, setSelectedEntityId] = useState(null);
+  const [entityEvents, setEntityEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const [variants, setVariants] = useState([]);
+  const [savingEvent, setSavingEvent] = useState(false);
+
+  const [newEvent, setNewEvent] = useState({
+    type: "other",
+    occurredAt: "",
+    payload: {},
+    notes: "",
+  });
 
   async function loadAll() {
     setLoading(true);
@@ -79,7 +108,10 @@ function Species() {
       supabase
         .from("farm_entities")
         .select(
-          `id, label, quantity, status, entity_code, entity_name, tracking_mode, variant:variant_id(id, name, variant_type), species_config:species_config_id(id, name)`,
+          `id, label, quantity, status, entity_code, entity_name,
+       tracking_mode, notes, location,
+       variant:variant_id(id, name, variant_type),
+       species_config:species_config_id(id, name)`,
         )
         .order("label"),
 
@@ -106,6 +138,10 @@ function Species() {
     setVariants(variantsRes.data ?? []);
     setLoading(false);
   }
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadAll();
+  }, []);
 
   function getVariantsForSpecies(speciesConfigId) {
     return variants.filter(
@@ -123,6 +159,136 @@ function Species() {
     return speciesList.find(
       (species) => species.name.trim().toLowerCase() === normalized,
     );
+  }
+  
+  function findVariantByName(name, speciesConfigId) {
+    const normalized = name.trim().toLowerCase();
+
+    return variants.find(
+      (variant) =>
+        variant.species_config_id === speciesConfigId &&
+        variant.name.trim().toLowerCase() === normalized,
+    );
+  }
+
+  function handleVariantSearchChange(value) {
+    setVariantSearch(value);
+
+    const speciesId = newEntity.speciesConfigId;
+
+    if (!speciesId) {
+      setNewEntity((prev) => ({
+        ...prev,
+        variantId: "",
+      }));
+      setShowNewVariantConfig(false);
+      return;
+    }
+
+    const existingVariant = findVariantByName(value, speciesId);
+
+    if (existingVariant) {
+      setNewEntity((prev) => ({
+        ...prev,
+        variantId: existingVariant.id,
+      }));
+
+      setShowNewVariantConfig(false);
+    } else {
+      setNewEntity((prev) => ({
+        ...prev,
+        variantId: "",
+      }));
+
+      setShowNewVariantConfig(value.trim().length > 0);
+    }
+  }
+  function handleEventPayloadChange(key, value) {
+    setNewEvent((prev) => ({
+      ...prev,
+      payload: {
+        ...prev.payload,
+        [key]: value,
+      },
+    }));
+  }
+  function handleEventTypeChange(type) {
+    setNewEvent((prev) => ({
+      ...prev,
+      type,
+      payload: {},
+    }));
+
+    setPageError("");
+  }
+  async function handleAddEntityEvent(e) {
+    e.preventDefault();
+
+    if (!selectedEntityId) {
+      setPageError("Please select an entity first.");
+      return;
+    }
+
+    if (!newEvent.type || !newEvent.occurredAt) {
+      setPageError("Event type and date are required.");
+      return;
+    }
+
+    const selectedEntity = entities.find(
+      (entity) => entity.id === selectedEntityId,
+    );
+
+    const validationError = validateEventPayload(
+      newEvent.type,
+      newEvent.payload,
+      selectedEntity,
+    );
+
+    if (validationError) {
+      setPageError(validationError);
+      return;
+    }
+
+    setSavingEvent(true);
+    setPageError("");
+
+    const { data, error } = await supabase
+      .from("entity_events")
+      .insert({
+        entity_id: selectedEntityId,
+        type: newEvent.type,
+        occurred_at: newEvent.occurredAt,
+        payload: {
+          ...newEvent.payload,
+          notes: newEvent.notes.trim() || null,
+        },
+      })
+      .select("id, entity_id, type, payload, occurred_at, created_at")
+      .single();
+
+    setSavingEvent(false);
+
+    if (error) {
+      setPageError(error.message);
+      return;
+    }
+
+    setEntityEvents((prev) =>
+      [data, ...prev].sort((a, b) => {
+        const dateCompare = b.occurred_at.localeCompare(a.occurred_at);
+
+        if (dateCompare !== 0) return dateCompare;
+
+        return b.created_at.localeCompare(a.created_at);
+      }),
+    );
+
+    setNewEvent({
+      type: "other",
+      occurredAt: "",
+      payload: {},
+      notes: "",
+    });
   }
 
   function handleVariantSpeciesChange(value) {
@@ -149,6 +315,8 @@ function Species() {
         trackingMode: allowedModes[0] ?? "group",
       }));
 
+      setVariantSearch("");
+      setShowNewVariantConfig(false);
       setShowNewSpeciesConfig(false);
     } else {
       setNewEntity((prev) => ({
@@ -157,25 +325,11 @@ function Species() {
         variantId: "",
       }));
 
+      setVariantSearch("");
+      setShowNewVariantConfig(false);
       setShowNewSpeciesConfig(value.trim().length > 0);
     }
   }
-
-  // function handleEntitySpeciesChange(speciesConfigId) {
-  //   const allowedModes = getTrackingModesForSpecies(speciesConfigId);
-
-  //   setNewEntity((prev) => ({
-  //     ...prev,
-  //     speciesConfigId,
-  //     variantId: "",
-  //     trackingMode: allowedModes[0] ?? "group",
-  //   }));
-  // }
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadAll();
-  }, []);
 
   function toggleNewCapability(key) {
     setNewSpecies((prev) => ({
@@ -260,6 +414,71 @@ function Species() {
     });
 
     loadAll();
+  }
+  async function handleCreateVariantForEntity() {
+    const speciesId = newEntity.speciesConfigId;
+    const name = newVariant.name.trim();
+
+    if (!speciesId) {
+      setPageError("Please select a species or crop first.");
+      return;
+    }
+
+    if (!name) {
+      setPageError("Please enter a variant name.");
+      return;
+    }
+
+    const existingVariant = findVariantByName(name, speciesId);
+
+    if (existingVariant) {
+      setNewEntity((prev) => ({
+        ...prev,
+        variantId: existingVariant.id,
+      }));
+
+      setVariantSearch(existingVariant.name);
+      setShowNewVariantConfig(false);
+      return;
+    }
+
+    setSavingVariant(true);
+    setPageError("");
+
+    const { data, error } = await supabase
+      .from("species_variants")
+      .insert({
+        species_config_id: speciesId,
+        name,
+        variant_type: newVariant.variantType,
+      })
+      .select("id, species_config_id, name, variant_type")
+      .single();
+
+    setSavingVariant(false);
+
+    if (error) {
+      setPageError(error.message);
+      return;
+    }
+
+    setVariants((prev) =>
+      [...prev, data].sort((a, b) => a.name.localeCompare(b.name)),
+    );
+
+    setNewEntity((prev) => ({
+      ...prev,
+      variantId: data.id,
+    }));
+
+    setVariantSearch(data.name);
+    setShowNewVariantConfig(false);
+
+    setNewVariant({
+      speciesConfigId: speciesId,
+      name: "",
+      variantType: "type",
+    });
   }
 
   async function handleCreateSpeciesForEntity() {
@@ -427,7 +646,118 @@ function Species() {
       notes: "",
     });
 
+    setSpeciesSearch("");
+    setVariantSearch("");
+    setShowNewSpeciesConfig(false);
+    setShowNewVariantConfig(false);
+
+    setNewVariant({
+      speciesConfigId: "",
+      name: "",
+      variantType: "type",
+    });
+
     loadAll();
+  }
+
+  function startEditingEntity(entity) {
+    setEditingEntityId(entity.id);
+
+    setEditingEntity({
+      entityCode: entity.entity_code ?? "",
+      entityName: entity.entity_name ?? entity.label ?? "",
+      location: entity.location ?? "",
+      notes: entity.notes ?? "",
+    });
+  }
+
+  async function saveEditedEntity(entityId) {
+    if (!editingEntity.entityName.trim()) {
+      setPageError("Entity name is required.");
+      return;
+    }
+
+    setSavingEntity(true);
+    setPageError("");
+
+    const { error } = await supabase
+      .from("farm_entities")
+      .update({
+        entity_code: editingEntity.entityCode.trim() || null,
+        entity_name: editingEntity.entityName.trim(),
+        label: editingEntity.entityName.trim(),
+        location: editingEntity.location.trim() || null,
+        notes: editingEntity.notes.trim() || null,
+      })
+      .eq("id", entityId);
+
+    setSavingEntity(false);
+
+    if (error) {
+      setPageError(error.message);
+      return;
+    }
+
+    setEditingEntityId(null);
+
+    setEditingEntity({
+      entityCode: "",
+      entityName: "",
+      location: "",
+      notes: "",
+    });
+
+    loadAll();
+  }
+  async function loadEntityEvents(entityId) {
+    if (!entityId) {
+      setEntityEvents([]);
+      return;
+    }
+
+    setLoadingEvents(true);
+    setPageError("");
+
+    const { data, error } = await supabase
+      .from("entity_events")
+      .select("id, entity_id, type, payload, occurred_at, created_at")
+      .eq("entity_id", entityId)
+      .order("occurred_at", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    setLoadingEvents(false);
+
+    if (error) {
+      setPageError(error.message);
+      return;
+    }
+
+    setEntityEvents(data ?? []);
+  }
+  function handleSelectEntity(entityId) {
+    const entity = entities.find((item) => item.id === entityId);
+
+    setSelectedEntityId(entityId);
+
+    setNewEvent({
+      type: getDefaultEventType(entity, speciesList),
+      occurredAt: "",
+      payload: {},
+      notes: "",
+    });
+
+    setPageError("");
+    loadEntityEvents(entityId);
+  }
+  function closeEntityHistory() {
+    setSelectedEntityId(null);
+    setEntityEvents([]);
+    setNewEvent({
+      type: "other",
+      occurredAt: "",
+      payload: {},
+      notes: "",
+    });
   }
 
   async function handleStatusChange(entityId, status) {
@@ -788,34 +1118,196 @@ function Species() {
       {/* --- Farm entities --- */}
       <section className="farmos-species__section">
         <h2 className="farmos-species__section-title">Farm entities</h2>
-
         <div className="farmos-species__list">
           {entities.map((entity) => (
-            <div key={entity.id} className="farmos-entity-row">
-              <div>
-                <span className="farmos-entity-row__label">
-                  {entity.entity_code ?? "No code"} ·{" "}
-                  {entity.entity_name ?? entity.label}
-                </span>
+            <div
+              key={entity.id}
+              className={`farmos-entity-row ${
+                selectedEntityId === entity.id
+                  ? "farmos-entity-row--selected"
+                  : ""
+              }`}
+            >
+              {/* Entity history */}
+              {selectedEntityId === entity.id && (
+                <EntityHistory
+                  entity={entity}
+                  speciesList={speciesList}
+                  entityEvents={entityEvents}
+                  loadingEvents={loadingEvents}
+                  newEvent={newEvent}
+                  savingEvent={savingEvent}
+                  onClose={closeEntityHistory}
+                  onSubmit={handleAddEntityEvent}
+                  onTypeChange={handleEventTypeChange}
+                  onDateChange={(occurredAt) =>
+                    setNewEvent((prev) => ({
+                      ...prev,
+                      occurredAt,
+                    }))
+                  }
+                  onPayloadChange={handleEventPayloadChange}
+                  onNotesChange={(notes) =>
+                    setNewEvent((prev) => ({
+                      ...prev,
+                      notes,
+                    }))
+                  }
+                />
+              )}
 
-                <span className="farmos-entity-row__species">
-                  {entity.species_config?.name}
-                  {entity.variant?.name ? ` · ${entity.variant.name}` : ""}
-                  {entity.tracking_mode ? ` · ${entity.tracking_mode}` : ""}
-                  {entity.quantity != null ? ` · ${entity.quantity}` : ""}
-                </span>
-              </div>
-              <select
-                value={entity.status}
-                onChange={(e) => handleStatusChange(entity.id, e.target.value)}
-                disabled={updatingStatusId === entity.id}
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
+              {/* Entity editing / normal display */}
+              {editingEntityId === entity.id ? (
+                <div className="farmos-entity-edit">
+                  <div className="farmos-form-grid">
+                    <div className="farmos-form-field">
+                      <label htmlFor={`edit-code-${entity.id}`}>
+                        Entity code
+                      </label>
+
+                      <input
+                        id={`edit-code-${entity.id}`}
+                        value={editingEntity.entityCode}
+                        onChange={(e) =>
+                          setEditingEntity((prev) => ({
+                            ...prev,
+                            entityCode: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className="farmos-form-field">
+                      <label htmlFor={`edit-name-${entity.id}`}>
+                        Entity name
+                      </label>
+
+                      <input
+                        id={`edit-name-${entity.id}`}
+                        value={editingEntity.entityName}
+                        onChange={(e) =>
+                          setEditingEntity((prev) => ({
+                            ...prev,
+                            entityName: e.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </div>
+
+                    <div className="farmos-form-field">
+                      <label htmlFor={`edit-location-${entity.id}`}>
+                        Location
+                      </label>
+
+                      <input
+                        id={`edit-location-${entity.id}`}
+                        value={editingEntity.location}
+                        onChange={(e) =>
+                          setEditingEntity((prev) => ({
+                            ...prev,
+                            location: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. Goat shed"
+                      />
+                    </div>
+
+                    <div className="farmos-form-field farmos-form-field--full">
+                      <label htmlFor={`edit-notes-${entity.id}`}>Notes</label>
+
+                      <textarea
+                        id={`edit-notes-${entity.id}`}
+                        value={editingEntity.notes}
+                        onChange={(e) =>
+                          setEditingEntity((prev) => ({
+                            ...prev,
+                            notes: e.target.value,
+                          }))
+                        }
+                        rows="3"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="farmos-entity-edit__actions">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingEntityId(null);
+                        setEditingEntity({
+                          entityCode: "",
+                          entityName: "",
+                          location: "",
+                          notes: "",
+                        });
+                      }}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => saveEditedEntity(entity.id)}
+                      disabled={savingEntity}
+                    >
+                      {savingEntity ? "Saving…" : "Save changes"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <span className="farmos-entity-row__label">
+                      {entity.entity_code ?? "No code"} ·{" "}
+                      {entity.entity_name ?? entity.label}
+                    </span>
+
+                    <span className="farmos-entity-row__species">
+                      {entity.species_config?.name}
+
+                      {entity.variant?.name ? ` · ${entity.variant.name}` : ""}
+
+                      {entity.tracking_mode ? ` · ${entity.tracking_mode}` : ""}
+
+                      {entity.quantity != null ? ` · ${entity.quantity}` : ""}
+                    </span>
+                  </div>
+
+                  <div className="farmos-entity-row__actions">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectEntity(entity.id)}
+                    >
+                      History
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => startEditingEntity(entity)}
+                    >
+                      Edit
+                    </button>
+
+                    <select
+                      value={entity.status ?? "active"}
+                      onChange={(e) =>
+                        handleStatusChange(entity.id, e.target.value)
+                      }
+                      disabled={updatingStatusId === entity.id}
+                      aria-label={`Status for ${
+                        entity.entity_name ?? entity.label
+                      }`}
+                    >
+                      {STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -1006,28 +1498,127 @@ function Species() {
             <div className="farmos-form-field">
               <label htmlFor="entity-variant">Breed / variety / type</label>
 
-              <select
+              <input
                 id="entity-variant"
-                value={newEntity.variantId}
-                onChange={(e) =>
-                  setNewEntity((prev) => ({
-                    ...prev,
-                    variantId: e.target.value,
-                  }))
-                }
+                name="entity-variant"
+                list="entity-variant-options"
+                value={variantSearch}
                 disabled={!newEntity.speciesConfigId}
-              >
-                <option value="">No variant / variety</option>
+                placeholder={
+                  newEntity.speciesConfigId
+                    ? "Select or type a breed / variety / type"
+                    : "Select a species / crop first"
+                }
+                onChange={(event) =>
+                  handleVariantSearchChange(event.target.value)
+                }
+              />
 
+              <datalist id="entity-variant-options">
                 {getVariantsForSpecies(newEntity.speciesConfigId).map(
                   (variant) => (
-                    <option key={variant.id} value={variant.id}>
-                      {variant.name}
-                    </option>
+                    <option key={variant.id} value={variant.name} />
                   ),
                 )}
-              </select>
+              </datalist>
+
+              {newEntity.speciesConfigId &&
+                variantSearch.trim() &&
+                !newEntity.variantId && (
+                  <button
+                    type="button"
+                    className="farmos-inline-create"
+                    onClick={() => {
+                      setNewVariant((prev) => ({
+                        ...prev,
+                        speciesConfigId: newEntity.speciesConfigId,
+                        name: variantSearch.trim(),
+                      }));
+
+                      setShowNewVariantConfig(true);
+                    }}
+                  >
+                    + Create "{variantSearch.trim()}" as a new variant
+                  </button>
+                )}
             </div>
+            {showNewVariantConfig &&
+              newEntity.speciesConfigId &&
+              !newEntity.variantId && (
+                <div className="farmos-new-variant-config">
+                  <div className="farmos-new-variant-config__header">
+                    <div>
+                      <h4>Create new variant</h4>
+                      <p>
+                        Add a breed, variety, strain, cultivar, or type for the
+                        selected species / crop.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="farmos-form-grid">
+                    <div className="farmos-form-field">
+                      <label htmlFor="inline-variant-type">Variant type</label>
+
+                      <select
+                        id="inline-variant-type"
+                        value={newVariant.variantType}
+                        onChange={(event) =>
+                          setNewVariant((prev) => ({
+                            ...prev,
+                            variantType: event.target.value,
+                          }))
+                        }
+                      >
+                        {VARIANT_TYPE_OPTIONS.map((type) => (
+                          <option key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="farmos-form-field">
+                      <label htmlFor="inline-variant-name">Variant name</label>
+
+                      <input
+                        id="inline-variant-name"
+                        value={newVariant.name}
+                        onChange={(event) =>
+                          setNewVariant((prev) => ({
+                            ...prev,
+                            name: event.target.value,
+                          }))
+                        }
+                        placeholder="e.g. Jamunapari"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="farmos-new-variant-config__actions">
+                    <button
+                      type="button"
+                      className="farmos-button farmos-button--secondary"
+                      onClick={() => {
+                        setShowNewVariantConfig(false);
+                      }}
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      className="farmos-button farmos-button--primary"
+                      onClick={handleCreateVariantForEntity}
+                      disabled={savingVariant}
+                    >
+                      {savingVariant
+                        ? "Creating..."
+                        : "Create variant & continue"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
             {/* Tracking mode */}
             <div className="farmos-form-field">

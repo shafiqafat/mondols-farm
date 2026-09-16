@@ -1,0 +1,226 @@
+.farmos-finance__title {
+  font-size: 1.6rem;
+  color: var(--color-forest);
+  margin: 0 0 16px;
+}
+
+.farmos-finance__status {
+  color: var(--color-text-muted);
+}
+
+.farmos-finance__status--error {
+  color: #a3402f;
+}
+
+.farmos-finance__section {
+  margin-bottom: 32px;
+}
+
+.farmos-finance__section h2 {
+  font-size: 1.1rem;
+  margin: 0 0 10px;
+}
+
+.farmos-finance__hint {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin: 0 0 10px;
+}
+
+.farmos-finance__projects {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.farmos-project-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.farmos-project-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.farmos-project-card__name {
+  font-weight: 600;
+}
+
+.farmos-project-card__net {
+  font-weight: 600;
+  color: var(--color-forest);
+}
+
+.farmos-project-card__totals {
+  display: flex;
+  gap: 14px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.farmos-project-card__cost-per-unit {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin: 0 0 10px;
+}
+
+.farmos-project-card__entities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.farmos-project-card__entity-tag {
+  font-size: 0.76rem;
+  background: var(--color-cream);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+.farmos-project-card__no-entities {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.farmos-project-card__assign {
+  display: flex;
+  gap: 8px;
+}
+
+.farmos-project-card__assign select,
+.farmos-project-card__assign button {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: 0.82rem;
+}
+
+.farmos-project-card__assign button {
+  background: var(--color-forest);
+  color: var(--color-white);
+  border: none;
+  cursor: pointer;
+}
+
+.farmos-finance__add-form {
+  background: var(--color-white);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.farmos-finance__add-form h3 {
+  font-size: 0.95rem;
+  margin: 0 0 12px;
+}
+
+.farmos-finance__add-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.farmos-finance__add-fields input,
+.farmos-finance__add-fields select,
+.farmos-finance__allocation-row select,
+.farmos-finance__allocation-row input {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  background: var(--color-cream);
+  min-height: 44px;
+}
+
+.farmos-finance__add-form > button,
+.farmos-finance__split-actions button {
+  background: var(--color-forest);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.farmos-finance__add-form > button:hover:not(:disabled),
+.farmos-finance__split-actions button:hover:not(:disabled) {
+  background: var(--color-terracotta);
+}
+
+.farmos-finance__allocation-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.farmos-finance__allocation-row button {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: #a3402f;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.farmos-finance__split-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.farmos-finance__split-actions button:first-child {
+  background: var(--color-white);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.farmos-finance__txn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.farmos-finance__txn-list li {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  display: flex;
+  gap: 14px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.farmos-finance__txn-type {
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.farmos-finance__txn-type--expense {
+  color: #a3402f;
+}
+
+.farmos-finance__txn-type--income {
+  color: var(--color-forest);
+}
+
+.farmos-finance__txn-type--asset {
+  color: var(--color-earth);
+}

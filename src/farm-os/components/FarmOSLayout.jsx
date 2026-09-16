@@ -7,7 +7,9 @@ const NAV_ITEMS = [
   { to: "/farm-os/species", label: "Species", ready: true },
   { to: "/farm-os/daily-log", label: "Daily Log", ready: true },
   { to: "/farm-os/inventory", label: "Inventory", ready: true },
-  { to: "/farm-os/finance", label: "Finance", ready: false },
+  { to: "/farm-os/finance", label: "Finance", ready: true },
+  { to: "/farm-os/capacity", label: "Capacity", ready: true },
+  { to: "/farm-os/scenario", label: "Scenario", ready: true },
   { to: "/farm-os/tasks", label: "Tasks", ready: false },
 ];
 

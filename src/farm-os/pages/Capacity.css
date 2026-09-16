@@ -1,0 +1,149 @@
+.farmos-capacity__title {
+  font-size: 1.6rem;
+  color: var(--color-forest);
+  margin: 0 0 6px;
+}
+
+.farmos-capacity__intro {
+  color: var(--color-text-muted);
+  max-width: 65ch;
+  margin: 0 0 20px;
+}
+
+.farmos-capacity__error {
+  color: #a3402f;
+  margin-bottom: 12px;
+}
+
+.farmos-capacity__form {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.farmos-capacity__scenario-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.farmos-capacity__scenario-fields input,
+.farmos-capacity__constraint-row input,
+.farmos-capacity__stretch-input input {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  background: var(--color-cream);
+  min-height: 44px;
+}
+
+.farmos-capacity__constraint-row {
+  display: grid;
+  grid-template-columns: 2fr 1.3fr auto auto;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.farmos-capacity__measured-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.farmos-capacity__constraint-row button {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: #a3402f;
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 8px 10px;
+}
+
+.farmos-capacity__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.farmos-capacity__actions > button {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.farmos-capacity__calculate {
+  background: var(--color-forest) !important;
+  color: var(--color-white);
+  border: none !important;
+  margin-left: auto;
+}
+
+.farmos-capacity__stretch-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.farmos-capacity__stretch-input input {
+  width: 64px;
+  min-height: auto;
+  padding: 6px 8px;
+}
+
+.farmos-capacity__result {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left-width: 5px;
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+}
+
+.farmos-capacity__result--safe {
+  border-left-color: #2f7a4f;
+}
+
+.farmos-capacity__result--stretch {
+  border-left-color: #c99a2e;
+}
+
+.farmos-capacity__result--over {
+  border-left-color: #a3402f;
+}
+
+.farmos-capacity__result h2 {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+}
+
+.farmos-capacity__result-scenario {
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.farmos-capacity__result-line {
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+.farmos-capacity__breakdown {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}

@@ -7,6 +7,7 @@ import {
   buildEventPayload,
   computeExpectedHarvest,
 } from "../engines/entityEventTypes";
+import { recommendationsFor } from "../engines/cropRotationEngine";
 import "./EntityDetail.css";
 
 function todayISO() {
@@ -24,6 +25,7 @@ function EntityDetail() {
   const { id } = useParams();
   const [entity, setEntity] = useState(null);
   const [events, setEvents] = useState([]);
+  const [rotationRules, setRotationRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
@@ -60,6 +62,16 @@ function EntityDetail() {
 
     setEntity(entityRes.data);
     setEvents(eventsRes.data ?? []);
+
+    const speciesId = entityRes.data?.species_config_id;
+    if (speciesId) {
+      const { data: rules } = await supabase
+        .from("crop_rotation_rules")
+        .select("*, to_species:to_species_id(name)")
+        .eq("from_species_id", speciesId);
+      setRotationRules(rules ?? []);
+    }
+
     setLoading(false);
   }
 
@@ -107,6 +119,10 @@ function EntityDetail() {
   const selectedTypeDef = availableTypes.find((t) => t.value === form.type);
   const harvestOutlook =
     category === "crop" || category === "fodder" ? computeExpectedHarvest(events) : null;
+  const rotationSuggestions =
+    category === "crop" || category === "fodder"
+      ? recommendationsFor(rotationRules, entity.species_config_id)
+      : [];
 
   return (
     <div className="farmos-entitydetail">
@@ -126,6 +142,20 @@ function EntityDetail() {
           Planted {harvestOutlook.plantedAt}
           {harvestOutlook.variety ? ` (${harvestOutlook.variety})` : ""} — expected harvest
           around <strong>{harvestOutlook.expectedHarvestDate}</strong>
+        </div>
+      )}
+
+      {rotationSuggestions.length > 0 && (
+        <div className="farmos-entitydetail__rotation">
+          <h2>Suggested next crop</h2>
+          <ul>
+            {rotationSuggestions.map((r) => (
+              <li key={r.id}>
+                <strong>{r.to_species?.name}</strong> — {r.reason}
+              </li>
+            ))}
+          </ul>
+          <Link to="/farm-os/species">Register it once this plot is free →</Link>
         </div>
       )}
 

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { todayFarmDate } from "../lib/farmDate";
 import {
   getQuickFieldsForCapabilities,
   buildEventRows,
@@ -8,6 +7,9 @@ import {
 import { consumeFIFO } from "../engines/inventoryEngine";
 import "./DailyLog.css";
 
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function DailyLog() {
   const [entities, setEntities] = useState([]);
@@ -16,10 +18,11 @@ function DailyLog() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const [date, setDate] = useState(todayFarmDate());
+  const [date, setDate] = useState(todayISO());
   const [entityValues, setEntityValues] = useState({});
   const [feedItemSelection, setFeedItemSelection] = useState({});
   const [expense, setExpense] = useState({ amount: "", category: "", entityId: "" });
+  const [content, setContent] = useState({ photos: "", videos: "", note: "" });
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -154,12 +157,29 @@ function DailyLog() {
         if (error) throw error;
       }
 
+      const photos = content.photos !== "" ? Number(content.photos) : 0;
+      const videos = content.videos !== "" ? Number(content.videos) : 0;
+      if (photos > 0 || videos > 0 || content.note.trim() !== "") {
+        const parts = [];
+        if (photos > 0) parts.push(`${photos} photo${photos > 1 ? "s" : ""}`);
+        if (videos > 0) parts.push(`${videos} video${videos > 1 ? "s" : ""}`);
+        const { error } = await supabase.from("content_items").insert({
+          title: `Daily capture — ${date}`,
+          type: photos > 0 && videos > 0 ? "mixed" : videos > 0 ? "video" : photos > 0 ? "photo" : "note",
+          stage: "captured",
+          notes: [parts.join(", "), content.note.trim()].filter(Boolean).join(" — "),
+          occurred_at: date,
+        });
+        if (error) throw error;
+      }
+
       if (shortfalls.length > 0) {
         setSubmitWarning(`Saved, but stock ran short: ${shortfalls.join("; ")}. Record a purchase in Inventory.`);
       }
 
       setEntityValues({});
       setExpense({ amount: "", category: "", entityId: "" });
+      setContent({ photos: "", videos: "", note: "" });
       setSubmitted(true);
     } catch (err) {
       setSubmitError(err.message ?? "Something went wrong saving today's log.");
@@ -296,6 +316,39 @@ function DailyLog() {
                     </option>
                   ))}
                 </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="farmos-dailylog__expense">
+            <h2 className="farmos-dailylog__section-title">Today's content (optional)</h2>
+            <div className="farmos-dailylog__expense-fields">
+              <label>
+                <span>Photos</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={content.photos}
+                  onChange={(e) => setContent((p) => ({ ...p, photos: e.target.value }))}
+                />
+              </label>
+              <label>
+                <span>Videos</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={content.videos}
+                  onChange={(e) => setContent((p) => ({ ...p, videos: e.target.value }))}
+                />
+              </label>
+              <label>
+                <span>Note</span>
+                <input
+                  type="text"
+                  placeholder="What did you capture?"
+                  value={content.note}
+                  onChange={(e) => setContent((p) => ({ ...p, note: e.target.value }))}
+                />
               </label>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import {
   EVENT_CAPABILITY_MAP,
+  EVENT_CATEGORY_MAP,
   EVENT_TYPE_OPTIONS,
   LEGACY_EVENT_LABELS,
 } from "../config/eventDefinitions";
@@ -17,10 +18,7 @@ export function getEventCapability(eventType) {
 
 export function canEntityUseEvent(entity, speciesList, eventType) {
   const requiredCapability = getEventCapability(eventType);
-
-  if (!requiredCapability) {
-    return true;
-  }
+  const allowedCategories = EVENT_CATEGORY_MAP[eventType];
 
   const species = speciesList.find(
     (item) => item.id === entity?.species_config?.id,
@@ -28,6 +26,14 @@ export function canEntityUseEvent(entity, speciesList, eventType) {
 
   if (!species) {
     return false;
+  }
+
+  if (allowedCategories?.includes(species.category)) {
+    return true;
+  }
+
+  if (!requiredCapability) {
+    return true;
   }
 
   const capabilities = species.capabilities ?? {};
@@ -169,6 +175,30 @@ export function getEventSummary(event) {
     return payload.quantity != null
       ? `${payload.quantity} ${payload.unit || ""}`.trim()
       : `${type === "purchase" ? "Purchase" : "Sale"} recorded`;
+  }
+  if (type === "planting") {
+    const parts = [];
+
+    if (payload.variety) {
+      parts.push(payload.variety);
+    }
+
+    if (payload.expectedDurationDays != null) {
+      parts.push(`${payload.expectedDurationDays} days`);
+    }
+
+    return parts.join(" · ") || "Planting recorded";
+  }
+
+  if (
+    type === "fertilizer_applied" ||
+    type === "irrigation" ||
+    type === "pest_observation" ||
+    type === "growth_stage" ||
+    type === "processing" ||
+    type === "health_note"
+  ) {
+    return payload.notes || "Event recorded";
   }
 
   return payload.notes || "Event recorded";

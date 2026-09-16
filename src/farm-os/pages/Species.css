@@ -25,7 +25,6 @@
 .farmos-species__section-title {
   font-size: 1.1rem;
   margin: 0 0 12px;
-  color: var(--color-terracotta);
 }
 
 .farmos-species__list {
@@ -54,6 +53,12 @@
 .farmos-entity-row__label {
   font-weight: 600;
   margin-right: 8px;
+  color: var(--color-forest);
+  text-decoration: none;
+}
+
+.farmos-entity-row__label:hover {
+  text-decoration: underline;
 }
 
 .farmos-entity-row__species {
@@ -104,7 +109,7 @@
 .farmos-species-row__edit-btn {
   background: none;
   border: none;
-  color: var(--color-text-muted);
+  color: var(--color-terracotta);
   font-size: 0.82rem;
   cursor: pointer;
   padding: 0;
@@ -154,81 +159,23 @@
 .farmos-species__add-form h3 {
   font-size: 0.95rem;
   margin: 0 0 12px;
-  color: var(--color-terracotta);
 }
 
-.farmos-form-grid {
+.farmos-species__add-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px 16px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.farmos-form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.farmos-form-field--full {
-  grid-column: 1 / -1;
-}
-
-.farmos-form-field label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.farmos-form-field input,
-.farmos-form-field select,
-.farmos-form-field textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 12px;
+.farmos-species__add-fields input,
+.farmos-species__add-fields select {
+  padding: 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
   background: var(--color-cream);
   min-height: 44px;
-  font-family: inherit;
-}
-
-.farmos-form-field textarea {
-  resize: vertical;
-  min-height: 90px;
-}
-
-.farmos-form-field input:focus,
-.farmos-form-field select:focus,
-.farmos-form-field textarea:focus {
-  outline: none;
-  border-color: var(--color-forest);
-}
-
-.farmos-form-help {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  line-height: 1.35;
-}
-
-.farmos-form__intro {
-  margin: -4px 0 18px;
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
-}
-
-.farmos-capability-fieldset {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  margin: 0 0 18px;
-}
-
-.farmos-capability-fieldset legend {
-  padding: 0 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
 }
 
 .farmos-species__add-capabilities {
@@ -266,384 +213,4 @@
   border-radius: var(--radius-sm);
   background: var(--color-cream);
   font-size: 0.85rem;
-}
-.farmos-variant-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.farmos-variant-group {
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-}
-
-.farmos-variant-group__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.farmos-variant-group__header span {
-  font-size: 0.78rem;
-  color: var(--color-text-muted);
-}
-
-.farmos-variant-group__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.farmos-variant-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-cream);
-}
-
-.farmos-variant-item__name {
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.farmos-variant-item__type {
-  font-size: 0.72rem;
-  color: var(--color-text-muted);
-  text-transform: capitalize;
-}
-
-.farmos-form-inline-action {
-  align-self: flex-start;
-  border: none;
-  background: none;
-  padding: 0;
-  color: var(--color-terracotta);
-  font-size: 0.8rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-.farmos-form-inline-action:hover {
-  text-decoration: underline;
-}
-
-.farmos-new-species-config {
-  grid-column: 1 / -1;
-  background: var(--color-cream);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 18px;
-  margin-top: 2px;
-  margin-bottom: 18px;
-}
-
-.farmos-new-species-config__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.farmos-new-species-config__header h4 {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-}
-
-.farmos-new-species-config__header p {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-}
-
-.farmos-new-species-config__close {
-  border: none;
-  background: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-size: 0.8rem;
-}
-
-.farmos-new-species-config > button {
-  background: var(--color-forest);
-  color: var(--color-white);
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 10px 18px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-.farmos-form-field--wide {
-  min-width: 0;
-}
-
-.farmos-form-field--wide input,
-.farmos-form-field--wide select,
-.farmos-form-field--wide textarea {
-  width: 100%;
-  box-sizing: border-box;
-}
-.farmos-new-variant-config {
-  grid-column: 1 / -1;
-  padding: 18px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-cream);
-  margin-top: 2px;
-  margin-bottom: 18px;
-}
-
-.farmos-new-variant-config__header {
-  margin-bottom: 18px;
-}
-
-.farmos-new-variant-config__header h4 {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-}
-
-.farmos-new-variant-config__header p {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-}
-
-.farmos-new-variant-config__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-.farmos-new-variant-config__actions button {
-  border-radius: var(--radius-sm);
-  padding: 10px 18px;
-  font-size: 0.9rem;
-  cursor: pointer;
-}
-
-.farmos-new-variant-config__actions button:first-child {
-  background: var(--color-white);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-}
-
-.farmos-new-variant-config__actions button:last-child {
-  background: var(--color-forest);
-  color: var(--color-white);
-  border: 1px solid var(--color-forest);
-}
-
-.farmos-inline-create {
-  align-self: flex-start;
-  margin-top: 2px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-terracotta);
-  font-size: 0.8rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-.farmos-inline-create:hover {
-  text-decoration: underline;
-}
-
-.farmos-entity-row__actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.farmos-entity-row__actions button {
-  padding: 6px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-white);
-  color: var(--color-text);
-  font-size: 0.82rem;
-  cursor: pointer;
-}
-
-.farmos-entity-row__actions button:hover {
-  background: var(--color-cream);
-}
-
-.farmos-entity-edit {
-  width: 100%;
-}
-
-.farmos-entity-edit__actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.farmos-entity-edit__actions button {
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-}
-
-.farmos-entity-edit__actions button:last-child {
-  background: var(--color-forest);
-  color: var(--color-white);
-  border-color: var(--color-forest);
-}
-.farmos-entity-row--selected {
-  border-color: var(--color-forest);
-}
-
-.farmos-entity-history {
-  margin-top: -4px;
-  margin-bottom: 10px;
-  padding: 16px;
-  background: var(--color-cream);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.farmos-entity-history__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 14px;
-}
-
-.farmos-entity-history__header h4 {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-}
-
-.farmos-entity-history__header p {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.8rem;
-}
-
-.farmos-entity-history__header button {
-  border: 1px solid var(--color-border);
-  background: var(--color-white);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-.farmos-entity-history__list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.farmos-entity-history__item {
-  padding: 10px 12px;
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-}
-
-.farmos-entity-history__item-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.farmos-entity-history__item-header strong {
-  text-transform: capitalize;
-}
-
-.farmos-entity-history__item-header span {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.farmos-entity-history__payload {
-  margin: 8px 0 0;
-  padding: 8px;
-  overflow-x: auto;
-  background: var(--color-cream);
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  white-space: pre-wrap;
-}
-.farmos-entity-event-form {
-  margin-bottom: 18px;
-  padding: 14px;
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-}
-
-.farmos-entity-event-form h5 {
-  margin: 0 0 14px;
-  font-size: 0.9rem;
-  color: var(--color-terracotta);
-}
-
-.farmos-entity-event-form > button {
-  background: var(--color-forest);
-  color: var(--color-white);
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 9px 16px;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.farmos-entity-event-form > button:hover:not(:disabled) {
-  background: var(--color-terracotta);
-}
-
-@media (max-width: 700px) {
-  .farmos-form-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
-  }
-
-  .farmos-form-field--full {
-    grid-column: auto;
-  }
-  .farmos-form-field--wide {
-  grid-column: auto;
-  }
-
-  .farmos-species__add-form {
-    padding: 14px;
-  }
-  .farmos-entity-row__actions {
-    width: 100%;
-  }
-
-  .farmos-entity-row__actions button,
-  .farmos-entity-row__actions select {
-    flex: 1;
-  }
-
-  .farmos-entity-edit__actions {
-    flex-direction: column-reverse;
-  }
-
-  .farmos-entity-edit__actions button {
-    width: 100%;
-  }
-  .farmos-new-variant-config__actions {
-    flex-direction: column-reverse;
-  }
-
-  .farmos-new-variant-config__actions button {
-    width: 100%;
-  }
 }

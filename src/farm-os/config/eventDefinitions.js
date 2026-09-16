@@ -8,6 +8,15 @@ export const EVENT_TYPE_OPTIONS = [
   { value: "breeding", label: "Breeding" },
   { value: "purchase", label: "Purchase" },
   { value: "sale", label: "Sale" },
+
+  { value: "planting", label: "Planting" },
+  { value: "fertilizer_applied", label: "Fertilizer applied" },
+  { value: "irrigation", label: "Irrigation" },
+  { value: "pest_observation", label: "Pest / disease observation" },
+  { value: "growth_stage", label: "Growth stage update" },
+  { value: "processing", label: "Processing" },
+
+  { value: "health_note", label: "Health observation" },
   { value: "other", label: "Other" },
 ];
 
@@ -192,19 +201,111 @@ export const EVENT_SCHEMAS = {
       },
     ],
   },
+  planting: {
+    fields: [
+      {
+        key: "variety",
+        label: "Variety",
+        type: "text",
+      },
+      {
+        key: "expectedDurationDays",
+        label: "Expected duration (days)",
+        type: "number",
+        min: 1,
+        step: "1",
+      },
+    ],
+  },
+
+  fertilizer_applied: {
+    fields: [
+      {
+        key: "amount",
+        label: "Amount",
+        type: "number",
+        min: 0,
+        step: "0.01",
+      },
+      {
+        key: "unit",
+        label: "Unit",
+        type: "text",
+        placeholder: "kg",
+      },
+    ],
+  },
+
+  irrigation: {
+    fields: [
+      {
+        key: "notes",
+        label: "Details",
+        type: "text",
+      },
+    ],
+  },
+
+  pest_observation: {
+    fields: [
+      {
+        key: "notes",
+        label: "Observation",
+        type: "text",
+      },
+    ],
+  },
+
+  growth_stage: {
+    fields: [
+      {
+        key: "notes",
+        label: "Growth stage",
+        type: "text",
+      },
+    ],
+  },
+
+  processing: {
+    fields: [
+      {
+        key: "notes",
+        label: "Processing details",
+        type: "text",
+      },
+    ],
+  },
+
+  health_note: {
+    fields: [
+      {
+        key: "notes",
+        label: "Health observation",
+        type: "text",
+      },
+    ],
+  },
 
   other: {
     fields: [],
   },
 };
-
 export const EVENT_CAPABILITY_MAP = {
   weight: "weight",
   feed: "feed",
   egg_production: "egg",
   breeding: "breeding",
   treatment: "health",
+  health_note: "health",
   harvest: "harvest",
+};
+export const EVENT_CATEGORY_MAP = {
+  planting: ["crop", "fodder"],
+  fertilizer_applied: ["crop", "fodder"],
+  irrigation: ["crop", "fodder"],
+  pest_observation: ["crop", "fodder"],
+  growth_stage: ["crop", "fodder"],
+  processing: ["crop", "fodder"],
 };
 
 export const LEGACY_EVENT_LABELS = {

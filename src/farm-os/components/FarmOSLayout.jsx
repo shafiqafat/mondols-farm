@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: "/farm-os/finance", label: "Finance", ready: true },
   { to: "/farm-os/capacity", label: "Capacity", ready: true },
   { to: "/farm-os/scenario", label: "Scenario", ready: true },
+  { to: "/farm-os/content", label: "Content", ready: true },
   { to: "/farm-os/tasks", label: "Tasks", ready: false },
 ];
 
@@ -42,14 +43,11 @@ function FarmOSLayout() {
               {item.label}
             </NavLink>
           ) : (
-            <span
-              key={item.to}
-              className="farmos__nav-link farmos__nav-link--soon"
-            >
+            <span key={item.to} className="farmos__nav-link farmos__nav-link--soon">
               {item.label}
               <span className="farmos__soon-tag">soon</span>
             </span>
-          ),
+          )
         )}
       </nav>
 

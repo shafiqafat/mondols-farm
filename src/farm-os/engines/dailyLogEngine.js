@@ -81,7 +81,23 @@ export function buildEventRows({ entityId, occurredAt, fields, values }) {
     if (raw === undefined || raw === null || raw === "") continue;
 
     const numericValue = Number(raw);
-    if (Number.isNaN(numericValue)) continue;
+
+    if (!Number.isFinite(numericValue)) {
+      continue;
+    }
+
+    if (field.eventType === "mortality") {
+      if (!Number.isInteger(numericValue) || numericValue < 1) {
+        continue;
+      }
+    }
+
+    if (
+      field.eventType !== "mortality" &&
+      numericValue < 0
+    ) {
+      continue;
+    }
 
     rows.push({
       entity_id: entityId,

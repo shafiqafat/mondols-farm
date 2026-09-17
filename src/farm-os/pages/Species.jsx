@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import "./Species.css";
+import { Sprout } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 const CAPABILITY_OPTIONS = [
   { key: "feed", label: "Feed" },
   { key: "health", label: "Health" },
@@ -240,299 +250,689 @@ function Species() {
     loadAll();
   }
 
-  if (loading) return <p className="farmos-species__status">Loading…</p>;
-  if (loadError)
-    return <p className="farmos-species__status farmos-species__status--error">{loadError}</p>;
+  if (loading) {
+    return (
+      <div className="flex min-h-[240px] items-center justify-center">
+        <p className="text-sm text-muted-foreground">
+          Loading species and farm data…
+        </p>
+      </div>
+    );
+  }
+  if (loadError) {
+    return (
+      <Card className="border-destructive/30">
+        <CardContent className="p-6">
+          <p className="text-sm font-medium text-destructive">
+            Unable to load farm configuration
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{loadError}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="farmos-species">
-      <h1 className="farmos-species__title">Species & Entities</h1>
-      <p className="farmos-species__intro">
-        Adding a new animal or crop happens here — no code change needed. Configure the
-        species/crop first, then register your actual entity against it.
-      </p>
+    <div className="space-y-7">
+      {/* Page Header */}
+      <div className="flex flex-col gap-5 border-b border-border/60 pb-7">
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            <Sprout className="size-4 text-primary" />
+            <span>Farm configuration</span>
+          </div>
+
+          <div>
+            <h1 className="text-4xl font-semibold tracking-[-0.03em] text-foreground sm:text-5xl">
+              Species & Entities
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Configure what your farm manages, then register the animals,
+              groups, plots, and other entities you actually operate.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {pageError && (
-        <p className="farmos-species__status farmos-species__status--error">{pageError}</p>
+        <Card className="border-destructive/30">
+          <CardContent className="p-4">
+            <p className="text-sm font-medium text-destructive">{pageError}</p>
+          </CardContent>
+        </Card>
       )}
 
       {/* --- Species / crop configuration --- */}
-      <section className="farmos-species__section">
-        <h2 className="farmos-species__section-title">Species & crops</h2>
-
-        <div className="farmos-species__list">
+      <section className="space-y-4">
+        <div>
+          <h2 className="mb-3.5 text-xl font-semibold tracking-tight">
+            Species & Crops
+          </h2>
+        </div>
+        <div className="grid gap-3 mb-4">
           {speciesList.map((species) => (
-            <div key={species.id} className="farmos-species-row">
-              <div className="farmos-species-row__header">
-                <span className="farmos-species-row__name">{species.name}</span>
-                <span className="farmos-species-row__category">{species.category}</span>
-              </div>
+            <Card
+              key={species.id}
+              className="border-border/70 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <CardTitle className="truncate text-base">
+                      {species.name}
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {species.category}
+                    </CardDescription>
+                  </div>
 
+                  <Badge variant="secondary" className="shrink-0 capitalize">
+                    {species.category}
+                  </Badge>
+                </div>
+              </CardHeader>
               {editingSpeciesId === species.id ? (
-                <>
-                  <div className="farmos-species-row__capabilities-edit">
-                    {CAPABILITY_OPTIONS.map((cap) => (
-                      <label key={cap.key}>
-                        <input
-                          type="checkbox"
-                          checked={!!editingCapabilities[cap.key]}
-                          onChange={() =>
-                            setEditingCapabilities((prev) => ({
-                              ...prev,
-                              [cap.key]: !prev[cap.key],
-                            }))
-                          }
-                        />
-                        {cap.label}
-                      </label>
-                    ))}
+                <CardContent className="pt-0">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-medium">Capabilities</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Select the capabilities this species or crop should
+                        support.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {CAPABILITY_OPTIONS.map((cap) => (
+                        <label
+                          key={cap.key}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg border border-border/70 px-3 py-2.5 text-sm transition-colors hover:bg-muted/50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!editingCapabilities[cap.key]}
+                            onChange={() =>
+                              setEditingCapabilities((prev) => ({
+                                ...prev,
+                                [cap.key]: !prev[cap.key],
+                              }))
+                            }
+                            className="size-4 accent-primary"
+                          />
+                          <span>{cap.label}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => saveEditedCapabilities(species)}
+                        disabled={savingEdit}
+                      >
+                        {savingEdit ? "Saving…" : "Save changes"}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingSpeciesId(null)}
+                        disabled={savingEdit}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <div className="farmos-species-row__actions">
-                    <button
-                      type="button"
-                      onClick={() => saveEditedCapabilities(species)}
-                      disabled={savingEdit}
-                    >
-                      {savingEdit ? "Saving…" : "Save"}
-                    </button>
-                    <button type="button" onClick={() => setEditingSpeciesId(null)}>
-                      Cancel
-                    </button>
-                  </div>
-                </>
+                </CardContent>
               ) : (
-                <>
-                  <div className="farmos-species-row__capabilities">
+                <CardContent className="pt-0">
+                  <div className="flex flex-wrap gap-2">
                     {Object.keys(species.capabilities ?? {}).length === 0 ? (
-                      <span className="farmos-species-row__none">No capabilities set</span>
+                      <span className="text-sm text-muted-foreground">
+                        No capabilities set
+                      </span>
                     ) : (
                       Object.keys(species.capabilities).map((key) => (
-                        <span key={key} className="farmos-species-row__cap-tag">
-                          {CAPABILITY_OPTIONS.find((c) => c.key === key)?.label ?? key}
-                        </span>
+                        <Badge
+                          key={key}
+                          variant="outline"
+                          className="font-normal"
+                        >
+                          {CAPABILITY_OPTIONS.find((c) => c.key === key)
+                            ?.label ?? key}
+                        </Badge>
                       ))
                     )}
                   </div>
-                  <button
+
+                  <Button
                     type="button"
-                    className="farmos-species-row__edit-btn"
+                    variant="ghost"
+                    size="sm"
+                    className="mt-3"
                     onClick={() => startEditing(species)}
                   >
                     Edit capabilities
-                  </button>
-                </>
+                  </Button>
+                </CardContent>
               )}
-            </div>
+            </Card>
           ))}
         </div>
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">
+              Add a new species or crop
+            </CardTitle>
+            <CardDescription>
+              Create a reusable configuration for a new animal, crop, or fodder
+              type.
+            </CardDescription>
+          </CardHeader>
 
-        <form className="farmos-species__add-form" onSubmit={handleAddSpecies}>
-          <h3>Add a new species or crop</h3>
-          <div className="farmos-species__add-fields">
-            <input
-              type="text"
-              placeholder="Name, e.g. Duck"
-              value={newSpecies.name}
-              onChange={(e) => setNewSpecies((p) => ({ ...p, name: e.target.value }))}
-              required
-            />
-            <select
-              value={newSpecies.category}
-              onChange={(e) => setNewSpecies((p) => ({ ...p, category: e.target.value }))}
-            >
-              {CATEGORY_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Space unit, e.g. sq ft"
-              value={newSpecies.spaceUnit}
-              onChange={(e) => setNewSpecies((p) => ({ ...p, spaceUnit: e.target.value }))}
-            />
-            <input
-              type="text"
-              placeholder="Feed unit, e.g. kg/day"
-              value={newSpecies.feedUnit}
-              onChange={(e) => setNewSpecies((p) => ({ ...p, feedUnit: e.target.value }))}
-            />
-          </div>
+          <CardContent>
+            <form onSubmit={handleAddSpecies} className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label htmlFor="species-name" className="text-sm font-medium">
+                    Name
+                  </label>
 
-          <div className="farmos-species__add-capabilities">
-            {CAPABILITY_OPTIONS.map((cap) => (
-              <label key={cap.key}>
-                <input
-                  type="checkbox"
-                  checked={newSpecies.capabilities[cap.key]}
-                  onChange={() => toggleNewCapability(cap.key)}
-                />
-                {cap.label}
-              </label>
-            ))}
-          </div>
+                  <Input
+                    id="species-name"
+                    type="text"
+                    placeholder="e.g. Duck"
+                    value={newSpecies.name}
+                    onChange={(e) =>
+                      setNewSpecies((p) => ({
+                        ...p,
+                        name: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </div>
 
-          <button type="submit" disabled={savingSpecies}>
-            {savingSpecies ? "Adding…" : "Add species"}
-          </button>
-        </form>
+                <div className="space-y-2">
+                  <label
+                    htmlFor="species-category"
+                    className="text-sm font-medium"
+                  >
+                    Category
+                  </label>
+
+                  <select
+                    id="species-category"
+                    value={newSpecies.category}
+                    onChange={(e) =>
+                      setNewSpecies((p) => ({
+                        ...p,
+                        category: e.target.value,
+                      }))
+                    }
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {CATEGORY_OPTIONS.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="species-space-unit"
+                    className="text-sm font-medium"
+                  >
+                    Space unit
+                  </label>
+
+                  <Input
+                    id="species-space-unit"
+                    type="text"
+                    placeholder="e.g. sq ft"
+                    value={newSpecies.spaceUnit}
+                    onChange={(e) =>
+                      setNewSpecies((p) => ({
+                        ...p,
+                        spaceUnit: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="species-feed-unit"
+                    className="text-sm font-medium"
+                  >
+                    Feed unit
+                  </label>
+
+                  <Input
+                    id="species-feed-unit"
+                    type="text"
+                    placeholder="e.g. kg/day"
+                    value={newSpecies.feedUnit}
+                    onChange={(e) =>
+                      setNewSpecies((p) => ({
+                        ...p,
+                        feedUnit: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium">Capabilities</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Choose which farm operations this species or crop supports.
+                  </p>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {CAPABILITY_OPTIONS.map((cap) => (
+                    <label
+                      key={cap.key}
+                      className="flex cursor-pointer items-center gap-3 rounded-lg border border-border/70 px-3 py-2.5 text-sm transition-colors hover:bg-muted/50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={newSpecies.capabilities[cap.key]}
+                        onChange={() => toggleNewCapability(cap.key)}
+                        className="size-4 accent-primary"
+                      />
+
+                      <span>{cap.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <Button type="submit" disabled={savingSpecies} className="w-auto">
+                {savingSpecies ? "Adding…" : "Add species"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </section>
 
       {/* --- Farm entities --- */}
-      <section className="farmos-species__section">
-        <h2 className="farmos-species__section-title">Farm entities</h2>
-
-        <div className="farmos-species__list">
-          {entities.map((entity) => (
-            <div key={entity.id} className="farmos-entity-row">
-              <div>
-                <Link to={`/farm-os/entities/${entity.id}`} className="farmos-entity-row__label">
-                  {entity.label}
-                </Link>
-                <span className="farmos-entity-row__species">
-                  {entity.species_config?.name}
-                  {entity.quantity != null ? ` · ${entity.quantity}` : ""}
-                </span>
-              </div>
-              <select
-                value={entity.status}
-                onChange={(e) => handleStatusChange(entity.id, e.target.value)}
-                disabled={updatingStatusId === entity.id}
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Farm entities
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Register and manage the actual animals, groups, plots, and other
+            operating units on your farm.
+          </p>
         </div>
 
-        <form className="farmos-species__add-form" onSubmit={handleAddEntity}>
-          <h3>Register a new farm entity</h3>
-          <div className="farmos-species__add-fields">
-            <select
-              value={newEntity.speciesConfigId}
-              onChange={(e) => setNewEntity((p) => ({ ...p, speciesConfigId: e.target.value }))}
-              required
-            >
-              <option value="">Select species/crop…</option>
-              {speciesList.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Label, e.g. Duck flock — batch 1"
-              value={newEntity.label}
-              onChange={(e) => setNewEntity((p) => ({ ...p, label: e.target.value }))}
-              required
-            />
-            <input
-              type="number"
-              step="any"
-              placeholder="Quantity"
-              value={newEntity.quantity}
-              onChange={(e) => setNewEntity((p) => ({ ...p, quantity: e.target.value }))}
-            />
-            <input
-              type="date"
-              value={newEntity.acquiredAt}
-              onChange={(e) => setNewEntity((p) => ({ ...p, acquiredAt: e.target.value }))}
-            />
-            <input
-              type="text"
-              placeholder="Location"
-              value={newEntity.location}
-              onChange={(e) => setNewEntity((p) => ({ ...p, location: e.target.value }))}
-            />
-          </div>
-          <button type="submit" disabled={savingEntity}>
-            {savingEntity ? "Registering…" : "Register entity"}
-          </button>
-        </form>
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">Registered entities</CardTitle>
+            <CardDescription>
+              Select an entity to view its detailed history and activity.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            {entities.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No farm entities registered yet.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {entities.map((entity) => (
+                  <div
+                    key={entity.id}
+                    className="flex flex-col gap-3 rounded-xl border border-border/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <Link
+                        to={`/farm-os/entities/${entity.id}`}
+                        className="font-medium text-foreground transition-colors hover:text-primary"
+                      >
+                        {entity.label}
+                      </Link>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span>{entity.species_config?.name}</span>
+
+                        {entity.quantity != null && (
+                          <>
+                            <span>·</span>
+                            <span>{entity.quantity}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <select
+                      value={entity.status}
+                      onChange={(e) =>
+                        handleStatusChange(entity.id, e.target.value)
+                      }
+                      disabled={updatingStatusId === entity.id}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm capitalize shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-36"
+                    >
+                      {STATUS_OPTIONS.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">
+              Register a new farm entity
+            </CardTitle>
+            <CardDescription>
+              Add an actual animal, group, crop plot, or other entity to the
+              farm.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <form onSubmit={handleAddEntity} className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="entity-species"
+                    className="text-sm font-medium"
+                  >
+                    Species or crop
+                  </label>
+
+                  <select
+                    id="entity-species"
+                    value={newEntity.speciesConfigId}
+                    onChange={(e) =>
+                      setNewEntity((p) => ({
+                        ...p,
+                        speciesConfigId: e.target.value,
+                      }))
+                    }
+                    required
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">Select species/crop…</option>
+
+                    {speciesList.map((species) => (
+                      <option key={species.id} value={species.id}>
+                        {species.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="entity-label" className="text-sm font-medium">
+                    Entity label
+                  </label>
+
+                  <Input
+                    id="entity-label"
+                    type="text"
+                    placeholder="e.g. Duck flock — batch 1"
+                    value={newEntity.label}
+                    onChange={(e) =>
+                      setNewEntity((p) => ({
+                        ...p,
+                        label: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="entity-quantity"
+                    className="text-sm font-medium"
+                  >
+                    Quantity
+                  </label>
+
+                  <Input
+                    id="entity-quantity"
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 100"
+                    value={newEntity.quantity}
+                    onChange={(e) =>
+                      setNewEntity((p) => ({
+                        ...p,
+                        quantity: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="entity-acquired"
+                    className="text-sm font-medium"
+                  >
+                    Acquired date
+                  </label>
+
+                  <Input
+                    id="entity-acquired"
+                    type="date"
+                    value={newEntity.acquiredAt}
+                    onChange={(e) =>
+                      setNewEntity((p) => ({
+                        ...p,
+                        acquiredAt: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label
+                    htmlFor="entity-location"
+                    className="text-sm font-medium"
+                  >
+                    Location
+                  </label>
+
+                  <Input
+                    id="entity-location"
+                    type="text"
+                    placeholder="e.g. Quail shed"
+                    value={newEntity.location}
+                    onChange={(e) =>
+                      setNewEntity((p) => ({
+                        ...p,
+                        location: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" disabled={savingEntity} className="w-auto">
+                {savingEntity ? "Registering…" : "Register entity"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </section>
 
       {/* --- Crop rotation rules --- */}
-      <section className="farmos-species__section">
-        <h2 className="farmos-species__section-title">Crop rotation rules</h2>
-        <p className="farmos-species__intro" style={{ marginBottom: 14 }}>
-          Which crop reasonably follows which, and why — shown as a suggestion on that crop's
-          Entity Detail page once it's harvested.
-        </p>
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Crop rotation rules
+          </h2>
 
-        <div className="farmos-species__list">
-          {rotationRules.length === 0 ? (
-            <p className="farmos-species-row__none">No rotation rules yet.</p>
-          ) : (
-            rotationRules.map((rule) => (
-              <div key={rule.id} className="farmos-species-row">
-                <span className="farmos-species-row__name">
-                  {rule.from_species?.name} → {rule.to_species?.name}
-                </span>
-                <p className="farmos-species-row__none" style={{ marginTop: 6 }}>
-                  {rule.reason}
-                </p>
-              </div>
-            ))
-          )}
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Define which crop can reasonably follow another and why. These rules
+            can later be used as suggestions after a crop is harvested.
+          </p>
         </div>
 
-        <form className="farmos-species__add-form" onSubmit={handleAddRule}>
-          <h3>Add a rotation rule</h3>
-          <div className="farmos-species__add-fields">
-            <select
-              value={newRule.fromSpeciesId}
-              onChange={(e) => setNewRule((p) => ({ ...p, fromSpeciesId: e.target.value }))}
-              required
-            >
-              <option value="">After this crop…</option>
-              {speciesList
-                .filter((s) => s.category === "crop" || s.category === "fodder")
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">Existing rules</CardTitle>
+            <CardDescription>
+              Crop sequence recommendations configured for the farm.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            {rotationRules.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No rotation rules yet.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {rotationRules.map((rule) => (
+                  <div
+                    key={rule.id}
+                    className="rounded-xl border border-border/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <p className="text-sm font-medium">
+                      {rule.from_species?.name} → {rule.to_species?.name}
+                    </p>
+
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      {rule.reason}
+                    </p>
+                  </div>
                 ))}
-            </select>
-            <select
-              value={newRule.toSpeciesId}
-              onChange={(e) => setNewRule((p) => ({ ...p, toSpeciesId: e.target.value }))}
-              required
-            >
-              <option value="">Suggest this crop…</option>
-              {speciesList
-                .filter((s) => s.category === "crop" || s.category === "fodder")
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-          <input
-            type="text"
-            placeholder="Why? e.g. Legume replenishes nitrogen after a heavy feeder"
-            value={newRule.reason}
-            onChange={(e) => setNewRule((p) => ({ ...p, reason: e.target.value }))}
-            style={{
-              width: "100%",
-              padding: 10,
-              marginBottom: 12,
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-sm)",
-              background: "var(--color-cream)",
-            }}
-            required
-          />
-          <button type="submit" disabled={savingRule}>
-            {savingRule ? "Adding…" : "Add rule"}
-          </button>
-        </form>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">Add a rotation rule</CardTitle>
+
+            <CardDescription>
+              Explain what should follow a crop and why.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            <form onSubmit={handleAddRule} className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="rotation-from"
+                    className="text-sm font-medium"
+                  >
+                    After this crop
+                  </label>
+
+                  <select
+                    id="rotation-from"
+                    value={newRule.fromSpeciesId}
+                    onChange={(e) =>
+                      setNewRule((p) => ({
+                        ...p,
+                        fromSpeciesId: e.target.value,
+                      }))
+                    }
+                    required
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">Select crop…</option>
+
+                    {speciesList
+                      .filter(
+                        (species) =>
+                          species.category === "crop" ||
+                          species.category === "fodder",
+                      )
+                      .map((species) => (
+                        <option key={species.id} value={species.id}>
+                          {species.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="rotation-to" className="text-sm font-medium">
+                    Suggest this crop
+                  </label>
+
+                  <select
+                    id="rotation-to"
+                    value={newRule.toSpeciesId}
+                    onChange={(e) =>
+                      setNewRule((p) => ({
+                        ...p,
+                        toSpeciesId: e.target.value,
+                      }))
+                    }
+                    required
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">Select crop…</option>
+
+                    {speciesList
+                      .filter(
+                        (species) =>
+                          species.category === "crop" ||
+                          species.category === "fodder",
+                      )
+                      .map((species) => (
+                        <option key={species.id} value={species.id}>
+                          {species.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="rotation-reason"
+                  className="text-sm font-medium"
+                >
+                  Reason
+                </label>
+
+                <Input
+                  id="rotation-reason"
+                  type="text"
+                  placeholder="e.g. Legume replenishes nitrogen after a heavy feeder"
+                  value={newRule.reason}
+                  onChange={(e) =>
+                    setNewRule((p) => ({
+                      ...p,
+                      reason: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
+
+              <Button type="submit" disabled={savingRule} className="w-auto">
+                {savingRule ? "Adding…" : "Add rule"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </section>
     </div>
   );

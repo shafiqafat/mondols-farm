@@ -11,11 +11,12 @@ import {
   Wallet,
   LogOut,
 } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 import {
   Sidebar,
   SidebarContent,
+  useSidebar,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
@@ -91,12 +92,14 @@ const NAV_GROUPS = [
 ];
 
 function FarmOSSidebar({ user, role, signOut }) {
+  const { state } = useSidebar();
+  const location = useLocation();
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       {/* Brand */}
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-2 py-4">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
+          <div className="flex items-center justify-center gap-3 px-2 py-4 group-data-[collapsible=icon]:px-0">
             <Sprout className="size-4" />
           </div>
 
@@ -124,27 +127,29 @@ function FarmOSSidebar({ user, role, signOut }) {
               <SidebarMenu className="gap-1">
                 {group.items.map((item) => {
                   const Icon = item.icon;
-
+                  const isActive = item.end
+                    ? location.pathname === item.to
+                    : location.pathname.startsWith(item.to);
                   return (
                     <SidebarMenuItem key={item.to}>
                       <SidebarMenuButton
                         asChild
+                        isActive={isActive}
                         tooltip={item.label}
                         className="h-9 w-full rounded-lg p-0 text-sm transition-colors duration-150"
                       >
                         <NavLink
                           to={item.to}
                           end={item.end}
-                          className={({ isActive }) =>
-                            `flex h-full w-full flex-row items-center gap-2 rounded-lg px-2.5 ${
-                              isActive
-                                ? "!bg-white font-medium !text-primary"
-                                : "text-sidebar-foreground/80 hover:text-white"
-                            }`
-                          }
+                          className={`flex h-full w-full flex-row items-center rounded-lg ${
+                            state === "collapsed"
+                              ? "justify-center px-0"
+                              : "gap-2 px-2.5"
+                          }`}
                         >
                           <Icon className="size-4 shrink-0" />
-                          <span>{item.label}</span>
+
+                          {state !== "collapsed" && <span>{item.label}</span>}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

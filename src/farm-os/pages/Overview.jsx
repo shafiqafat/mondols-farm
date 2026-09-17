@@ -1053,7 +1053,7 @@ function RecentActivity({ events }) {
                 key={event.id}
                 className="group relative flex items-start gap-3"
               >
-                {index < Math.min(events.length, 6) - 1 && (
+                {index < Math.min(events.length, 3) - 1 && (
                   <div className="absolute left-4 top-8 h-full w-px bg-border" />
                 )}
 

@@ -1,138 +1,32 @@
-.farmos {
-  min-height: 100vh;
-  background: var(--color-cream);
-  color: var(--color-text);
-}
-
-.farmos__topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px var(--container-padding);
-  background: var(--color-forest);
-  color: var(--color-white);
-}
-
-.farmos__wordmark {
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
-.farmos__topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.farmos-offline-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.78rem;
-}
-
-.farmos-offline-indicator__badge {
-  background: #a3402f;
-  color: var(--color-white);
-  border-radius: 999px;
-  padding: 2px 10px;
-}
-
-.farmos-offline-indicator__queue {
-  color: var(--color-beige);
-}
-
-.farmos-offline-indicator button {
-  background: transparent;
-  border: 1px solid var(--color-beige);
-  color: var(--color-white);
-  border-radius: var(--radius-sm);
-  padding: 4px 10px;
-  font-size: 0.76rem;
-  cursor: pointer;
-}
-
-.farmos-offline-indicator__message {
-  color: var(--color-beige);
-  max-width: 220px;
-}
-
-.farmos__user {
-  font-size: 0.85rem;
-  color: var(--color-beige);
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .farmos__user {
-    display: inline;
-  }
-}
-
-.farmos__signout {
-  background: transparent;
-  border: 1px solid var(--color-beige);
-  color: var(--color-white);
-  border-radius: var(--radius-sm);
-  padding: 6px 14px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.farmos__signout:hover {
-  background: var(--color-terracotta);
-  border-color: var(--color-terracotta);
-}
-
-.farmos__nav {
-  display: flex;
-  gap: 4px;
-  padding: 8px var(--container-padding);
-  overflow-x: auto;
-  background: var(--color-white);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.farmos__nav-link {
-  white-space: nowrap;
-  padding: 8px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.farmos__nav-link--active {
-  background: var(--color-forest);
-  color: var(--color-white);
-}
-
-.farmos__nav-link--soon {
-  color: var(--color-border);
-  cursor: default;
-}
-
-.farmos__soon-tag {
-  font-size: 0.65rem;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  padding: 1px 6px;
-}
-
-.farmos__content {
-  max-width: var(--container-width);
-  margin: 0 auto;
-  padding: 24px var(--container-padding) 48px;
-}
-
-.farmos-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  color: var(--color-text-muted);
+.farmos { min-height: 100vh; background: var(--color-cream); color: var(--color-text); }
+.farmos__shell { min-height: 100vh; display: flex; }
+.farmos__sidebar { width: 248px; flex: 0 0 248px; min-height: 100vh; display: flex; flex-direction: column; background: var(--color-forest); color: var(--color-white); padding: 24px 14px 16px; }
+.farmos__brand-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 0 10px 28px; }
+.farmos__wordmark { font-size: 1.15rem; font-weight: 650; letter-spacing: .02em; line-height: 1.15; }
+.farmos__nav { display: grid; gap: 4px; }
+.farmos__nav-link { display: flex; align-items: center; min-height: 42px; padding: 0 12px; border-radius: var(--radius-sm); color: rgba(255,255,255,.72); font-size: .9rem; text-decoration: none; transition: var(--transition); }
+.farmos__nav-link:hover { color: var(--color-white); background: rgba(255,255,255,.1); }
+.farmos__nav-link--active { color: var(--color-forest); background: var(--color-white); font-weight: 600; }
+.farmos__sidebar-footer { margin-top: auto; display: grid; gap: 6px; padding: 20px 10px 0; border-top: 1px solid rgba(255,255,255,.18); }
+.farmos__user { overflow: hidden; color: var(--color-beige); font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.farmos__role { color: var(--color-white); font-size: .78rem; text-transform: capitalize; }
+.farmos__signout { width: fit-content; margin-top: 8px; padding: 6px 11px; border: 1px solid var(--color-beige); border-radius: var(--radius-sm); background: transparent; color: var(--color-white); cursor: pointer; font-size: .78rem; }
+.farmos__signout:hover { background: var(--color-terracotta); border-color: var(--color-terracotta); }
+.farmos__main-shell { min-width: 0; flex: 1; }
+.farmos__topbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 10px 28px; background: var(--color-white); border-bottom: 1px solid var(--color-border); }
+.farmos__topbar-right, .farmos-offline-indicator { display: flex; align-items: center; gap: 8px; }
+.farmos-offline-indicator { font-size: .78rem; }
+.farmos-offline-indicator__badge { padding: 2px 10px; border-radius: 999px; background: #a3402f; color: var(--color-white); }
+.farmos-offline-indicator__queue, .farmos-offline-indicator__message { color: var(--color-text-muted); }
+.farmos-offline-indicator button { padding: 4px 10px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: transparent; color: var(--color-text); cursor: pointer; font-size: .76rem; }
+.farmos__content { max-width: var(--container-width); margin: 0 auto; padding: 30px var(--container-padding) 48px; }
+.farmos__menu-button, .farmos__menu-close, .farmos__mobile-wordmark { display: none; }
+.farmos-loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; color: var(--color-text-muted); }
+@media (max-width: 800px) {
+  .farmos__sidebar { position: fixed; z-index: 20; top: 0; bottom: 0; left: 0; transform: translateX(-100%); transition: transform .22s ease; box-shadow: 12px 0 30px rgba(0,0,0,.18); }
+  .farmos__sidebar--open { transform: translateX(0); }
+  .farmos__menu-button, .farmos__menu-close { display: block; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1.25rem; }
+  .farmos__menu-close { color: var(--color-white); }
+  .farmos__mobile-wordmark { display: inline; font-size: .9rem; font-weight: 650; }
+  .farmos__topbar { padding: 10px var(--container-padding); }
 }

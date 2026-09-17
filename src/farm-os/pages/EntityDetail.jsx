@@ -8,11 +8,10 @@ import {
   computeExpectedHarvest,
 } from "../engines/entityEventTypes";
 import { recommendationsFor } from "../engines/cropRotationEngine";
+import { localDateISO } from "../lib/localDate";
 import "./EntityDetail.css";
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+const todayISO = localDateISO;
 
 function summarizePayload(payload) {
   if (!payload || Object.keys(payload).length === 0) return "";

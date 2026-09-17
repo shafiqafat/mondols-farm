@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { localDateISO } from "../lib/localDate";
 import { STAGES, STAGE_LABEL, nextStage } from "../engines/contentJournalEngine";
 import "./ContentJournal.css";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function ContentJournal() {
   const [items, setItems] = useState([]);
@@ -68,7 +65,7 @@ function ContentJournal() {
       project_id: form.projectId || null,
       notes: form.notes || null,
       stage: "idea",
-      occurred_at: todayISO(),
+      occurred_at: localDateISO(),
     });
 
     setSaving(false);

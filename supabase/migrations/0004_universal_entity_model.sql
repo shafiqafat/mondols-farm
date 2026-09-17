@@ -11,6 +11,24 @@
 -- Existing entity UUIDs and historical events are preserved.
 -- ============================================================
 
+-- This table must exist before farm_entities can reference it. Earlier
+-- versions assumed it had been created manually, so a clean migration failed.
+create table if not exists public.species_variants (
+  id uuid primary key default gen_random_uuid(),
+  species_config_id uuid not null references public.species_config(id),
+  name text not null,
+  variant_type text not null default 'other',
+  created_at timestamptz not null default now(),
+  unique (species_config_id, name)
+);
+
+alter table public.species_variants enable row level security;
+
+create policy "authenticated_full_access_species_variants" on public.species_variants
+  for all
+  using (auth.role() = 'authenticated')
+  with check (auth.role() = 'authenticated');
+
 
 -- ------------------------------------------------------------
 -- 1. Add universal entity fields
@@ -66,7 +84,7 @@ select
   'Deshi',
   'breed'
 from public.species_config s
-where s.name = 'Chicken'
+where s.name = 'Deshi Chicken'
   and not exists (
     select 1
     from public.species_variants v
@@ -85,7 +103,7 @@ select
   'Black Bengal',
   'breed'
 from public.species_config s
-where s.name = 'Goat'
+where s.name = 'Black Bengal Goat'
   and not exists (
     select 1
     from public.species_variants v
@@ -104,7 +122,7 @@ from public.species_config s
 join public.species_variants v
   on v.species_config_id = s.id
 where e.species_config_id = s.id
-  and s.name = 'Chicken'
+  and s.name = 'Deshi Chicken'
   and v.name = 'Deshi';
 
 
@@ -114,7 +132,7 @@ from public.species_config s
 join public.species_variants v
   on v.species_config_id = s.id
 where e.species_config_id = s.id
-  and s.name = 'Goat'
+  and s.name = 'Black Bengal Goat'
   and v.name = 'Black Bengal';
 
 
@@ -126,14 +144,14 @@ update public.farm_entities e
 set tracking_mode = 'group'
 from public.species_config s
 where e.species_config_id = s.id
-  and s.name in ('Chicken', 'Quail');
+  and s.name in ('Deshi Chicken', 'Quail');
 
 
 update public.farm_entities e
 set tracking_mode = 'individual'
 from public.species_config s
 where e.species_config_id = s.id
-  and s.name = 'Goat';
+  and s.name = 'Black Bengal Goat';
 
 
 update public.farm_entities e
@@ -170,8 +188,8 @@ where entity_name is null
 update public.farm_entities e
 set entity_code =
   case
-    when s.name = 'Chicken' then 'CHK-001'
-    when s.name = 'Goat' then 'GOT-001'
+    when s.name = 'Deshi Chicken' then 'CHK-001'
+    when s.name = 'Black Bengal Goat' then 'GOT-001'
     when s.name = 'Quail' then 'QUA-001'
     when s.name = 'Mustard' then 'MUS-001'
     when s.name = 'Napier' then 'NAP-001'

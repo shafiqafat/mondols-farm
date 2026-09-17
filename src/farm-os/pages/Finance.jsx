@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { localDateISO } from "../lib/localDate";
 import { computeTotals, computeCostPerUnit, splitByPercent } from "../engines/financeEngine";
 import "./Finance.css";
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+const todayISO = localDateISO;
 
 function Finance() {
   const [projects, setProjects] = useState([]);

@@ -1,4 +1,5 @@
 // Task engine — pure functions only.
+import { localDateISO, parseLocalDate } from "../lib/localDate.js";
 
 /**
  * Classify an incomplete task relative to today's date, for the
@@ -19,7 +20,7 @@ export function classifyTask(task, todayISO) {
 export function computeNextDueDate(dueAtISO, recurrence) {
   if (!recurrence || !dueAtISO) return null;
 
-  const date = new Date(dueAtISO);
+  const date = parseLocalDate(dueAtISO);
   switch (recurrence) {
     case "daily":
       date.setDate(date.getDate() + 1);
@@ -33,5 +34,5 @@ export function computeNextDueDate(dueAtISO, recurrence) {
     default:
       return null;
   }
-  return date.toISOString().slice(0, 10);
+  return localDateISO(date);
 }

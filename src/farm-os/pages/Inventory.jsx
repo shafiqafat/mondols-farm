@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { computeStock } from "../engines/inventoryEngine";
+import { localDateISO } from "../lib/localDate";
 import "./Inventory.css";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function Inventory() {
   const [items, setItems] = useState([]);
@@ -92,7 +89,7 @@ function Inventory() {
       [itemId]: {
         qty: "",
         costPerUnit: "",
-        purchasedAt: todayISO(),
+        purchasedAt: localDateISO(),
         ...prev[itemId],
         [field]: value,
       },
@@ -103,7 +100,7 @@ function Inventory() {
     const form = purchaseForms[item.id] ?? {};
     const qty = Number(form.qty);
     const cost = Number(form.costPerUnit);
-    const purchasedAt = form.purchasedAt || todayISO();
+    const purchasedAt = form.purchasedAt || localDateISO();
 
     if (!qty || qty <= 0 || Number.isNaN(cost)) {
       setPageError("Enter a valid quantity and cost per unit before recording a purchase.");
@@ -113,38 +110,21 @@ function Inventory() {
     setSavingPurchase(item.id);
     setPageError("");
 
-    const { error: lotError } = await supabase.from("inventory_lots").insert({
-      item_id: item.id,
-      qty_purchased: qty,
-      qty_remaining: qty,
-      cost_per_unit: cost,
-      purchased_at: purchasedAt,
-    });
-
-    if (lotError) {
-      setSavingPurchase(null);
-      setPageError(lotError.message);
-      return;
-    }
-
-    // Purchasing inventory is always a real expense — record it automatically
-    // rather than asking you to duplicate the entry in Finance later.
-    const { error: financeError } = await supabase.from("finance_transactions").insert({
-      type: "expense",
-      amount: qty * cost,
-      category: item.name,
-      occurred_at: purchasedAt,
+    const { error } = await supabase.rpc("record_inventory_purchase", {
+      p_item_id: item.id,
+      p_qty: qty,
+      p_cost_per_unit: cost,
+      p_purchased_at: purchasedAt,
     });
 
     setSavingPurchase(null);
 
-    if (financeError) {
-      setPageError(
-        `Stock was recorded, but the matching expense failed to save: ${financeError.message}`
-      );
+    if (error) {
+      setPageError(error.message);
+      return;
     }
 
-    setPurchaseForms((prev) => ({ ...prev, [item.id]: { qty: "", costPerUnit: "", purchasedAt: todayISO() } }));
+    setPurchaseForms((prev) => ({ ...prev, [item.id]: { qty: "", costPerUnit: "", purchasedAt: localDateISO() } }));
     loadAll();
   }
 
@@ -169,7 +149,7 @@ function Inventory() {
           const lots = lotsByItem[item.id] ?? [];
           const { totalRemaining, weightedAvgCost } = computeStock(lots);
           const isLow = item.safety_stock != null && totalRemaining <= item.safety_stock;
-          const form = purchaseForms[item.id] ?? { qty: "", costPerUnit: "", purchasedAt: todayISO() };
+          const form = purchaseForms[item.id] ?? { qty: "", costPerUnit: "", purchasedAt: localDateISO() };
 
           return (
             <div key={item.id} className="farmos-inv-item">

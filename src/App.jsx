@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 
 import ScrollToTop from "./components/ScrollToTop";
@@ -6,36 +7,38 @@ import InitialLoader from "./components/InitialLoader";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
-import Home from "./pages/Home";
-import Farm from "./pages/Farm";
-import Stay from "./pages/Stay";
-import Shop from "./pages/Shop";
-import Journal from "./pages/Journal";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import ProjectDetail from "./pages/ProjectDetail";
-import ProductDetail from "./pages/ProductDetail";
-import JournalDetail from "./pages/JournalDetail";
-import StayDetail from "./pages/StayDetail";
-import Gallery from "./pages/Gallery";
-import NotFound from "./pages/NotFound";
+const Home = lazy(() => import("./pages/Home"));
+const Farm = lazy(() => import("./pages/Farm"));
+const Stay = lazy(() => import("./pages/Stay"));
+const Shop = lazy(() => import("./pages/Shop"));
+const Journal = lazy(() => import("./pages/Journal"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const JournalDetail = lazy(() => import("./pages/JournalDetail"));
+const StayDetail = lazy(() => import("./pages/StayDetail"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const Invest = lazy(() => import("./pages/Invest"));
+const InvestmentDetail = lazy(() => import("./pages/InvestmentDetail"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 import { Analytics } from "@vercel/analytics/react";
 
 import { AuthProvider } from "./farm-os/context/AuthContext";
 import ProtectedRoute from "./farm-os/components/ProtectedRoute";
 import FarmOSLayout from "./farm-os/components/FarmOSLayout";
-import FarmOSLogin from "./farm-os/pages/Login";
-import FarmOSOverview from "./farm-os/pages/Overview";
-import FarmOSSpecies from "./farm-os/pages/Species";
-import FarmOSEntityDetail from "./farm-os/pages/EntityDetail";
-import FarmOSFinance from "./farm-os/pages/Finance";
-import FarmOSCapacity from "./farm-os/pages/Capacity";
-import FarmOSScenario from "./farm-os/pages/Scenario";
-import FarmOSContentJournal from "./farm-os/pages/ContentJournal";
-import FarmOSTasks from "./farm-os/pages/Tasks";
-import FarmOSDailyLog from "./farm-os/pages/DailyLog";
-import FarmOSInventory from "./farm-os/pages/Inventory";
+const FarmOSLogin = lazy(() => import("./farm-os/pages/Login"));
+const FarmOSOverview = lazy(() => import("./farm-os/pages/Overview"));
+const FarmOSSpecies = lazy(() => import("./farm-os/pages/Species"));
+const FarmOSEntityDetail = lazy(() => import("./farm-os/pages/EntityDetail"));
+const FarmOSFinance = lazy(() => import("./farm-os/pages/Finance"));
+const FarmOSCapacity = lazy(() => import("./farm-os/pages/Capacity"));
+const FarmOSScenario = lazy(() => import("./farm-os/pages/Scenario"));
+const FarmOSContentJournal = lazy(() => import("./farm-os/pages/ContentJournal"));
+const FarmOSTasks = lazy(() => import("./farm-os/pages/Tasks"));
+const FarmOSDailyLog = lazy(() => import("./farm-os/pages/DailyLog"));
+const FarmOSInventory = lazy(() => import("./farm-os/pages/Inventory"));
 
 // The public marketing site — unchanged, still wrapped in its own Navbar/Footer.
 function PublicSite() {
@@ -43,6 +46,7 @@ function PublicSite() {
     <>
       <Navbar />
 
+      <Suspense fallback={<div className="farmos-loading">Loading…</div>}>
       <Routes>
         <Route path="/" element={<Home />} />
 
@@ -60,12 +64,16 @@ function PublicSite() {
 
         <Route path="/gallery" element={<Gallery />} />
 
+        <Route path="/invest" element={<Invest />} />
+        <Route path="/invest/:slug" element={<InvestmentDetail />} />
+
         <Route path="/about" element={<About />} />
 
         <Route path="/contact" element={<Contact />} />
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </Suspense>
 
       <Footer />
     </>
@@ -79,6 +87,7 @@ function App() {
       <InitialLoader />
       <PageLoader />
 
+      <Suspense fallback={<div className="farmos-loading">Loading…</div>}>
       <Routes>
         {/* Farm OS — private, no public Navbar/Footer */}
         <Route path="/farm-os/login" element={<FarmOSLogin />} />
@@ -105,6 +114,7 @@ function App() {
         {/* Public site handles everything else */}
         <Route path="/*" element={<PublicSite />} />
       </Routes>
+      </Suspense>
 
       <Analytics />
     </AuthProvider>

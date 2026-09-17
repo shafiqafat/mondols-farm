@@ -7,13 +7,18 @@ function PageLoader() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
+    // Schedule state changes outside the effect's synchronous phase so route
+    // transitions do not trigger a cascading render under React 19.
+    const startTimer = setTimeout(() => setLoading(true), 0);
 
     const timer = setTimeout(() => {
       setLoading(false);
     }, 350);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(timer);
+    };
   }, [location.pathname]);
 
   if (!loading) return null;

@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import OfflineIndicator from "./OfflineIndicator";
 import "./FarmOSLayout.css";
@@ -16,46 +17,43 @@ const NAV_ITEMS = [
 ];
 
 function FarmOSLayout() {
-  const { user, signOut } = useAuth();
+  const { user, role, signOut } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="farmos">
-      <header className="farmos__topbar">
-        <span className="farmos__wordmark">Mondol's Farm OS</span>
-        <div className="farmos__topbar-right">
+      <div className="farmos__shell">
+        <aside className={`farmos__sidebar${sidebarOpen ? " farmos__sidebar--open" : ""}`}>
+          <div className="farmos__brand-row">
+            <span className="farmos__wordmark">Mondol's<br />Farm OS</span>
+            <button className="farmos__menu-close" onClick={() => setSidebarOpen(false)} aria-label="Close navigation">×</button>
+          </div>
+          <nav className="farmos__nav" aria-label="Farm OS navigation">
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.to} to={item.to} end={item.end} onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) => `farmos__nav-link${isActive ? " farmos__nav-link--active" : ""}`}>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="farmos__sidebar-footer">
+            <span className="farmos__user">{user?.email}</span>
+            <span className="farmos__role">{role ?? "Administrator"}</span>
+            <button className="farmos__signout" onClick={signOut}>Sign out</button>
+          </div>
+        </aside>
+
+        <div className="farmos__main-shell">
+          <header className="farmos__topbar">
+            <button className="farmos__menu-button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation">☰</button>
+            <span className="farmos__mobile-wordmark">Mondol's Farm OS</span>
+            <div className="farmos__topbar-right">
           <OfflineIndicator />
-          <span className="farmos__user">{user?.email}</span>
-          <button className="farmos__signout" onClick={signOut}>
-            Sign out
-          </button>
+            </div>
+          </header>
+          <main className="farmos__content"><Outlet /></main>
         </div>
-      </header>
-
-      <nav className="farmos__nav">
-        {NAV_ITEMS.map((item) =>
-          item.ready ? (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `farmos__nav-link${isActive ? " farmos__nav-link--active" : ""}`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ) : (
-            <span key={item.to} className="farmos__nav-link farmos__nav-link--soon">
-              {item.label}
-              <span className="farmos__soon-tag">soon</span>
-            </span>
-          )
-        )}
-      </nav>
-
-      <main className="farmos__content">
-        <Outlet />
-      </main>
+      </div>
     </div>
   );
 }

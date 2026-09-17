@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { localDateISO } from "../lib/localDate";
 import { computeStock } from "../engines/inventoryEngine";
 import {
   aggregateDailyConsumption,
@@ -83,7 +84,7 @@ function Overview() {
       }
 
       if (!tasksRes.error) {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = localDateISO();
         const openTasks = tasksRes.data ?? [];
         const overdue = openTasks.filter((t) => classifyTask(t, today) === "overdue").length;
         const dueToday = openTasks.filter((t) => classifyTask(t, today) === "today").length;

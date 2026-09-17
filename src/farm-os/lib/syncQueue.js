@@ -29,6 +29,17 @@ async function resolveItem(item) {
       return { ok: true };
     }
 
+    case "daily_log": {
+      const { events, expense, content } = item.payload;
+      const { data, error } = await supabase.rpc("process_daily_log", {
+        p_events: events ?? [],
+        p_expense: expense ?? null,
+        p_content: content ?? null,
+      });
+      if (error) throw error;
+      return { ok: true, shortfalls: data?.shortfalls ?? [] };
+    }
+
     case "inventory_consume": {
       const { itemId, qtyKg, itemName } = item.payload;
       const { data: lots, error: lotsError } = await supabase
@@ -74,6 +85,7 @@ export async function processQueue() {
     try {
       const result = await resolveItem(item);
       if (result.shortfall) shortfalls.push(result.shortfall);
+      if (result.shortfalls) shortfalls.push(...result.shortfalls);
       removeFromQueue(item.id);
       processed++;
     } catch (err) {

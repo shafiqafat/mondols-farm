@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { localDateISO } from "../lib/localDate";
 import { classifyTask, computeNextDueDate } from "../engines/taskEngine";
 import "./Tasks.css";
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+const todayISO = localDateISO;
 
 const GROUP_LABEL = {
   overdue: "Overdue",

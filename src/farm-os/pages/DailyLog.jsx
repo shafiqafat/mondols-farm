@@ -4,22 +4,17 @@ import {
   getQuickFieldsForCapabilities,
   buildEventRows,
 } from "../engines/dailyLogEngine";
-import { consumeFIFO } from "../engines/inventoryEngine";
 import { enqueue } from "../lib/offlineQueue";
+import { localDateISO } from "../lib/localDate";
 import "./DailyLog.css";
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function DailyLog() {
   const [entities, setEntities] = useState([]);
   const [inventoryItems, setInventoryItems] = useState([]);
-  const [lotsByItem, setLotsByItem] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(localDateISO());
   const [entityValues, setEntityValues] = useState({});
   const [feedItemSelection, setFeedItemSelection] = useState({});
   const [expense, setExpense] = useState({ amount: "", category: "", entityId: "" });
@@ -35,14 +30,13 @@ function DailyLog() {
       setLoading(true);
       setLoadError("");
 
-      const [entitiesRes, itemsRes, lotsRes] = await Promise.all([
+      const [entitiesRes, itemsRes] = await Promise.all([
         supabase
           .from("farm_entities")
           .select("id, label, quantity, species_config:species_config_id(id, name, category, capabilities)")
           .eq("status", "active")
           .order("label"),
         supabase.from("inventory_items").select("*").order("name"),
-        supabase.from("inventory_lots").select("*"),
       ]);
 
       if (entitiesRes.error) {
@@ -53,13 +47,6 @@ function DailyLog() {
 
       setEntities(entitiesRes.data ?? []);
       setInventoryItems(itemsRes.data ?? []);
-
-      const grouped = {};
-      for (const lot of lotsRes.data ?? []) {
-        if (!grouped[lot.item_id]) grouped[lot.item_id] = [];
-        grouped[lot.item_id].push(lot);
-      }
-      setLotsByItem(grouped);
 
       setLoading(false);
     }
@@ -126,23 +113,9 @@ function DailyLog() {
             }
           : null;
 
-      // Offline: never touch the network. Queue everything as-is and
-      // resolve inventory consumption later, at sync time, against
-      // then-current stock — not against whatever was cached on this
-      // page when the connection dropped.
+      // A complete daily log is one durable unit, online or offline.
       if (!navigator.onLine) {
-        if (allRows.length > 0) enqueue("entity_events_insert", allRows);
-
-        for (const row of allRows) {
-          if (row.type !== "feed_given") continue;
-          const itemId = feedItemSelection[row.entity_id];
-          if (!itemId) continue;
-          const itemName = inventoryItems.find((i) => i.id === itemId)?.name;
-          enqueue("inventory_consume", { itemId, qtyKg: row.payload.qty_kg, itemName });
-        }
-
-        if (expenseRow) enqueue("finance_transactions_insert", expenseRow);
-        if (contentRow) enqueue("content_items_insert", contentRow);
+        enqueue("daily_log", { events: allRows, expense: expenseRow, content: contentRow });
 
         setEntityValues({});
         setExpense({ amount: "", category: "", entityId: "" });
@@ -154,66 +127,17 @@ function DailyLog() {
         return;
       }
 
-      // Work out FIFO inventory consumption for every feed_given row that has
-      // a linked inventory item, before writing anything — so a stock
-      // problem surfaces before we commit events, not after.
-      const lotUpdatesById = {};
-      const shortfalls = [];
-      // Lots get consumed cumulatively across entities sharing one item
-      // (e.g. two quail batches drawing from the same feed bag), so track
-      // running remaining quantities locally rather than re-reading per entity.
-      const workingLots = structuredClone(lotsByItem);
-
-      for (const row of allRows) {
-        if (row.type !== "feed_given") continue;
-        const itemId = feedItemSelection[row.entity_id];
-        if (!itemId) continue;
-
-        const result = consumeFIFO(workingLots[itemId] ?? [], row.payload.qty_kg);
-        for (const updated of result.updatedLots) {
-          lotUpdatesById[updated.id] = updated.qty_remaining;
-          const lotIndex = (workingLots[itemId] ?? []).findIndex((l) => l.id === updated.id);
-          if (lotIndex !== -1) workingLots[itemId][lotIndex].qty_remaining = updated.qty_remaining;
-        }
-        if (result.shortfall > 0) {
-          const itemName = inventoryItems.find((i) => i.id === itemId)?.name ?? "item";
-          shortfalls.push(`${itemName}: short by ${result.shortfall.toFixed(2)}`);
-        }
-      }
-
-      const eventsToInsert = allRows;
-
-      if (eventsToInsert.length > 0) {
-        const { error } = await supabase.from("entity_events").insert(eventsToInsert);
-        if (error) throw error;
-      }
-
-      const lotUpdateIds = Object.keys(lotUpdatesById);
-      if (lotUpdateIds.length > 0) {
-        const results = await Promise.all(
-          lotUpdateIds.map((lotId) =>
-            supabase
-              .from("inventory_lots")
-              .update({ qty_remaining: lotUpdatesById[lotId] })
-              .eq("id", lotId)
-          )
-        );
-        const failed = results.find((r) => r.error);
-        if (failed) throw failed.error;
-      }
-
-      if (expenseRow) {
-        const { error } = await supabase.from("finance_transactions").insert(expenseRow);
-        if (error) throw error;
-      }
-
-      if (contentRow) {
-        const { error } = await supabase.from("content_items").insert(contentRow);
-        if (error) throw error;
-      }
-
-      if (shortfalls.length > 0) {
-        setSubmitWarning(`Saved, but stock ran short: ${shortfalls.join("; ")}. Record a purchase in Inventory.`);
+      const { data, error } = await supabase.rpc("process_daily_log", {
+        p_events: allRows,
+        p_expense: expenseRow,
+        p_content: contentRow,
+      });
+      if (error) throw error;
+      if (data?.shortfalls?.length > 0) {
+        const warning = data.shortfalls
+          .map((item) => `${item.item_name ?? "item"}: short by ${Number(item.shortfall).toFixed(2)}`)
+          .join("; ");
+        setSubmitWarning(`Saved, but stock ran short: ${warning}. Record a purchase in Inventory.`);
       }
 
       setEntityValues({});

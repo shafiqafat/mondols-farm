@@ -33,6 +33,7 @@ import FarmOSFinance from "./farm-os/pages/Finance";
 import FarmOSCapacity from "./farm-os/pages/Capacity";
 import FarmOSScenario from "./farm-os/pages/Scenario";
 import FarmOSContentJournal from "./farm-os/pages/ContentJournal";
+import FarmOSTasks from "./farm-os/pages/Tasks";
 import FarmOSDailyLog from "./farm-os/pages/DailyLog";
 import FarmOSInventory from "./farm-os/pages/Inventory";
 
@@ -96,6 +97,7 @@ function App() {
           <Route path="capacity" element={<FarmOSCapacity />} />
           <Route path="scenario" element={<FarmOSScenario />} />
           <Route path="content" element={<FarmOSContentJournal />} />
+          <Route path="tasks" element={<FarmOSTasks />} />
           <Route path="daily-log" element={<FarmOSDailyLog />} />
           <Route path="inventory" element={<FarmOSInventory />} />
         </Route>

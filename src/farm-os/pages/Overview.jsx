@@ -9,6 +9,7 @@ import {
   classifyAlert,
   estimateMonthlyRequirement,
 } from "../engines/feedForecastEngine";
+import { classifyTask } from "../engines/taskEngine";
 import "./Overview.css";
 
 const ALERT_LABEL = {
@@ -22,6 +23,7 @@ function Overview() {
   const [species, setSpecies] = useState([]);
   const [entityCount, setEntityCount] = useState(null);
   const [feedAlerts, setFeedAlerts] = useState([]);
+  const [taskSummary, setTaskSummary] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -30,12 +32,13 @@ function Overview() {
       setLoading(true);
       setError("");
 
-      const [speciesRes, entitiesRes, itemsRes, lotsRes, feedEventsRes] = await Promise.all([
+      const [speciesRes, entitiesRes, itemsRes, lotsRes, feedEventsRes, tasksRes] = await Promise.all([
         supabase.from("species_config").select("id, name, category").order("name"),
         supabase.from("farm_entities").select("id", { count: "exact", head: true }),
         supabase.from("inventory_items").select("*"),
         supabase.from("inventory_lots").select("*"),
         supabase.from("entity_events").select("occurred_at, payload").eq("type", "feed_given"),
+        supabase.from("tasks").select("due_at, priority, completed_at").is("completed_at", null),
       ]);
 
       if (speciesRes.error) {
@@ -77,6 +80,15 @@ function Overview() {
         });
 
         setFeedAlerts(alerts);
+      }
+
+      if (!tasksRes.error) {
+        const today = new Date().toISOString().slice(0, 10);
+        const openTasks = tasksRes.data ?? [];
+        const overdue = openTasks.filter((t) => classifyTask(t, today) === "overdue").length;
+        const dueToday = openTasks.filter((t) => classifyTask(t, today) === "today").length;
+        const critical = openTasks.filter((t) => t.priority === "critical").length;
+        setTaskSummary({ overdue, dueToday, critical, total: openTasks.length });
       }
 
       setLoading(false);
@@ -147,6 +159,18 @@ function Overview() {
               <span className="farmos-card__label">Farm entities recorded</span>
               <span className="farmos-card__value">{entityCount ?? "—"}</span>
             </div>
+            {taskSummary && (
+              <>
+                <div className={`farmos-card${taskSummary.overdue > 0 ? " farmos-card--warn" : ""}`}>
+                  <span className="farmos-card__label">Overdue tasks</span>
+                  <span className="farmos-card__value">{taskSummary.overdue}</span>
+                </div>
+                <div className="farmos-card">
+                  <span className="farmos-card__label">Due today</span>
+                  <span className="farmos-card__value">{taskSummary.dueToday}</span>
+                </div>
+              </>
+            )}
           </section>
 
           <section className="farmos-overview__section">

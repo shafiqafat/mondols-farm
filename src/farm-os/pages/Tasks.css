@@ -1,0 +1,167 @@
+.farmos-tasks__title {
+  font-size: 1.6rem;
+  color: var(--color-forest);
+  margin: 0 0 16px;
+}
+
+.farmos-tasks__status {
+  color: var(--color-text-muted);
+}
+
+.farmos-tasks__status--error {
+  color: #a3402f;
+}
+
+.farmos-tasks__section {
+  margin-bottom: 22px;
+}
+
+.farmos-tasks__group-title {
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+}
+
+.farmos-tasks__group-title--overdue {
+  color: #a3402f;
+}
+
+.farmos-tasks__group-title--today {
+  color: var(--color-forest);
+}
+
+.farmos-tasks__group-title--upcoming,
+.farmos-tasks__group-title--no-due-date {
+  color: var(--color-text-muted);
+}
+
+.farmos-tasks__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.farmos-task-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.farmos-task-card--low {
+  border-left-color: var(--color-border);
+}
+
+.farmos-task-card--normal {
+  border-left-color: var(--color-earth);
+}
+
+.farmos-task-card--high {
+  border-left-color: #c99a2e;
+}
+
+.farmos-task-card--critical {
+  border-left-color: #a3402f;
+}
+
+.farmos-task-card--completed {
+  opacity: 0.6;
+  border-left-color: var(--color-border);
+}
+
+.farmos-task-card__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.farmos-task-card__title {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.farmos-task-card__meta {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.farmos-task-card__notes {
+  font-size: 0.82rem;
+  margin: 4px 0 0;
+}
+
+.farmos-task-card button {
+  background: var(--color-forest);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.farmos-task-card button:hover:not(:disabled) {
+  background: var(--color-terracotta);
+}
+
+.farmos-tasks__add-form {
+  background: var(--color-white);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.farmos-tasks__add-form h3 {
+  font-size: 0.95rem;
+  margin: 0 0 12px;
+}
+
+.farmos-tasks__add-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.farmos-tasks__add-fields input,
+.farmos-tasks__add-fields select,
+.farmos-tasks__notes-input {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  background: var(--color-cream);
+  min-height: 44px;
+}
+
+.farmos-tasks__notes-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.farmos-tasks__add-form > button {
+  background: var(--color-forest);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.farmos-tasks__toggle-completed {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--color-text-muted);
+}

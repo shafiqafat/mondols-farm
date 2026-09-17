@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import OfflineIndicator from "./OfflineIndicator";
 import "./FarmOSLayout.css";
 
 const NAV_ITEMS = [
@@ -11,7 +12,7 @@ const NAV_ITEMS = [
   { to: "/farm-os/capacity", label: "Capacity", ready: true },
   { to: "/farm-os/scenario", label: "Scenario", ready: true },
   { to: "/farm-os/content", label: "Content", ready: true },
-  { to: "/farm-os/tasks", label: "Tasks", ready: false },
+  { to: "/farm-os/tasks", label: "Tasks", ready: true },
 ];
 
 function FarmOSLayout() {
@@ -22,6 +23,7 @@ function FarmOSLayout() {
       <header className="farmos__topbar">
         <span className="farmos__wordmark">Mondol's Farm OS</span>
         <div className="farmos__topbar-right">
+          <OfflineIndicator />
           <span className="farmos__user">{user?.email}</span>
           <button className="farmos__signout" onClick={signOut}>
             Sign out

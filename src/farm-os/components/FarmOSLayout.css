@@ -1,6 +1,6 @@
 .farmos {
   min-height: 100vh;
-  background: var(--color-white);
+  background: var(--color-cream);
   color: var(--color-text);
 }
 
@@ -22,6 +22,39 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.farmos-offline-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.farmos-offline-indicator__badge {
+  background: #a3402f;
+  color: var(--color-white);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+.farmos-offline-indicator__queue {
+  color: var(--color-beige);
+}
+
+.farmos-offline-indicator button {
+  background: transparent;
+  border: 1px solid var(--color-beige);
+  color: var(--color-white);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.farmos-offline-indicator__message {
+  color: var(--color-beige);
+  max-width: 220px;
 }
 
 .farmos__user {
@@ -94,7 +127,6 @@
   max-width: var(--container-width);
   margin: 0 auto;
   padding: 24px var(--container-padding) 48px;
-
 }
 
 .farmos-loading {

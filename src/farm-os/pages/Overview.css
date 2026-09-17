@@ -108,6 +108,10 @@
   font-weight: 600;
 }
 
+.farmos-card--warn .farmos-card__value {
+  color: #a3402f;
+}
+
 .farmos-overview__section {
   margin-bottom: 28px;
 }

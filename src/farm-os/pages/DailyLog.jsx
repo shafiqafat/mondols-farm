@@ -5,6 +5,7 @@ import {
   buildEventRows,
 } from "../engines/dailyLogEngine";
 import { consumeFIFO } from "../engines/inventoryEngine";
+import { enqueue } from "../lib/offlineQueue";
 import "./DailyLog.css";
 
 function todayISO() {
@@ -98,6 +99,61 @@ function DailyLog() {
         });
       });
 
+      const photos = content.photos !== "" ? Number(content.photos) : 0;
+      const videos = content.videos !== "" ? Number(content.videos) : 0;
+      const hasContent = photos > 0 || videos > 0 || content.note.trim() !== "";
+      const contentParts = [];
+      if (photos > 0) contentParts.push(`${photos} photo${photos > 1 ? "s" : ""}`);
+      if (videos > 0) contentParts.push(`${videos} video${videos > 1 ? "s" : ""}`);
+      const contentRow = hasContent
+        ? {
+            title: `Daily capture — ${date}`,
+            type: photos > 0 && videos > 0 ? "mixed" : videos > 0 ? "video" : photos > 0 ? "photo" : "note",
+            stage: "captured",
+            notes: [contentParts.join(", "), content.note.trim()].filter(Boolean).join(" — "),
+            occurred_at: date,
+          }
+        : null;
+
+      const expenseRow =
+        expense.amount !== "" && !Number.isNaN(Number(expense.amount))
+          ? {
+              type: "expense",
+              amount: Number(expense.amount),
+              category: expense.category || null,
+              entity_id: expense.entityId || null,
+              occurred_at: date,
+            }
+          : null;
+
+      // Offline: never touch the network. Queue everything as-is and
+      // resolve inventory consumption later, at sync time, against
+      // then-current stock — not against whatever was cached on this
+      // page when the connection dropped.
+      if (!navigator.onLine) {
+        if (allRows.length > 0) enqueue("entity_events_insert", allRows);
+
+        for (const row of allRows) {
+          if (row.type !== "feed_given") continue;
+          const itemId = feedItemSelection[row.entity_id];
+          if (!itemId) continue;
+          const itemName = inventoryItems.find((i) => i.id === itemId)?.name;
+          enqueue("inventory_consume", { itemId, qtyKg: row.payload.qty_kg, itemName });
+        }
+
+        if (expenseRow) enqueue("finance_transactions_insert", expenseRow);
+        if (contentRow) enqueue("content_items_insert", contentRow);
+
+        setEntityValues({});
+        setExpense({ amount: "", category: "", entityId: "" });
+        setContent({ photos: "", videos: "", note: "" });
+        setSubmitWarning(
+          "You're offline — saved on this device and queued to sync automatically once you're back online."
+        );
+        setSubmitted(true);
+        return;
+      }
+
       // Work out FIFO inventory consumption for every feed_given row that has
       // a linked inventory item, before writing anything — so a stock
       // problem surfaces before we commit events, not after.
@@ -146,30 +202,13 @@ function DailyLog() {
         if (failed) throw failed.error;
       }
 
-      if (expense.amount !== "" && !Number.isNaN(Number(expense.amount))) {
-        const { error } = await supabase.from("finance_transactions").insert({
-          type: "expense",
-          amount: Number(expense.amount),
-          category: expense.category || null,
-          entity_id: expense.entityId || null,
-          occurred_at: date,
-        });
+      if (expenseRow) {
+        const { error } = await supabase.from("finance_transactions").insert(expenseRow);
         if (error) throw error;
       }
 
-      const photos = content.photos !== "" ? Number(content.photos) : 0;
-      const videos = content.videos !== "" ? Number(content.videos) : 0;
-      if (photos > 0 || videos > 0 || content.note.trim() !== "") {
-        const parts = [];
-        if (photos > 0) parts.push(`${photos} photo${photos > 1 ? "s" : ""}`);
-        if (videos > 0) parts.push(`${videos} video${videos > 1 ? "s" : ""}`);
-        const { error } = await supabase.from("content_items").insert({
-          title: `Daily capture — ${date}`,
-          type: photos > 0 && videos > 0 ? "mixed" : videos > 0 ? "video" : photos > 0 ? "photo" : "note",
-          stage: "captured",
-          notes: [parts.join(", "), content.note.trim()].filter(Boolean).join(" — "),
-          occurred_at: date,
-        });
+      if (contentRow) {
+        const { error } = await supabase.from("content_items").insert(contentRow);
         if (error) throw error;
       }
 

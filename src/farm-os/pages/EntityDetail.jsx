@@ -1,13 +1,34 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Sprout } from "lucide-react";
-import { supabase } from "../lib/supabaseClient";
 import {
-  eventTypesForCategory,
-  eventTypeLabel,
-  buildEventPayload,
-  computeExpectedHarvest,
-} from "../engines/entityEventTypes";
+  Activity,
+  ArrowLeft,
+  BadgeDollarSign,
+  CalendarDays,
+  ClipboardPlus,
+  Dna,
+  Droplets,
+  Egg,
+  HeartPulse,
+  Leaf,
+  Pill,
+  Scale,
+  ShoppingCart,
+  Sprout,
+  Wheat,
+} from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
+import { computeExpectedHarvest } from "../engines/entityEventTypes";
+
+import { EVENT_SCHEMAS } from "../config/eventDefinitions";
+
+import {
+  formatEventDate,
+  getAvailableEventTypes,
+  getEventDisplayLabel,
+  getEventSummary,
+  validateEventPayload,
+} from "../lib/eventUtils";
 import { recommendationsFor } from "../engines/cropRotationEngine";
 import { localDateISO } from "../lib/localDate";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,17 +36,90 @@ import { Badge } from "@/components/ui/badge";
 
 const todayISO = localDateISO;
 
-function summarizePayload(payload) {
-  if (!payload || Object.keys(payload).length === 0) return "";
-  return Object.entries(payload)
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(" · ");
+
+function eventIcon(type) {
+  switch (type) {
+    case "feed":
+    case "Feed_given":
+      return Wheat;
+
+    case "weight":
+      return Scale;
+
+    case "egg_production":
+    case "Egg_count":
+      return Egg;
+
+    case "mortality":
+      return HeartPulse;
+
+    case "treatment":
+    case "health_note":
+      return Pill;
+
+    case "breeding":
+      return Dna;
+
+    case "harvest":
+      return Wheat;
+
+    case "planting":
+      return Sprout;
+
+    case "fertilizer_applied":
+      return Leaf;
+
+    case "irrigation":
+      return Droplets;
+
+    case "purchase":
+      return ShoppingCart;
+
+    case "sale":
+      return BadgeDollarSign;
+
+    default:
+      return Activity;
+  }
+}
+
+function buildPayloadFromSchema(type, values) {
+  const schema = EVENT_SCHEMAS[type];
+
+  if (!schema) {
+    return {};
+  }
+
+  const payload = {};
+
+  for (const field of schema.fields) {
+    const raw = values[field.key];
+
+    if (raw === undefined || raw === null || raw === "") {
+      continue;
+    }
+
+    if (field.type === "number") {
+      const numericValue = Number(raw);
+
+      if (Number.isFinite(numericValue)) {
+        payload[field.key] = numericValue;
+      }
+
+      continue;
+    }
+
+    payload[field.key] = raw;
+  }
+
+  return payload;
 }
 
 function EntityDetail() {
   const { id } = useParams();
   const [entity, setEntity] = useState(null);
   const [events, setEvents] = useState([]);
+  const [speciesList, setSpeciesList] = useState([]);
   const [rotationRules, setRotationRules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -42,7 +136,7 @@ function EntityDetail() {
     setLoading(true);
     setLoadError("");
 
-    const [entityRes, eventsRes] = await Promise.all([
+    const [entityRes, eventsRes, speciesRes] = await Promise.all([
       supabase
         .from("farm_entities")
         .select(
@@ -55,6 +149,11 @@ function EntityDetail() {
         .select("*")
         .eq("entity_id", id)
         .order("occurred_at", { ascending: false }),
+
+      supabase
+        .from("species_config")
+        .select("id, name, category, capabilities")
+        .order("name"),
     ]);
 
     if (entityRes.error) {
@@ -65,6 +164,7 @@ function EntityDetail() {
 
     setEntity(entityRes.data);
     setEvents(eventsRes.data ?? []);
+    setSpeciesList(speciesRes.data ?? []);
 
     const speciesId = entityRes.data?.species_config_id;
     if (speciesId) {
@@ -87,13 +187,28 @@ function EntityDetail() {
 
   async function handleAddEvent(e) {
     e.preventDefault();
-    const typeDef = availableTypes.find((t) => t.value === form.type);
-    if (!typeDef) return;
+    const typeDef = EVENT_SCHEMAS[form.type];
+
+    if (!typeDef) {
+      return;
+    }
 
     setSaving(true);
     setPageError("");
 
-    const payload = buildEventPayload(typeDef, form.values);
+    const validationError = validateEventPayload(
+      form.type,
+      form.values,
+      entity,
+    );
+
+    if (validationError) {
+      setSaving(false);
+      setPageError(validationError);
+      return;
+    }
+
+    const payload = buildPayloadFromSchema(form.type, form.values);
 
     const { error } = await supabase.from("entity_events").insert({
       entity_id: id,
@@ -113,7 +228,13 @@ function EntityDetail() {
   }
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Loading…</div>;
+    return (
+      <Card className="border-border/70 bg-card shadow-sm">
+        <CardContent className="flex min-h-32 items-center justify-center p-5">
+          <p className="text-sm text-muted-foreground">Loading entity…</p>
+        </CardContent>
+      </Card>
+    );
   }
   if (loadError) {
     return (
@@ -126,13 +247,29 @@ function EntityDetail() {
   }
   if (!entity) {
     return (
-      <div className="text-sm text-muted-foreground">Entity not found.</div>
+      <Card className="border-border/70 bg-card shadow-sm">
+        <CardContent className="space-y-2 p-5">
+          <h2 className="text-base font-semibold">Entity not found</h2>
+          <p className="text-sm text-muted-foreground">
+            This farm entity may have been removed or the link may be invalid.
+          </p>
+
+          <Link
+            to="/farm-os/species"
+            className="inline-flex text-sm font-medium text-primary transition-colors hover:text-primary/80"
+          >
+            ← Back to Species & Entities
+          </Link>
+        </CardContent>
+      </Card>
     );
   }
 
   const category = entity.species_config?.category;
-  const availableTypes = eventTypesForCategory(category);
-  const selectedTypeDef = availableTypes.find((t) => t.value === form.type);
+
+  const availableTypes = getAvailableEventTypes(entity, speciesList);
+
+  const selectedTypeDef = EVENT_SCHEMAS[form.type];
   const harvestOutlook =
     category === "crop" || category === "fodder"
       ? computeExpectedHarvest(events)
@@ -152,39 +289,98 @@ function EntityDetail() {
         Species & Entities
       </Link>
 
-      <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Sprout className="size-5" />
+      <div className="space-y-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Sprout className="size-5" />
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-[-0.03em]">
+                  {entity.label}
+                </h1>
+
+                <Badge variant="secondary" className="capitalize">
+                  {entity.status}
+                </Badge>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span>{entity.species_config?.name}</span>
+                <span>·</span>
+                <span className="capitalize">{category}</span>
+
+                {entity.quantity != null && (
+                  <>
+                    <span>·</span>
+                    <span>{entity.quantity} currently</span>
+                  </>
+                )}
+
+                {entity.location && (
+                  <>
+                    <span>·</span>
+                    <span>{entity.location}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.03em]">
-            {entity.label}
-          </h1>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Card className="border-border/70 bg-card shadow-sm">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Sprout className="size-4" />
+              </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span>{entity.species_config?.name}</span>
-            <span>·</span>
-            <span className="capitalize">{category}</span>
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Quantity
+                </p>
+                <p className="mt-0.5 text-lg font-semibold">
+                  {entity.quantity ?? "—"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-            {entity.quantity != null && (
-              <>
-                <span>·</span>
-                <span>{entity.quantity}</span>
-              </>
-            )}
+          <Card className="border-border/70 bg-card shadow-sm">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                <CalendarDays className="size-4" />
+              </div>
 
-            {entity.location && (
-              <>
-                <span>·</span>
-                <span>{entity.location}</span>
-              </>
-            )}
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Last activity
+                </p>
+                <p className="mt-0.5 text-sm font-semibold">
+                  {events[0]?.occurred_at
+                    ? formatEventDate(events[0].occurred_at)
+                    : "No activity"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
 
-            <Badge variant="secondary" className="capitalize">
-              {entity.status}
-            </Badge>
-          </div>
+          <Card className="border-border/70 bg-card shadow-sm">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                <Activity className="size-4" />
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Events
+                </p>
+                <p className="mt-0.5 text-lg font-semibold">{events.length}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -241,163 +437,220 @@ function EntityDetail() {
       )}
 
       <section className="space-y-4">
-        <div>
-          <h2 className="text-base font-semibold">Log an event</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Record an event for this farm entity.
-          </p>
+        <div className="flex items-start gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <ClipboardPlus className="size-4" />
+          </div>
+
+          <div>
+            <h2 className="text-base font-semibold">Log an event</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Record an event for this farm entity.
+            </p>
+          </div>
         </div>
+
         <form
           onSubmit={handleAddEvent}
           className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
         >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <select
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
-              value={form.type}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, type: e.target.value, values: {} }))
-              }
-              required
-            >
-              <option value="">Event type…</option>
-              {availableTypes.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-            <input
-              type="date"
-              value={form.date}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
-              onChange={(e) => setForm((p) => ({ ...p, date: e.target.value }))}
-            />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label
+                htmlFor="entity-event-type"
+                className="text-sm font-medium"
+              >
+                Event type
+              </label>
+
+              <select
+                id="entity-event-type"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                value={form.type}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    type: e.target.value,
+                    values: {},
+                  }))
+                }
+                required
+              >
+                <option value="">Select an event…</option>
+
+                {availableTypes.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="entity-event-date"
+                className="text-sm font-medium"
+              >
+                Date
+              </label>
+
+              <input
+                id="entity-event-date"
+                type="date"
+                value={form.date}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    date: e.target.value,
+                  }))
+                }
+              />
+            </div>
           </div>
 
           {selectedTypeDef && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {selectedTypeDef.fields.includes("variety") && (
-                <input
-                  value={form.values.variety ?? ""}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      values: {
-                        ...prev.values,
-                        variety: e.target.value,
-                      },
-                    }))
-                  }
-                  placeholder="Variety"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
-                />
-              )}
-              {selectedTypeDef.fields.includes("expectedDurationDays") && (
-                <input
-                  type="number"
-                  placeholder="Expected duration (days)"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
-                  value={form.values.expectedDurationDays ?? ""}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      values: {
-                        ...p.values,
-                        expectedDurationDays: e.target.value,
-                      },
-                    }))
-                  }
-                />
-              )}
-              {selectedTypeDef.fields.includes("amount") && (
-                <input
-                  type="number"
-                  step="any"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
-                  placeholder="Amount"
-                  value={form.values.amount ?? ""}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      values: { ...p.values, amount: e.target.value },
-                    }))
-                  }
-                />
-              )}
-              {selectedTypeDef.fields.includes("unit") && (
-                <input
-                  type="text"
-                  placeholder="Unit, e.g. kg"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20"
-                  value={form.values.unit ?? ""}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      values: { ...p.values, unit: e.target.value },
-                    }))
-                  }
-                />
-              )}
-              {selectedTypeDef.fields.includes("note") && (
-                <input
-                  type="text"
-                  placeholder="Note"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/20 sm:col-span-2 lg:col-span-3"
-                  value={form.values.note ?? ""}
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      values: { ...p.values, note: e.target.value },
-                    }))
-                  }
-                />
-              )}
+            <div className="mt-5 border-t border-border/60 pt-5">
+              <div className="mb-4">
+                <p className="text-sm font-medium">Event details</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Add the information available for this event.
+                </p>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {selectedTypeDef.fields.map((field) => {
+                  const isWide =
+                    field.key === "notes" ||
+                    field.key === "reason" ||
+                    field.key === "quality";
+
+                  return (
+                    <div
+                      key={field.key}
+                      className={
+                        isWide
+                          ? "space-y-2 sm:col-span-2 lg:col-span-3"
+                          : "space-y-2"
+                      }
+                    >
+                      <label
+                        htmlFor={`entity-event-${field.key}`}
+                        className="text-sm font-medium"
+                      >
+                        {field.label}
+                      </label>
+
+                      <div className="relative">
+                        <input
+                          id={`entity-event-${field.key}`}
+                          type={field.type}
+                          min={field.min}
+                          step={field.step}
+                          placeholder={field.placeholder ?? ""}
+                          value={form.values[field.key] ?? ""}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              values: {
+                                ...prev.values,
+                                [field.key]: e.target.value,
+                              },
+                            }))
+                          }
+                          className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring ${
+                            field.unit ? "pr-12" : ""
+                          }`}
+                        />
+
+                        {field.unit && (
+                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                            {field.unit}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={!form.type || saving}
-            className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-          >
-            {saving ? "Saving…" : "Log event"}
-          </button>
+          <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
+            <button
+              type="submit"
+              disabled={!form.type || saving}
+              className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Log event"}
+            </button>
+          </div>
         </form>
       </section>
 
       <section className="space-y-4">
-        <div>
-          <h2 className="text-base font-semibold">History</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Events recorded for this entity.
-          </p>
+        <div className="flex items-start gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Activity className="size-4" />
+          </div>
+
+          <div>
+            <h2 className="text-base font-semibold">Activity history</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Events recorded for this entity.
+            </p>
+          </div>
         </div>
+
         {events.length === 0 ? (
-          <p className="rounded-lg border border-border/70 bg-card px-4 py-4 text-sm text-muted-foreground">
-            No events logged yet.
-          </p>
+          <Card className="border-border/70 bg-card shadow-sm">
+            <CardContent className="p-5">
+              <p className="text-sm text-muted-foreground">
+                No events logged yet.
+              </p>
+            </CardContent>
+          </Card>
         ) : (
-          <ul className="space-y-2">
-            {events.map((event) => (
-              <li
-                key={event.id}
-                className="flex flex-wrap items-start gap-x-4 gap-y-1 rounded-lg border border-border/70 bg-card px-4 py-3 text-sm shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <span className="min-w-[90px] text-muted-foreground">
-                  {event.occurred_at}
-                </span>
+          <div className="relative">
+            <div className="absolute bottom-5 left-[18px] top-5 w-px bg-border" />
 
-                <span className="min-w-[140px] font-semibold text-foreground">
-                  {eventTypeLabel(event.type)}
-                </span>
+            <div className="space-y-3">
+              {events.map((event) => {
+                const Icon = eventIcon(event.type);
 
-                <span className="text-muted-foreground">
-                  {summarizePayload(event.payload)}
-                </span>
-              </li>
-            ))}
-          </ul>
+                return (
+                  <Card
+                    key={event.id}
+                    className="relative border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <CardContent className="flex gap-3 p-4 sm:gap-4">
+                      <div className="relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-primary">
+                        <Icon className="size-4" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {getEventDisplayLabel(event.type)}
+                          </h3>
+
+                          <time className="shrink-0 text-xs text-muted-foreground">
+                            {formatEventDate(event.occurred_at)}
+                          </time>
+                        </div>
+
+                        {getEventSummary(event) && (
+                          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                            {getEventSummary(event)}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
         )}
       </section>
     </div>

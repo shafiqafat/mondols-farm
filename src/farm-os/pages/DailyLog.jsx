@@ -6,7 +6,11 @@ import {
 } from "../engines/dailyLogEngine";
 import { enqueue } from "../lib/offlineQueue";
 import { localDateISO } from "../lib/localDate";
-import "./DailyLog.css";
+import { CalendarDays, ClipboardList } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 function DailyLog() {
   const [entities, setEntities] = useState([]);
@@ -17,7 +21,11 @@ function DailyLog() {
   const [date, setDate] = useState(localDateISO());
   const [entityValues, setEntityValues] = useState({});
   const [feedItemSelection, setFeedItemSelection] = useState({});
-  const [expense, setExpense] = useState({ amount: "", category: "", entityId: "" });
+  const [expense, setExpense] = useState({
+    amount: "",
+    category: "",
+    entityId: "",
+  });
   const [content, setContent] = useState({ photos: "", videos: "", note: "" });
 
   const [submitting, setSubmitting] = useState(false);
@@ -33,7 +41,9 @@ function DailyLog() {
       const [entitiesRes, itemsRes] = await Promise.all([
         supabase
           .from("farm_entities")
-          .select("id, label, quantity, species_config:species_config_id(id, name, category, capabilities)")
+          .select(
+            "id, label, quantity, species_config:species_config_id(id, name, category, capabilities)",
+          )
           .eq("status", "active")
           .order("label"),
         supabase.from("inventory_items").select("*").order("name"),
@@ -80,7 +90,13 @@ function DailyLog() {
           values,
         }).map((row) => {
           if (row.type === "feed_given" && feedItemSelection[entity.id]) {
-            return { ...row, payload: { ...row.payload, item_id: feedItemSelection[entity.id] } };
+            return {
+              ...row,
+              payload: {
+                ...row.payload,
+                item_id: feedItemSelection[entity.id],
+              },
+            };
           }
           return row;
         });
@@ -90,14 +106,25 @@ function DailyLog() {
       const videos = content.videos !== "" ? Number(content.videos) : 0;
       const hasContent = photos > 0 || videos > 0 || content.note.trim() !== "";
       const contentParts = [];
-      if (photos > 0) contentParts.push(`${photos} photo${photos > 1 ? "s" : ""}`);
-      if (videos > 0) contentParts.push(`${videos} video${videos > 1 ? "s" : ""}`);
+      if (photos > 0)
+        contentParts.push(`${photos} photo${photos > 1 ? "s" : ""}`);
+      if (videos > 0)
+        contentParts.push(`${videos} video${videos > 1 ? "s" : ""}`);
       const contentRow = hasContent
         ? {
             title: `Daily capture — ${date}`,
-            type: photos > 0 && videos > 0 ? "mixed" : videos > 0 ? "video" : photos > 0 ? "photo" : "note",
+            type:
+              photos > 0 && videos > 0
+                ? "mixed"
+                : videos > 0
+                  ? "video"
+                  : photos > 0
+                    ? "photo"
+                    : "note",
             stage: "captured",
-            notes: [contentParts.join(", "), content.note.trim()].filter(Boolean).join(" — "),
+            notes: [contentParts.join(", "), content.note.trim()]
+              .filter(Boolean)
+              .join(" — "),
             occurred_at: date,
           }
         : null;
@@ -115,13 +142,17 @@ function DailyLog() {
 
       // A complete daily log is one durable unit, online or offline.
       if (!navigator.onLine) {
-        enqueue("daily_log", { events: allRows, expense: expenseRow, content: contentRow });
+        enqueue("daily_log", {
+          events: allRows,
+          expense: expenseRow,
+          content: contentRow,
+        });
 
         setEntityValues({});
         setExpense({ amount: "", category: "", entityId: "" });
         setContent({ photos: "", videos: "", note: "" });
         setSubmitWarning(
-          "You're offline — saved on this device and queued to sync automatically once you're back online."
+          "You're offline — saved on this device and queued to sync automatically once you're back online.",
         );
         setSubmitted(true);
         return;
@@ -135,9 +166,14 @@ function DailyLog() {
       if (error) throw error;
       if (data?.shortfalls?.length > 0) {
         const warning = data.shortfalls
-          .map((item) => `${item.item_name ?? "item"}: short by ${Number(item.shortfall).toFixed(2)}`)
+          .map(
+            (item) =>
+              `${item.item_name ?? "item"}: short by ${Number(item.shortfall).toFixed(2)}`,
+          )
           .join("; ");
-        setSubmitWarning(`Saved, but stock ran short: ${warning}. Record a purchase in Inventory.`);
+        setSubmitWarning(
+          `Saved, but stock ran short: ${warning}. Record a purchase in Inventory.`,
+        );
       }
 
       setEntityValues({});
@@ -152,189 +188,309 @@ function DailyLog() {
   }
 
   if (loading) {
-    return <p className="farmos-dailylog__status">Loading today's entities…</p>;
+    return (
+      <Card>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          Loading today's entities…
+        </CardContent>
+      </Card>
+    );
   }
 
   if (loadError) {
-    return <p className="farmos-dailylog__status farmos-dailylog__status--error">{loadError}</p>;
+    return (
+      <Card>
+        <CardContent className="py-6">
+          <p className="text-sm text-destructive">{loadError}</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="farmos-dailylog">
-      <h1 className="farmos-dailylog__title">Daily Log</h1>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="size-5 text-forest" />
+            <h1 className="text-2xl font-semibold tracking-tight">Daily Log</h1>
+          </div>
 
-      <div className="farmos-dailylog__date-row">
-        <label htmlFor="log-date">Date</label>
-        <input
-          id="log-date"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+          <p className="text-sm text-muted-foreground">
+            Record today's farm activity, expenses, and content in one durable
+            log.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <CalendarDays className="size-4 text-muted-foreground" />
+          <label
+            htmlFor="log-date"
+            className="text-sm font-medium text-muted-foreground"
+          >
+            Date
+          </label>
+          <Input
+            id="log-date"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-auto"
+          />
+        </div>
       </div>
 
       {entities.length === 0 ? (
-        <p className="farmos-dailylog__status">
-          No active farm entities yet — register some in the database before logging against them.
-        </p>
+        <Card>
+          <CardContent className="py-8">
+            <p className="text-sm text-muted-foreground">
+              No active farm entities yet — register some in the database before
+              logging against them.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
-        <form onSubmit={handleSubmit}>
-          <div className="farmos-dailylog__entities">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
             {entities.map((entity) => {
               const capabilities = entity.species_config?.capabilities ?? {};
               const fields = getQuickFieldsForCapabilities(capabilities);
               const values = entityValues[entity.id] ?? {};
 
               return (
-                <div key={entity.id} className="farmos-entity-card">
-                  <div className="farmos-entity-card__header">
-                    <span className="farmos-entity-card__label">{entity.label}</span>
-                    <span className="farmos-entity-card__species">
-                      {entity.species_config?.name}
-                    </span>
-                  </div>
+                <Card
+                  key={entity.id}
+                  className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex flex-col gap-1 text-base sm:flex-row sm:items-center sm:justify-between">
+                      <span>{entity.label}</span>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {entity.species_config?.name}
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
 
-                  <div className="farmos-entity-card__fields">
-                    {fields.map((field) => (
-                      <label key={field.key} className="farmos-entity-card__field">
-                        <span>{field.label}</span>
-                        <input
-                          type="number"
-                          inputMode={field.inputMode}
-                          step="any"
-                          value={values[field.key] ?? ""}
-                          onChange={(e) =>
-                            updateEntityField(entity.id, field.key, e.target.value)
-                          }
-                        />
-                        {field.key === "feed_kg" && inventoryItems.length > 0 && (
-                          <select
-                            className="farmos-entity-card__feed-item"
-                            value={feedItemSelection[entity.id] ?? ""}
+                  <CardContent>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {fields.map((field) => (
+                        <label
+                          key={field.key}
+                          className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground"
+                        >
+                          <span>{field.label}</span>
+                          <Input
+                            type="number"
+                            inputMode={field.inputMode}
+                            step="any"
+                            value={values[field.key] ?? ""}
                             onChange={(e) =>
-                              setFeedItemSelection((prev) => ({
-                                ...prev,
-                                [entity.id]: e.target.value,
-                              }))
+                              updateEntityField(
+                                entity.id,
+                                field.key,
+                                e.target.value,
+                              )
                             }
-                          >
-                            <option value="">From stock…</option>
-                            {inventoryItems.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </label>
-                    ))}
-                  </div>
+                          />
+                          {field.key === "feed_kg" &&
+                            inventoryItems.length > 0 && (
+                              <select
+                                className="mt-1 min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={feedItemSelection[entity.id] ?? ""}
+                                onChange={(e) =>
+                                  setFeedItemSelection((prev) => ({
+                                    ...prev,
+                                    [entity.id]: e.target.value,
+                                  }))
+                                }
+                              >
+                                <option value="">From stock…</option>
+                                {inventoryItems.map((item) => (
+                                  <option key={item.id} value={item.id}>
+                                    {item.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                        </label>
+                      ))}
+                    </div>
 
-                  <label className="farmos-entity-card__note">
-                    <span>Note</span>
-                    <input
-                      type="text"
-                      placeholder="Optional — e.g. field inspection, health observation"
-                      value={values.note ?? ""}
-                      onChange={(e) => updateEntityField(entity.id, "note", e.target.value)}
-                    />
-                  </label>
-                </div>
+                    <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                      <span>Note</span>
+                      <Input
+                        type="text"
+                        placeholder="Optional — e.g. field inspection, health observation"
+                        value={values.note ?? ""}
+                        onChange={(e) =>
+                          updateEntityField(entity.id, "note", e.target.value)
+                        }
+                      />
+                    </label>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
 
-          <div className="farmos-dailylog__expense">
-            <h2 className="farmos-dailylog__section-title">Today's expense (optional)</h2>
-            <div className="farmos-dailylog__expense-fields">
-              <label>
-                <span>Amount (৳)</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="any"
-                  value={expense.amount}
-                  onChange={(e) => setExpense((p) => ({ ...p, amount: e.target.value }))}
-                />
-              </label>
-              <label>
-                <span>Category</span>
-                <input
-                  type="text"
-                  placeholder="e.g. feed, transport, medicine"
-                  value={expense.category}
-                  onChange={(e) => setExpense((p) => ({ ...p, category: e.target.value }))}
-                />
-              </label>
-              <label>
-                <span>For</span>
-                <select
-                  value={expense.entityId}
-                  onChange={(e) => setExpense((p) => ({ ...p, entityId: e.target.value }))}
-                >
-                  <option value="">General (not entity-specific)</option>
-                  {entities.map((entity) => (
-                    <option key={entity.id} value={entity.id}>
-                      {entity.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">
+                Today's expense{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </CardTitle>
+            </CardHeader>
 
-          <div className="farmos-dailylog__expense">
-            <h2 className="farmos-dailylog__section-title">Today's content (optional)</h2>
-            <div className="farmos-dailylog__expense-fields">
-              <label>
-                <span>Photos</span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={content.photos}
-                  onChange={(e) => setContent((p) => ({ ...p, photos: e.target.value }))}
-                />
-              </label>
-              <label>
-                <span>Videos</span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={content.videos}
-                  onChange={(e) => setContent((p) => ({ ...p, videos: e.target.value }))}
-                />
-              </label>
-              <label>
-                <span>Note</span>
-                <input
-                  type="text"
-                  placeholder="What did you capture?"
-                  value={content.note}
-                  onChange={(e) => setContent((p) => ({ ...p, note: e.target.value }))}
-                />
-              </label>
-            </div>
-          </div>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                  <span>Amount (৳)</span>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={expense.amount}
+                    onChange={(e) =>
+                      setExpense((prev) => ({
+                        ...prev,
+                        amount: e.target.value,
+                      }))
+                    }
+                    placeholder="0.00"
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                  <span>Category</span>
+                  <Input
+                    type="text"
+                    placeholder="e.g. feed, transport, medicine"
+                    value={expense.category}
+                    onChange={(e) =>
+                      setExpense((prev) => ({
+                        ...prev,
+                        category: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                  <span>For</span>
+                  <select
+                    value={expense.entityId}
+                    onChange={(e) =>
+                      setExpense((prev) => ({
+                        ...prev,
+                        entityId: e.target.value,
+                      }))
+                    }
+                    className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                  >
+                    <option value="">General (not entity-specific)</option>
+                    {entities.map((entity) => (
+                      <option key={entity.id} value={entity.id}>
+                        {entity.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">
+                Today's content{" "}
+                <span className="text-sm font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                  <span>Photos</span>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    step="1"
+                    value={content.photos}
+                    onChange={(e) =>
+                      setContent((prev) => ({
+                        ...prev,
+                        photos: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                  <span>Videos</span>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    step="1"
+                    value={content.videos}
+                    onChange={(e) =>
+                      setContent((prev) => ({
+                        ...prev,
+                        videos: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                  <span>Note</span>
+                  <Input
+                    type="text"
+                    placeholder="What did you capture?"
+                    value={content.note}
+                    onChange={(e) =>
+                      setContent((prev) => ({
+                        ...prev,
+                        note: e.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+            </CardContent>
+          </Card>
 
           {submitError && (
-            <p className="farmos-dailylog__status farmos-dailylog__status--error">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {submitError}
-            </p>
-          )}
-          {submitWarning && (
-            <p className="farmos-dailylog__status farmos-dailylog__status--warning">
-              {submitWarning}
-            </p>
-          )}
-          {submitted && (
-            <p className="farmos-dailylog__status farmos-dailylog__status--success">
-              Saved today's log.
-            </p>
+            </div>
           )}
 
-          <button type="submit" className="farmos-dailylog__submit" disabled={submitting}>
+          {submitWarning && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
+              {submitWarning}
+            </div>
+          )}
+
+          {submitted && (
+            <div className="rounded-lg border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-forest">
+              Saved today's log.
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="w-full sm:w-auto"
+          >
             {submitting ? "Saving…" : "Save today's log"}
-          </button>
+          </Button>
         </form>
       )}
     </div>

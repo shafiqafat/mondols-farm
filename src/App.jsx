@@ -39,6 +39,7 @@ const FarmOSContentJournal = lazy(() => import("./farm-os/pages/ContentJournal")
 const FarmOSTasks = lazy(() => import("./farm-os/pages/Tasks"));
 const FarmOSDailyLog = lazy(() => import("./farm-os/pages/DailyLog"));
 const FarmOSInventory = lazy(() => import("./farm-os/pages/Inventory"));
+const FarmOSSettings = lazy(() => import("./farm-os/pages/Settings"));
 
 // The public marketing site — unchanged, still wrapped in its own Navbar/Footer.
 function PublicSite() {
@@ -88,32 +89,33 @@ function App() {
       <PageLoader />
 
       <Suspense fallback={<div className="farmos-loading">Loading…</div>}>
-      <Routes>
-        {/* Farm OS — private, no public Navbar/Footer */}
-        <Route path="/farm-os/login" element={<FarmOSLogin />} />
-        <Route
-          path="/farm-os/*"
-          element={
-            <ProtectedRoute>
-              <FarmOSLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<FarmOSOverview />} />
-          <Route path="species" element={<FarmOSSpecies />} />
-          <Route path="entities/:id" element={<FarmOSEntityDetail />} />
-          <Route path="finance" element={<FarmOSFinance />} />
-          <Route path="capacity" element={<FarmOSCapacity />} />
-          <Route path="scenario" element={<FarmOSScenario />} />
-          <Route path="content" element={<FarmOSContentJournal />} />
-          <Route path="tasks" element={<FarmOSTasks />} />
-          <Route path="daily-log" element={<FarmOSDailyLog />} />
-          <Route path="inventory" element={<FarmOSInventory />} />
-        </Route>
+        <Routes>
+          {/* Farm OS — private, no public Navbar/Footer */}
+          <Route path="/farm-os/login" element={<FarmOSLogin />} />
+          <Route
+            path="/farm-os/*"
+            element={
+              <ProtectedRoute>
+                <FarmOSLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<FarmOSOverview />} />
+            <Route path="species" element={<FarmOSSpecies />} />
+            <Route path="entities/:id" element={<FarmOSEntityDetail />} />
+            <Route path="finance" element={<FarmOSFinance />} />
+            <Route path="capacity" element={<FarmOSCapacity />} />
+            <Route path="scenario" element={<FarmOSScenario />} />
+            <Route path="content" element={<FarmOSContentJournal />} />
+            <Route path="tasks" element={<FarmOSTasks />} />
+            <Route path="daily-log" element={<FarmOSDailyLog />} />
+            <Route path="inventory" element={<FarmOSInventory />} />
+            <Route path="settings" element={<FarmOSSettings />} />
+          </Route>
 
-        {/* Public site handles everything else */}
-        <Route path="/*" element={<PublicSite />} />
-      </Routes>
+          {/* Public site handles everything else */}
+          <Route path="/*" element={<PublicSite />} />
+        </Routes>
       </Suspense>
 
       <Analytics />

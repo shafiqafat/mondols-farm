@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  CalendarDays,
   CheckCircle2,
   ClipboardList,
   ListTodo,
@@ -221,7 +220,7 @@ function Tasks() {
                       : task.priority === "high"
                         ? "border-l-4 border-l-amber-500"
                         : task.priority === "normal"
-                          ? "border-l-4 border-l-earth"
+                          ? "border-l-4 border-l-[var(--color-earth)]"
                           : ""
                   }`}
                 >

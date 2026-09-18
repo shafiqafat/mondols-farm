@@ -1,8 +1,18 @@
 import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  ClipboardPenLine,
+} from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
-import { STAGES, STAGE_LABEL, nextStage } from "../engines/contentJournalEngine";
-import "./ContentJournal.css";
+import {
+  STAGES,
+  STAGE_LABEL,
+  nextStage,
+} from "../engines/contentJournalEngine";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 function ContentJournal() {
   const [items, setItems] = useState([]);
@@ -73,7 +83,13 @@ function ContentJournal() {
       setPageError(error.message);
       return;
     }
-    setForm({ title: "", type: "mixed", entityId: "", projectId: "", notes: "" });
+    setForm({
+      title: "",
+      type: "mixed",
+      entityId: "",
+      projectId: "",
+      notes: "",
+    });
     loadAll();
   }
 
@@ -93,108 +109,246 @@ function ContentJournal() {
     loadAll();
   }
 
-  if (loading) return <p className="farmos-content__status">Loading…</p>;
-  if (loadError)
-    return <p className="farmos-content__status farmos-content__status--error">{loadError}</p>;
+  if (loading) {
+    return (
+      <Card className="border-border/70 bg-card shadow-sm">
+        <CardContent className="flex min-h-32 items-center justify-center p-5">
+          <p className="text-sm text-muted-foreground">
+            Loading content journal…
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+  if (loadError) {
+    return (
+      <Card className="border-destructive/30 bg-card shadow-sm">
+        <CardContent className="p-5">
+          <p className="text-sm text-destructive">{loadError}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="farmos-content">
-      <h1 className="farmos-content__title">Content Journal</h1>
-      <p className="farmos-content__intro">
-        Idea → Captured → Editing → Published — every piece optionally linked back to the
-        entity or project it's about.
-      </p>
+    <div className="space-y-8">
+      <div className="flex items-start gap-3">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <ClipboardPenLine className="size-4" />
+        </div>
+
+        <div>
+          <h1 className="text-2xl font-semibold tracking-[-0.03em]">
+            Content Journal
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Capture farm stories and move them from idea to published content.
+            Link each piece back to the entity or project it belongs to.
+          </p>
+        </div>
+      </div>
 
       {pageError && (
-        <p className="farmos-content__status farmos-content__status--error">{pageError}</p>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+          <p className="text-sm text-destructive">{pageError}</p>
+        </div>
       )}
 
-      <div className="farmos-content__board">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {STAGES.map((stage) => (
-          <div key={stage} className="farmos-content__column">
-            <h2>{STAGE_LABEL[stage]}</h2>
-            {items.filter((i) => i.stage === stage).length === 0 ? (
-              <p className="farmos-content__empty">Nothing here yet.</p>
-            ) : (
-              items
-                .filter((i) => i.stage === stage)
-                .map((item) => {
-                  const next = nextStage(item.stage);
-                  return (
-                    <div key={item.id} className="farmos-content-card">
-                      <span className="farmos-content-card__title">{item.title}</span>
-                      <span className="farmos-content-card__meta">
-                        {item.type}
-                        {item.entity ? ` · ${item.entity.label}` : ""}
-                        {item.project ? ` · ${item.project.name}` : ""}
-                      </span>
-                      {item.notes && <p className="farmos-content-card__notes">{item.notes}</p>}
-                      {next && (
-                        <button
-                          type="button"
-                          onClick={() => handleAdvance(item)}
-                          disabled={advancingId === item.id}
-                        >
-                          {advancingId === item.id ? "…" : `Move to ${STAGE_LABEL[next]}`}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })
-            )}
-          </div>
+          <Card key={stage} className="border-border/70 bg-card shadow-sm">
+            <CardContent className="p-4">
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold">{STAGE_LABEL[stage]}</h2>
+
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {items.filter((i) => i.stage === stage).length}
+                </span>
+              </div>
+
+              {items.filter((i) => i.stage === stage).length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border/70 px-3 py-6 text-center text-xs text-muted-foreground">
+                  Nothing here yet.
+                </p>
+              ) : (
+                items
+                  .filter((i) => i.stage === stage)
+                  .map((item) => {
+                    const next = nextStage(item.stage);
+
+                    return (
+                      <Card
+                        key={item.id}
+                        className="mb-3 border-border/70 bg-background shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                      >
+                        <CardContent className="space-y-3 p-4">
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {item.title}
+                          </h3>
+
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs capitalize text-muted-foreground">
+                            <span>{item.type}</span>
+
+                            {item.entity && <span>· {item.entity.label}</span>}
+
+                            {item.project && <span>· {item.project.name}</span>}
+                          </div>
+
+                          {item.notes && (
+                            <p className="text-sm leading-5 text-muted-foreground">
+                              {item.notes}
+                            </p>
+                          )}
+
+                          {next && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => handleAdvance(item)}
+                              disabled={advancingId === item.id}
+                            >
+                              {advancingId === item.id
+                                ? "Moving…"
+                                : `Move to ${STAGE_LABEL[next]}`}
+
+                              {advancingId !== item.id && (
+                                <ArrowRight className="size-4" />
+                              )}
+                            </Button>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+              )}
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <form className="farmos-content__add-form" onSubmit={handleAdd}>
-        <h3>New content idea</h3>
-        <div className="farmos-content__add-fields">
-          <input
-            type="text"
-            placeholder="Title, e.g. Goat kidding day"
-            value={form.title}
-            onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-            required
-          />
-          <select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}>
-            <option value="mixed">Mixed</option>
-            <option value="photo">Photo</option>
-            <option value="video">Video</option>
-            <option value="note">Note</option>
-          </select>
-          <select
-            value={form.entityId}
-            onChange={(e) => setForm((p) => ({ ...p, entityId: e.target.value }))}
-          >
-            <option value="">No entity</option>
-            {entities.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={form.projectId}
-            onChange={(e) => setForm((p) => ({ ...p, projectId: e.target.value }))}
-          >
-            <option value="">No project</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+      <form
+        className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
+        onSubmit={handleAdd}
+      >
+        <div className="mb-5 flex items-start gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <ClipboardPenLine className="size-4" />
+          </div>
+
+          <div>
+            <h2 className="text-base font-semibold">New content idea</h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Capture an idea and optionally link it to a farm entity or
+              project.
+            </p>
+          </div>
         </div>
-        <input
-          type="text"
-          className="farmos-content__notes-input"
-          placeholder="Notes"
-          value={form.notes}
-          onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-        />
-        <button type="submit" disabled={saving}>
-          {saving ? "Adding…" : "Add idea"}
-        </button>
+
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="space-y-2 lg:col-span-2">
+            <label htmlFor="content-title" className="text-sm font-medium">
+              Title
+            </label>
+
+            <Input
+              id="content-title"
+              type="text"
+              placeholder="e.g. Goat kidding day"
+              value={form.title}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, title: e.target.value }))
+              }
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="content-type" className="text-sm font-medium">
+              Type
+            </label>
+
+            <select
+              id="content-type"
+              value={form.type}
+              onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="mixed">Mixed</option>
+              <option value="photo">Photo</option>
+              <option value="video">Video</option>
+              <option value="note">Note</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="content-entity" className="text-sm font-medium">
+              Entity
+            </label>
+
+            <select
+              id="content-entity"
+              value={form.entityId}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, entityId: e.target.value }))
+              }
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="">No entity</option>
+
+              {entities.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="content-project" className="text-sm font-medium">
+              Project
+            </label>
+
+            <select
+              id="content-project"
+              value={form.projectId}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, projectId: e.target.value }))
+              }
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="">No project</option>
+
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-2">
+          <label htmlFor="content-notes" className="text-sm font-medium">
+            Notes
+          </label>
+
+          <Input
+            id="content-notes"
+            type="text"
+            placeholder="Optional notes"
+            value={form.notes}
+            onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+          />
+        </div>
+
+        <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
+          <Button type="submit" disabled={saving}>
+            {saving ? "Adding…" : "Add idea"}
+          </Button>
+        </div>
       </form>
     </div>
   );

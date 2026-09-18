@@ -95,8 +95,14 @@ function Finance() {
 
     const harvestTotals = {};
     for (const row of harvestRes.data ?? []) {
-      const amt = Number(row.payload?.amount ?? 0);
-      harvestTotals[row.entity_id] = (harvestTotals[row.entity_id] ?? 0) + amt;
+      const qtyKg = Number(row.payload?.qty_kg ?? 0);
+
+      if (!Number.isFinite(qtyKg) || qtyKg <= 0) {
+        continue;
+      }
+
+      harvestTotals[row.entity_id] =
+        (harvestTotals[row.entity_id] ?? 0) + qtyKg;
     }
     setHarvestByEntity(harvestTotals);
 

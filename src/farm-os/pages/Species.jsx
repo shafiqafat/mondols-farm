@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { Sprout } from "lucide-react";
+import { Pencil, Sprout } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -316,27 +316,45 @@ function Species() {
               key={species.id}
               className="border-border/70 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-4">
+              <CardHeader className="pb-2">
+                <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <CardTitle className="truncate text-base">
                       {species.name}
                     </CardTitle>
+
                     <CardDescription className="mt-1">
                       {species.category}
                     </CardDescription>
                   </div>
 
-                  <Badge variant="secondary" className="shrink-0 capitalize">
-                    {species.category}
-                  </Badge>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge variant="secondary" className="capitalize">
+                      {species.category}
+                    </Badge>
+
+                    {editingSpeciesId !== species.id && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1.5 px-2.5"
+                        onClick={() => startEditing(species)}
+                      >
+                        <Pencil className="size-3.5" />
+                        <span>Edit</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
+
               {editingSpeciesId === species.id ? (
-                <CardContent className="pt-0">
+                <CardContent className="pt-1">
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm font-medium">Capabilities</p>
+
                       <p className="mt-1 text-xs text-muted-foreground">
                         Select the capabilities this species or crop should
                         support.
@@ -360,6 +378,7 @@ function Species() {
                             }
                             className="size-4 accent-primary"
                           />
+
                           <span>{cap.label}</span>
                         </label>
                       ))}
@@ -388,7 +407,7 @@ function Species() {
                   </div>
                 </CardContent>
               ) : (
-                <CardContent className="pt-0">
+                <CardContent className="pt-1 pb-4">
                   <div className="flex flex-wrap gap-2">
                     {Object.keys(species.capabilities ?? {}).length === 0 ? (
                       <span className="text-sm text-muted-foreground">
@@ -407,16 +426,6 @@ function Species() {
                       ))
                     )}
                   </div>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="mt-3"
-                    onClick={() => startEditing(species)}
-                  >
-                    Edit capabilities
-                  </Button>
                 </CardContent>
               )}
             </Card>

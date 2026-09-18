@@ -9,7 +9,6 @@ import {
   Sprout,
   Boxes,
   Wallet,
-  LogOut,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -91,8 +90,8 @@ const NAV_GROUPS = [
   },
 ];
 
-function FarmOSSidebar({ user, role, signOut }) {
-  const { state } = useSidebar();
+function FarmOSSidebar() {
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const location = useLocation();
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -141,6 +140,11 @@ function FarmOSSidebar({ user, role, signOut }) {
                         <NavLink
                           to={item.to}
                           end={item.end}
+                          onClick={() => {
+                            if (isMobile) {
+                              setOpenMobile(false);
+                            }
+                          }}
                           className={`flex h-full w-full flex-row items-center rounded-lg ${
                             state === "collapsed"
                               ? "justify-center px-0"
@@ -168,7 +172,7 @@ function FarmOSSidebar({ user, role, signOut }) {
             <SidebarMenuButton
               asChild
               tooltip="Settings"
-              className="h-9 rounded-lg px-2.5 text-sm text-sidebar-foreground/80 transition-colors duration-150 hover:bg-white/10 hover:text-white"
+              className="h-9 rounded-lg px-2.5 text-sm text-sidebar-foreground/80 transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
               <NavLink
                 to="/farm-os/settings"
@@ -179,28 +183,7 @@ function FarmOSSidebar({ user, role, signOut }) {
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
-
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={signOut}
-              tooltip="Sign out"
-              className="h-9 flex-row items-center rounded-lg px-2.5 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              <LogOut className="size-4 shrink-0" />
-              <span>Sign out</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
-
-        <div className="mt-2 border-t border-sidebar-border/70 px-2 pt-3 group-data-[collapsible=icon]:hidden">
-          <div className="truncate text-xs text-sidebar-foreground/60">
-            {user?.email}
-          </div>
-
-          <div className="mt-1 text-xs font-medium capitalize text-sidebar-foreground/80">
-            {role ?? "Administrator"}
-          </div>
-        </div>
       </SidebarFooter>
     </Sidebar>
   );

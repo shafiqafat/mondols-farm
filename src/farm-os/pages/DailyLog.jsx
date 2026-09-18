@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import {
-  getQuickFieldsForCapabilities,
   buildEventRows,
+  getQuickFieldsForCapabilities,
+  validateDailyLog,
+  validateDailyLogInput,
 } from "../engines/dailyLogEngine";
 import { enqueue } from "../lib/offlineQueue";
 import { localDateISO } from "../lib/localDate";
@@ -79,6 +81,17 @@ function DailyLog() {
     setSubmitting(true);
 
     try {
+      const inputValidationErrors = validateDailyLogInput({
+        entityValues,
+        entities,
+        expense,
+        content,
+      });
+
+      if (inputValidationErrors.length > 0) {
+        setSubmitError(inputValidationErrors[0]);
+        return;
+      }
       const allRows = entities.flatMap((entity) => {
         const capabilities = entity.species_config?.capabilities ?? {};
         const fields = getQuickFieldsForCapabilities(capabilities);
@@ -140,6 +153,23 @@ function DailyLog() {
             }
           : null;
 
+          const validationErrors = validateDailyLog({
+            entityRows: allRows,
+            expense: expenseRow,
+            content: contentRow,
+          });
+          if (allRows.length === 0 && !expenseRow && !contentRow) {
+            setSubmitError(
+              "Add at least one activity, expense, or content entry.",
+            );
+            return;
+          }
+
+          if (validationErrors.length > 0) {
+            setSubmitError(validationErrors[0]);
+            return;
+          }
+
       // A complete daily log is one durable unit, online or offline.
       if (!navigator.onLine) {
         enqueue("daily_log", {
@@ -180,11 +210,13 @@ function DailyLog() {
       setExpense({ amount: "", category: "", entityId: "" });
       setContent({ photos: "", videos: "", note: "" });
       setSubmitted(true);
-    } catch (err) {
+    } 
+    catch (err) {
       setSubmitError(err.message ?? "Something went wrong saving today's log.");
     } finally {
       setSubmitting(false);
     }
+    
   }
 
   if (loading) {

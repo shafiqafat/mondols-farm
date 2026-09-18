@@ -1,3 +1,87 @@
+-- ============================================================
+-- 0015 — Inventory consumption ledger
+-- ============================================================
+
+create table if not exists public.inventory_consumptions (
+  id uuid primary key default gen_random_uuid(),
+
+  event_id uuid not null
+    references public.entity_events(id) on delete cascade,
+
+  item_id uuid not null
+    references public.inventory_items(id) on delete restrict,
+
+  lot_id uuid not null
+    references public.inventory_lots(id) on delete restrict,
+
+  quantity numeric not null
+    check (quantity > 0),
+
+  unit_cost numeric not null
+    check (unit_cost >= 0),
+
+  total_cost numeric not null
+    check (total_cost >= 0),
+
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_inventory_consumptions_event
+  on public.inventory_consumptions(event_id);
+
+create index if not exists idx_inventory_consumptions_item
+  on public.inventory_consumptions(item_id, created_at desc);
+
+create index if not exists idx_inventory_consumptions_lot
+  on public.inventory_consumptions(lot_id);
+
+create index if not exists idx_inventory_consumptions_created
+  on public.inventory_consumptions(created_at desc);
+
+
+-- ============================================================
+-- RLS
+-- ============================================================
+
+alter table public.inventory_consumptions
+  enable row level security;
+
+drop policy if exists "farmos_read"
+  on public.inventory_consumptions;
+
+drop policy if exists "farmos_write"
+  on public.inventory_consumptions;
+
+create policy "farmos_read"
+on public.inventory_consumptions
+for select
+using (farm_can_read());
+
+create policy "farmos_write"
+on public.inventory_consumptions
+for all
+using (farm_can_write())
+with check (farm_can_write());
+
+
+-- ============================================================
+-- Audit
+-- ============================================================
+
+drop trigger if exists farm_audit_inventory_consumptions
+on public.inventory_consumptions;
+
+create trigger farm_audit_inventory_consumptions
+after insert or update or delete
+on public.inventory_consumptions
+for each row
+execute function public.write_farm_audit_log();
+
+
+-- ============================================================
+-- Daily Log transaction with FIFO consumption recording
+-- ============================================================
+
 create or replace function public.process_daily_log(
   p_events jsonb default '[]'::jsonb,
   p_expense jsonb default null::jsonb,
@@ -25,9 +109,9 @@ begin
     Process each event inside the same database transaction.
 
     For feed_given events:
-      1. Insert the event.
-      2. Lock eligible inventory lots in FIFO order.
-      3. Deduct stock.
+      1. Insert the entity event.
+      2. Lock inventory lots in FIFO order.
+      3. Deduct inventory.
       4. Record the exact lot allocation.
   */
 

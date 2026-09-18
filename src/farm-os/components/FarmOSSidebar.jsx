@@ -176,6 +176,11 @@ function FarmOSSidebar() {
             >
               <NavLink
                 to="/farm-os/settings"
+                onClick={() => {
+                  if (isMobile) {
+                    setOpenMobile(false);
+                  }
+                }}
                 className="flex w-full flex-row items-center gap-2"
               >
                 <Settings className="size-4 shrink-0" />

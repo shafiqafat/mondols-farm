@@ -68,6 +68,155 @@ export function getQuickFieldsForCapabilities(capabilities = {}) {
   return fields;
 }
 
+export function validateDailyLogInput({
+  entityValues = {},
+  entities = [],
+  expense = null,
+  content = null,
+}) {
+  const errors = [];
+
+  for (const entity of entities) {
+    const values = entityValues[entity.id] ?? {};
+    const capabilities = entity.species_config?.capabilities ?? {};
+    const fields = getQuickFieldsForCapabilities(capabilities);
+
+    for (const field of fields) {
+      const raw = values[field.key];
+
+      if (raw === undefined || raw === null || raw === "") {
+        continue;
+      }
+
+      const value = Number(raw);
+
+      if (!Number.isFinite(value)) {
+        errors.push(`${field.label} must be a valid number.`);
+        continue;
+      }
+
+      if (field.eventType === "mortality") {
+        if (!Number.isInteger(value) || value < 0) {
+          errors.push("Mortality must be a whole number of 0 or greater.");
+        }
+        continue;
+      }
+
+      if (field.eventType === "weight_check" && value <= 0) {
+        errors.push("Weight must be greater than 0.");
+        continue;
+      }
+
+      if (field.eventType === "harvest" && value <= 0) {
+        errors.push("Harvest quantity must be greater than 0.");
+        continue;
+      }
+
+      if (value < 0) {
+        errors.push(`${field.label} cannot be negative.`);
+      }
+    }
+  }
+
+  if (expense?.amount !== undefined && expense.amount !== "") {
+    const amount = Number(expense.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      errors.push("Expense amount must be greater than 0.");
+    }
+  }
+
+  if (content) {
+    const photos = content.photos === "" ? 0 : Number(content.photos);
+
+    const videos = content.videos === "" ? 0 : Number(content.videos);
+
+    if (!Number.isInteger(photos) || photos < 0) {
+      errors.push("Photo count must be a whole number of 0 or greater.");
+    }
+
+    if (!Number.isInteger(videos) || videos < 0) {
+      errors.push("Video count must be a whole number of 0 or greater.");
+    }
+  }
+
+  return errors;
+}
+
+export function validateDailyLog({
+  entityRows = [],
+  expense = null,
+  content = null,
+}) {
+  const errors = [];
+
+  for (const row of entityRows) {
+    const payload = row.payload ?? {};
+
+    if (row.type === "feed_given") {
+      const value = Number(payload.qty_kg);
+
+      if (!Number.isFinite(value) || value < 0) {
+        errors.push("Feed must be 0 or greater.");
+      }
+    }
+
+    if (row.type === "egg_count") {
+      const value = Number(payload.count);
+
+      if (!Number.isFinite(value) || value < 0) {
+        errors.push("Egg count must be 0 or greater.");
+      }
+    }
+
+    if (row.type === "weight_check") {
+      const value = Number(payload.kg);
+
+      if (!Number.isFinite(value) || value <= 0) {
+        errors.push("Weight must be greater than 0.");
+      }
+    }
+
+    if (row.type === "harvest") {
+      const value = Number(payload.qty_kg);
+
+      if (!Number.isFinite(value) || value <= 0) {
+        errors.push("Harvest quantity must be greater than 0.");
+      }
+    }
+
+    if (row.type === "mortality") {
+      const value = Number(payload.count);
+
+      if (!Number.isFinite(value) || value < 0) {
+        errors.push("Mortality must be 0 or greater.");
+      }
+    }
+  }
+
+  if (expense) {
+    const amount = Number(expense.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      errors.push("Expense amount must be greater than 0.");
+    }
+  }
+
+  if (content) {
+    const photos = Number(content.photos ?? 0);
+    const videos = Number(content.videos ?? 0);
+
+    if (!Number.isFinite(photos) || photos < 0) {
+      errors.push("Photo count must be 0 or greater.");
+    }
+
+    if (!Number.isFinite(videos) || videos < 0) {
+      errors.push("Video count must be 0 or greater.");
+    }
+  }
+
+  return errors;
+}
 /**
  * Build the entity_events rows for one entity's form values.
  * Blank fields are skipped — Daily Log should only record what you

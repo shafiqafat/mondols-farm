@@ -46,6 +46,16 @@ export function getAvailableEventTypes(entity, speciesList) {
     return EVENT_TYPE_OPTIONS;
   }
 
+  const lifecycleRestrictedStatuses = new Set([
+    "sold",
+    "deceased",
+    "harvested",
+  ]);
+
+  if (lifecycleRestrictedStatuses.has(entity.status)) {
+    return EVENT_TYPE_OPTIONS.filter((option) => option.value === "other");
+  }
+
   return EVENT_TYPE_OPTIONS.filter((option) =>
     canEntityUseEvent(entity, speciesList, option.value),
   );
@@ -88,6 +98,28 @@ export function getEventSummary(event) {
   const type = event?.type;
 
   if (type === "feed") {
+        if (type === "status_changed") {
+          const formatStatus = (value) =>
+            value
+              ? value
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (char) => char.toUpperCase())
+              : null;
+
+          const from = formatStatus(payload.from);
+          const to = formatStatus(payload.to);
+
+          const transition =
+            from && to
+              ? `${from} → ${to}`
+              : to
+                ? `Changed to ${to}`
+                : "Status changed";
+
+          return payload.reason
+            ? `${transition} · ${payload.reason}`
+            : transition;
+        }
     const quantity = payload.quantity;
     const unit = payload.unit || "";
     const feedType = payload.feedType;

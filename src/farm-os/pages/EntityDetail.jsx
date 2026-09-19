@@ -268,6 +268,9 @@ function EntityDetail() {
   const category = entity.species_config?.category;
 
   const availableTypes = getAvailableEventTypes(entity, speciesList);
+  const isClosedEntity = ["sold", "deceased", "harvested"].includes(
+    entity.status,
+  );
 
   const selectedTypeDef = EVENT_SCHEMAS[form.type];
   const harvestOutlook =
@@ -450,9 +453,18 @@ function EntityDetail() {
           </div>
         </div>
 
+        {isClosedEntity && (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
+            This entity is {entity.status}. Operational events can no longer be
+            recorded.
+          </div>
+        )}
+
         <form
           onSubmit={handleAddEvent}
-          className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
+          className={`rounded-xl border border-border/70 bg-card p-5 shadow-sm ${
+            isClosedEntity ? "opacity-70" : ""
+          }`}
         >
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
@@ -465,7 +477,8 @@ function EntityDetail() {
 
               <select
                 id="entity-event-type"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                disabled={isClosedEntity}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
                 value={form.type}
                 onChange={(e) =>
                   setForm((p) => ({
@@ -497,6 +510,7 @@ function EntityDetail() {
               <input
                 id="entity-event-date"
                 type="date"
+                disabled={isClosedEntity}
                 value={form.date}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
                 onChange={(e) =>
@@ -579,7 +593,7 @@ function EntityDetail() {
           <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
             <button
               type="submit"
-              disabled={!form.type || saving}
+              disabled={!form.type || saving || isClosedEntity}
               className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
             >
               {saving ? "Saving…" : "Log event"}

@@ -217,16 +217,28 @@ function Species() {
 
   async function handleStatusChange(entityId, status) {
     setUpdatingStatusId(entityId);
-    const { error } = await supabase
-      .from("farm_entities")
-      .update({ status })
-      .eq("id", entityId);
+    setPageError("");
+
+    const { data, error } = await supabase.rpc("change_entity_status", {
+      p_entity_id: entityId,
+      p_status: status,
+      p_reason: null,
+    });
+
     setUpdatingStatusId(null);
+
     if (error) {
       setPageError(error.message);
       return;
     }
-    loadAll();
+
+    if (data?.changed) {
+      setEntities((currentEntities) =>
+        currentEntities.map((entity) =>
+          entity.id === entityId ? { ...entity, status: data.status } : entity,
+        ),
+      );
+    }
   }
 
   async function handleAddRule(e) {

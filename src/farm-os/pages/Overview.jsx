@@ -89,7 +89,8 @@ function Overview() {
 
         supabase
           .from("farm_entities")
-          .select("id", { count: "exact", head: true }),
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active"),
 
         supabase.from("inventory_items").select("*"),
 
@@ -102,7 +103,7 @@ function Overview() {
 
         supabase
           .from("tasks")
-          .select("due_at, priority, completed_at")
+          .select("due_at, priority, completed_at, entity:entity_id(status)")
           .is("completed_at", null),
 
         supabase
@@ -166,7 +167,9 @@ function Overview() {
 
       if (!tasksRes.error) {
         const today = localDateISO();
-        const openTasks = tasksRes.data ?? [];
+        const openTasks = (tasksRes.data ?? []).filter(
+          (task) => !task.entity || task.entity.status === "active",
+        );
 
         const overdue = openTasks.filter(
           (task) => classifyTask(task, today) === "overdue",

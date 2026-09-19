@@ -56,9 +56,13 @@ function Tasks() {
     const [tasksRes, entitiesRes] = await Promise.all([
       supabase
         .from("tasks")
-        .select("*, entity:entity_id(label)")
+        .select("*, entity:entity_id(id, label, status)")
         .order("due_at", { ascending: true, nullsFirst: false }),
-      supabase.from("farm_entities").select("id, label").order("label"),
+      supabase
+        .from("farm_entities")
+        .select("id, label")
+        .eq("status", "active")
+        .order("label"),
     ]);
 
     if (tasksRes.error) {
@@ -125,8 +129,9 @@ function Tasks() {
 
     // Recurring tasks spawn their next occurrence on completion, rather
     // than pre-creating every future date up front.
+    const entityIsActive = !task.entity || task.entity.status === "active";
     const nextDue = computeNextDueDate(task.due_at, task.recurrence);
-    if (nextDue) {
+    if (nextDue && entityIsActive) {
       const { error: nextError } = await supabase.from("tasks").insert({
         title: task.title,
         entity_id: task.entity_id,
@@ -166,7 +171,9 @@ function Tasks() {
   }
 
   const today = todayISO();
-  const incomplete = tasks.filter((t) => !t.completed_at);
+  const incomplete = tasks.filter(
+    (t) => !t.completed_at && (!t.entity || t.entity.status === "active"),
+  );
   const completed = tasks.filter((t) => t.completed_at);
 
   const grouped = { overdue: [], today: [], upcoming: [], "no-due-date": [] };

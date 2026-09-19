@@ -13,6 +13,28 @@ import {
   Split,
   Plus,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  ReferenceLine,
+  XAxis,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +54,7 @@ function Finance() {
   const [transactions, setTransactions] = useState([]);
   const [entities, setEntities] = useState([]);
   const [harvestByEntity, setHarvestByEntity] = useState({});
+  const [inventoryConsumptions, setInventoryConsumptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
@@ -52,6 +75,9 @@ function Finance() {
     notes: "",
   });
   const [savingTxn, setSavingTxn] = useState(false);
+  const [editingTxn, setEditingTxn] = useState(null);
+  const [deletingTxnId, setDeletingTxnId] = useState(null);
+  const [txnActionError, setTxnActionError] = useState("");
 
   const [assignSelection, setAssignSelection] = useState({});
 
@@ -67,24 +93,43 @@ function Finance() {
     setLoading(true);
     setLoadError("");
 
-    const [projectsRes, txnRes, entitiesRes, harvestRes] = await Promise.all([
+    const [
+      projectsRes,
+      txnRes,
+      entitiesRes,
+      harvestRes,
+      inventoryConsumptionsRes,
+    ] = await Promise.all([
       supabase.from("farm_projects").select("*").order("name"),
+
       supabase
         .from("finance_transactions")
         .select("*")
         .order("occurred_at", { ascending: false }),
+
       supabase
         .from("farm_entities")
         .select("id, label, project_id, species_config:species_config_id(name)")
         .order("label"),
+
       supabase
         .from("entity_events")
         .select("entity_id, payload")
         .eq("type", "harvest"),
-    ]);
 
-    if (projectsRes.error) {
-      setLoadError(projectsRes.error.message);
+      supabase
+        .from("inventory_consumptions")
+        .select(`id, entity_events!inner (entity_id), total_cost`),
+    ]);
+    const loadErrorResult =
+      projectsRes.error ||
+      txnRes.error ||
+      entitiesRes.error ||
+      harvestRes.error ||
+      inventoryConsumptionsRes.error;
+
+    if (loadErrorResult) {
+      setLoadError(loadErrorResult.message);
       setLoading(false);
       return;
     }
@@ -92,6 +137,8 @@ function Finance() {
     setProjects(projectsRes.data ?? []);
     setTransactions(txnRes.data ?? []);
     setEntities(entitiesRes.data ?? []);
+    setInventoryConsumptions(inventoryConsumptionsRes.data ?? []);
+
 
     const harvestTotals = {};
     for (const row of harvestRes.data ?? []) {
@@ -113,6 +160,43 @@ function Finance() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll();
   }, []);
+
+  async function handleUpdateTransaction(e) {
+    e.preventDefault();
+
+    if (!editingTxn) return;
+
+    const amount = Number(editingTxn.amount);
+
+    if (!amount || amount <= 0) {
+      setTxnActionError("Enter a valid amount.");
+      return;
+    }
+
+    setTxnActionError("");
+
+    const { error } = await supabase
+      .from("finance_transactions")
+      .update({
+        type: editingTxn.type,
+        amount,
+        category: editingTxn.category || null,
+        project_id: editingTxn.projectId || null,
+        entity_id: editingTxn.entityId || null,
+        occurred_at: editingTxn.date,
+        notes: editingTxn.notes || null,
+      })
+      .eq("id", editingTxn.id)
+      .is("sale_id", null);
+
+    if (error) {
+      setTxnActionError(error.message);
+      return;
+    }
+
+    setEditingTxn(null);
+    loadAll();
+  }
 
   async function handleAddProject(e) {
     e.preventDefault();
@@ -169,6 +253,26 @@ function Finance() {
       date: todayISO(),
       notes: "",
     });
+    loadAll();
+  }
+
+  async function handleDeleteTransaction(id) {
+    setDeletingTxnId(id);
+    setTxnActionError("");
+
+    const { error } = await supabase
+      .from("finance_transactions")
+      .delete()
+      .eq("id", id)
+      .is("sale_id", null);
+
+    setDeletingTxnId(null);
+
+    if (error) {
+      setTxnActionError(error.message);
+      return;
+    }
+
     loadAll();
   }
 
@@ -283,6 +387,59 @@ function Finance() {
   }
 
   const unassignedEntities = entities.filter((e) => !e.project_id);
+  const monthlyFinance = transactions.reduce((acc, transaction) => {
+    const month = transaction.occurred_at?.slice(0, 7);
+
+    if (!month) return acc;
+
+    if (!acc[month]) {
+      acc[month] = {
+        income: 0,
+        expense: 0,
+        asset: 0,
+        netCash: 0,
+      };
+    }
+
+    const amount = Number(transaction.amount || 0);
+
+    if (transaction.type === "income") {
+      acc[month].income += amount;
+      acc[month].netCash += amount;
+    }
+
+    if (transaction.type === "expense") {
+      acc[month].expense += amount;
+      acc[month].netCash -= amount;
+    }
+
+    if (transaction.type === "asset") {
+      acc[month].asset += amount;
+      acc[month].netCash -= amount;
+    }
+
+    return acc;
+  }, {});
+  const monthlyFinanceRows = Object.entries(monthlyFinance)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([month, values]) => ({
+      month,
+      ...values,
+    }));
+  const financeChartConfig = {
+    income: {
+      label: "Income",
+      color: "var(--color-forest)",
+    },
+    expense: {
+      label: "Expenses",
+      color: "var(--color-terracotta)",
+    },
+    netCash: {
+      label: "Net cash",
+      color: "var(--color-earth)",
+    },
+  };
   // const unassignedTransactions = transactions.filter((t) => !t.project_id);
 
   return (
@@ -332,9 +489,28 @@ function Finance() {
         <div className="space-y-3">
           {projects.map((project) => {
             const projectTxns = transactions.filter(
-              (t) => t.project_id === project.id,
+              (t) =>
+                t.project_id === project.id &&
+                t.category !== "Inventory Purchase",
             );
             const totals = computeTotals(projectTxns);
+            const projectConsumedInventoryCost = inventoryConsumptions
+              .filter(
+                (consumption) =>
+                  entities.find(
+                    (entity) =>
+                      entity.id === consumption.entity_events?.entity_id,
+                  )?.project_id === project.id,
+              )
+              .reduce(
+                (sum, consumption) => sum + Number(consumption.total_cost || 0),
+                0,
+              );
+            const projectOperatingCost =
+              totals.expense + projectConsumedInventoryCost;
+            const projectRevenue = totals.income;
+            
+            const operatingMargin = projectRevenue - projectOperatingCost;
             const projectEntities = entities.filter(
               (e) => e.project_id === project.id,
             );
@@ -342,8 +518,10 @@ function Finance() {
               (sum, e) => sum + (harvestByEntity[e.id] ?? 0),
               0,
             );
-            const costPerUnit = computeCostPerUnit(totals.expense, totalYield);
-
+            const costPerUnit = computeCostPerUnit(
+              projectOperatingCost,
+              totalYield,
+            );
             return (
               <Card
                 key={project.id}
@@ -373,7 +551,7 @@ function Finance() {
                 </CardHeader>
 
                 <CardContent className="space-y-4">
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
                       <p className="text-xs text-muted-foreground">Income</p>
                       <p className="mt-1 text-sm font-semibold">
@@ -394,26 +572,73 @@ function Finance() {
                         ৳{totals.asset.toFixed(2)}
                       </p>
                     </div>
-                  </div>
 
-                  {totalYield > 0 && (
-                    <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+                    <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
                       <p className="text-xs text-muted-foreground">
-                        Production economics
+                        Consumed inventory
                       </p>
-
-                      <p className="mt-1 text-sm font-medium">
-                        Yield: {totalYield.toFixed(2)}
-                        <span className="mx-1.5 text-muted-foreground">·</span>
-                        Cost/unit: ৳
-                        {costPerUnit != null ? costPerUnit.toFixed(2) : "—"}
-                      </p>
-
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Cash costs only
+                      <p className="mt-1 text-sm font-semibold">
+                        ৳{projectConsumedInventoryCost.toFixed(2)}
                       </p>
                     </div>
-                  )}
+                    <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+                      <p className="text-xs text-muted-foreground">
+                        Operating cost
+                      </p>
+                      <p className="mt-1 text-sm font-semibold">
+                        ৳{projectOperatingCost.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Project economics
+                    </p>
+
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Recorded revenue
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          ৳{projectRevenue.toFixed(2)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Operating cost
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          ৳{projectOperatingCost.toFixed(2)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Operating margin
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          ৳{operatingMargin.toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Cost / unit
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {costPerUnit != null
+                            ? `৳${costPerUnit.toFixed(2)}`
+                            : "—"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Operating cost includes consumed inventory.
+                    </p>
+                  </div>
 
                   <div className="space-y-2">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -845,13 +1070,397 @@ function Finance() {
                       )}
                     </div>
 
-                    <div
-                      className={`shrink-0 text-left text-base font-semibold sm:text-right ${
-                        t.type === "income" ? "text-primary" : "text-foreground"
-                      }`}
-                    >
-                      {t.type === "income" ? "+" : "-"}৳
-                      {Number(t.amount || 0).toLocaleString()}
+                    <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                      <div
+                        className={`text-left text-base font-semibold sm:text-right ${
+                          t.type === "income"
+                            ? "text-primary"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {t.type === "income" ? "+" : "-"}৳
+                        {Number(t.amount || 0).toLocaleString()}
+                      </div>
+
+                      {t.sale_id ? (
+                        <Badge variant="secondary" className="font-normal">
+                          From sale
+                        </Badge>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setEditingTxn({
+                                id: t.id,
+                                type: t.type,
+                                amount: t.amount,
+                                category: t.category ?? "",
+                                projectId: t.project_id ?? "",
+                                entityId: t.entity_id ?? "",
+                                date: t.occurred_at ?? todayISO(),
+                                notes: t.notes ?? "",
+                              })
+                            }
+                          >
+                            Edit
+                          </Button>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={deletingTxnId === t.id}
+                            onClick={() => handleDeleteTransaction(t.id)}
+                            className="border-destructive/40 text-destructive hover:border-destructive/60 hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            {deletingTxnId === t.id ? "Deleting…" : "Delete"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+      {editingTxn && (
+        <Dialog
+          open={Boolean(editingTxn)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingTxn(null);
+              setTxnActionError("");
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit transaction</DialogTitle>
+              <DialogDescription>
+                Update this manually recorded finance transaction.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleUpdateTransaction} className="space-y-5">
+              {txnActionError && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+                  <p className="text-sm text-destructive">{txnActionError}</p>
+                </div>
+              )}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select
+                  value={editingTxn.type}
+                  onChange={(e) =>
+                    setEditingTxn((prev) => ({
+                      ...prev,
+                      type: e.target.value,
+                    }))
+                  }
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                  <option value="asset">Asset purchase</option>
+                </select>
+
+                <Input
+                  type="number"
+                  step="any"
+                  placeholder="Amount (৳)"
+                  value={editingTxn.amount}
+                  onChange={(e) =>
+                    setEditingTxn((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
+                  }
+                  required
+                />
+
+                <Input
+                  type="text"
+                  placeholder="Category"
+                  value={editingTxn.category}
+                  onChange={(e) =>
+                    setEditingTxn((prev) => ({
+                      ...prev,
+                      category: e.target.value,
+                    }))
+                  }
+                />
+
+                <select
+                  value={editingTxn.projectId}
+                  onChange={(e) =>
+                    setEditingTxn((prev) => ({
+                      ...prev,
+                      projectId: e.target.value,
+                    }))
+                  }
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="">No project (general)</option>
+
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={editingTxn.entityId}
+                  onChange={(e) =>
+                    setEditingTxn((prev) => ({
+                      ...prev,
+                      entityId: e.target.value,
+                    }))
+                  }
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="">No entity</option>
+
+                  {entities.map((entity) => (
+                    <option key={entity.id} value={entity.id}>
+                      {entity.label}
+                    </option>
+                  ))}
+                </select>
+
+                <Input
+                  type="date"
+                  value={editingTxn.date}
+                  onChange={(e) =>
+                    setEditingTxn((prev) => ({
+                      ...prev,
+                      date: e.target.value,
+                    }))
+                  }
+                />
+
+                <Input
+                  type="text"
+                  placeholder="Notes (optional)"
+                  value={editingTxn.notes}
+                  onChange={(e) =>
+                    setEditingTxn((prev) => ({
+                      ...prev,
+                      notes: e.target.value,
+                    }))
+                  }
+                  className="sm:col-span-2"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-border/60 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setEditingTxn(null);
+                    setTxnActionError("");
+                  }}
+                >
+                  Cancel
+                </Button>
+
+                <Button type="submit">Save changes</Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      <section className="space-y-4">
+        <div className="flex items-start gap-3">
+          <CircleDollarSign className="mt-0.5 size-5 shrink-0 text-primary" />
+
+          <div>
+            <h2 className="text-xl font-semibold tracking-[-0.02em]">
+              Financial trend
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Monthly income, expenses, and net cash movement.
+            </p>
+          </div>
+        </div>
+
+        <Card className="border-border/70 bg-card shadow-sm">
+          <CardContent className="p-4 sm:p-6">
+            {monthlyFinanceRows.length === 0 ? (
+              <div className="flex h-[280px] items-center justify-center">
+                <p className="text-sm text-muted-foreground">
+                  No financial activity recorded yet.
+                </p>
+              </div>
+            ) : (
+              <ChartContainer
+                config={financeChartConfig}
+                className="h-[300px] w-full"
+              >
+                <ComposedChart
+                  accessibilityLayer
+                  data={[...monthlyFinanceRows].reverse()}
+                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <ReferenceLine
+                    y={0}
+                    stroke="currentColor"
+                    strokeOpacity={0.35}
+                  />
+
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tickFormatter={(value) =>
+                      new Date(`${value}-01`).toLocaleDateString(undefined, {
+                        month: "short",
+                        year: "2-digit",
+                      })
+                    }
+                  />
+
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value) =>
+                          `৳${Number(value).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                          })}`
+                        }
+                      />
+                    }
+                  />
+                  <ChartLegend content={<ChartLegendContent />} />
+
+                  <Bar
+                    dataKey="income"
+                    name="Income"
+                    fill="var(--color-income)"
+                    radius={[4, 4, 0, 0]}
+                  />
+
+                  <Bar
+                    dataKey="expense"
+                    name="Expenses"
+                    fill="var(--color-expense)"
+                    radius={[4, 4, 0, 0]}
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey="netCash"
+                    name="Net cash"
+                    stroke="var(--color-netCash)"
+                    strokeWidth={2.5}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
+                  />
+                </ComposedChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-start gap-3">
+          <CircleDollarSign className="mt-0.5 size-5 shrink-0 text-primary" />
+
+          <div>
+            <h2 className="text-xl font-semibold tracking-[-0.02em]">
+              Monthly summary
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Monthly income, operating expenses, asset purchases, and cash
+              movement.
+            </p>
+          </div>
+        </div>
+
+        <Card className="border-border/70 bg-card shadow-sm">
+          <CardContent className="p-0">
+            {monthlyFinanceRows.length === 0 ? (
+              <div className="p-6 text-sm text-muted-foreground">
+                No financial activity recorded yet.
+              </div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {monthlyFinanceRows.map((row) => (
+                  <div
+                    key={row.month}
+                    className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5"
+                  >
+                    <div>
+                      <p className="text-xs text-muted-foreground">Month</p>
+                      <p className="mt-1 text-sm font-semibold">
+                        {new Date(`${row.month}-01`).toLocaleDateString(
+                          undefined,
+                          {
+                            month: "long",
+                            year: "numeric",
+                          },
+                        )}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">Income</p>
+                      <p className="mt-1 text-sm font-semibold text-primary">
+                        ৳
+                        {row.income.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">Expenses</p>
+                      <p className="mt-1 text-sm font-semibold">
+                        ৳
+                        {row.expense.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Asset purchases
+                      </p>
+                      <p className="mt-1 text-sm font-semibold">
+                        ৳
+                        {row.asset.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        Net cash movement
+                      </p>
+                      <p
+                        className={`mt-1 text-sm font-semibold ${
+                          row.netCash >= 0 ? "text-primary" : "text-destructive"
+                        }`}
+                      >
+                        {row.netCash >= 0 ? "+" : "-"}৳
+                        {Math.abs(row.netCash).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
+                      </p>
                     </div>
                   </div>
                 ))}

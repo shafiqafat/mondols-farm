@@ -9,6 +9,7 @@ import {
   Sprout,
   Boxes,
   Wallet,
+  ShoppingCart,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -65,6 +66,11 @@ const NAV_GROUPS = [
         to: "/farm-os/inventory",
         label: "Inventory",
         icon: Package,
+      },
+      {
+        to: "/farm-os/sales",
+        label: "Sales",
+        icon: ShoppingCart,
       },
       {
         to: "/farm-os/finance",

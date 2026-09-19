@@ -34,6 +34,7 @@ function FarmOSLayout() {
     "/farm-os/scenario": "Scenario",
     "/farm-os/daily-log": "Daily Log",
     "/farm-os/inventory": "Inventory",
+    "/farm-os/sales": "Sales",
     "/farm-os/finance": "Finance",
     "/farm-os/tasks": "Tasks",
     "/farm-os/content": "Content",

@@ -40,6 +40,7 @@ const FarmOSTasks = lazy(() => import("./farm-os/pages/Tasks"));
 const FarmOSDailyLog = lazy(() => import("./farm-os/pages/DailyLog"));
 const FarmOSInventory = lazy(() => import("./farm-os/pages/Inventory"));
 const FarmOSSettings = lazy(() => import("./farm-os/pages/Settings"));
+const FarmOSSales = lazy(() => import("./farm-os/pages/Sales"));
 
 // The public marketing site — unchanged, still wrapped in its own Navbar/Footer.
 function PublicSite() {
@@ -109,6 +110,7 @@ function App() {
             <Route path="content" element={<FarmOSContentJournal />} />
             <Route path="tasks" element={<FarmOSTasks />} />
             <Route path="daily-log" element={<FarmOSDailyLog />} />
+            <Route path="sales" element={<FarmOSSales />} />
             <Route path="inventory" element={<FarmOSInventory />} />
             <Route path="settings" element={<FarmOSSettings />} />
           </Route>

@@ -17,6 +17,56 @@ export function computeTotals(transactions = []) {
   };
 }
 
+
+/**
+ * Calculate break-even quantity and revenue.
+ *
+ * fixedCost:
+ *   Costs that do not change with the number of units produced/sold.
+ *
+ * variableCostPerUnit:
+ *   Cost associated with producing one additional unit.
+ *
+ * sellingPricePerUnit:
+ *   Expected selling price for one unit.
+ *
+ * Returns null when the contribution margin is zero or negative.
+ */
+export function computeBreakEven(
+  fixedCost,
+  variableCostPerUnit,
+  sellingPricePerUnit,
+) {
+  const fixed = Number(fixedCost);
+  const variable = Number(variableCostPerUnit);
+  const price = Number(sellingPricePerUnit);
+
+  if (
+    !Number.isFinite(fixed) ||
+    !Number.isFinite(variable) ||
+    !Number.isFinite(price) ||
+    fixed < 0 ||
+    variable < 0 ||
+    price <= 0
+  ) {
+    return null;
+  }
+
+  const contributionPerUnit = price - variable;
+
+  if (contributionPerUnit <= 0) {
+    return null;
+  }
+
+  const quantity = fixed / contributionPerUnit;
+
+  return {
+    quantity,
+    revenue: quantity * price,
+    contributionPerUnit,
+  };
+}
+
 /**
  * Cost per unit of yield, e.g. cost/kg for a crop project.
  * Returns null when there's no yield to divide by, rather than Infinity —

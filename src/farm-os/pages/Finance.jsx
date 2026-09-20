@@ -83,6 +83,7 @@ function Finance() {
   const [txnActionError, setTxnActionError] = useState("");
 
   const [assignSelection, setAssignSelection] = useState({});
+  const [completingProjectId, setCompletingProjectId] = useState(null);
 
   const [split, setSplit] = useState({
     amount: "",
@@ -307,6 +308,30 @@ function Finance() {
     loadAll();
   }
 
+  async function handleCompleteProject(projectId) {
+    const confirmed = window.confirm(
+      "Complete this project? Active entity assignments will be ended, but all project history will be preserved.",
+    );
+
+    if (!confirmed) return;
+
+    setCompletingProjectId(projectId);
+    setPageError("");
+
+    const { error } = await supabase.rpc("complete_project", {
+      p_project_id: projectId,
+    });
+
+    setCompletingProjectId(null);
+
+    if (error) {
+      setPageError(error.message);
+      return;
+    }
+
+    loadAll();
+  }
+
   function updateAllocation(index, field, value) {
     setSplit((prev) => {
       const allocations = [...prev.allocations];
@@ -402,6 +427,13 @@ function Finance() {
     );
   }
 
+  const activeProjects = projects.filter(
+    (project) => project.status === "active",
+  );
+
+  const completedProjects = projects.filter(
+    (project) => project.status === "completed",
+  );
   const monthlyFinance = transactions.reduce((acc, transaction) => {
     const month = transaction.occurred_at?.slice(0, 7);
 
@@ -457,28 +489,264 @@ function Finance() {
   };
   // const unassignedTransactions = transactions.filter((t) => !t.project_id);
 
-  return (
-    <div className="space-y-7">
-      <div className="flex flex-col gap-5 border-b border-border/60 pb-7">
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            <CircleDollarSign className="size-4 text-primary" />
-            <span>Farm operations</span>
+    const renderProjectCard = (project) => {
+    const projectTxns = transactions.filter(
+      (t) =>
+        t.project_id === project.id &&
+        t.category !== "Inventory Purchase",
+    );
+
+    const totals = computeTotals(projectTxns);
+
+    const projectConsumedInventoryCost = inventoryConsumptions
+      .filter(
+        (consumption) =>
+          entities.find(
+            (entity) =>
+              entity.id === consumption.entity_events?.entity_id,
+          )?.project_id === project.id,
+      )
+      .reduce(
+        (sum, consumption) => sum + Number(consumption.total_cost || 0),
+        0,
+      );
+
+    const projectOperatingCost =
+      totals.expense + projectConsumedInventoryCost;
+
+    const projectRevenue = totals.income;
+    const operatingMargin = projectRevenue - projectOperatingCost;
+
+    const projectEntities = entities.filter(
+      (e) => e.project_id === project.id,
+    );
+
+    const totalYield = projectEntities.reduce(
+      (sum, e) => sum + (harvestByEntity[e.id] ?? 0),
+      0,
+    );
+
+    const costPerUnit = computeCostPerUnit(
+      projectOperatingCost,
+      totalYield,
+    );
+
+    return (
+      <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <CardTitle className="text-lg">{project.name}</CardTitle>
+
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Badge
+                  variant={
+                    project.status === "completed"
+                      ? "secondary"
+                      : "default"
+                  }
+                >
+                  {project.status === "completed"
+                    ? "Completed"
+                    : "Active"}
+                </Badge>
+
+                <CardDescription>
+                  {project.started_at
+                    ? `Started ${project.started_at}`
+                    : "No start date recorded"}
+                </CardDescription>
+              </div>
+
+              {project.completed_at && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Completed {project.completed_at}
+                </p>
+              )}
+            </div>
+
+            <div className="shrink-0 text-right">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Net
+              </p>
+              <p className="mt-0.5 text-lg font-semibold tracking-[-0.02em]">
+                ৳{totals.net.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+              <p className="text-xs text-muted-foreground">Income</p>
+              <p className="mt-1 text-sm font-semibold">
+                ৳{totals.income.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+              <p className="text-xs text-muted-foreground">Expense</p>
+              <p className="mt-1 text-sm font-semibold">
+                ৳{totals.expense.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+              <p className="text-xs text-muted-foreground">Assets</p>
+              <p className="mt-1 text-sm font-semibold">
+                ৳{totals.asset.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+              <p className="text-xs text-muted-foreground">
+                Consumed inventory
+              </p>
+              <p className="mt-1 text-sm font-semibold">
+                ৳{projectConsumedInventoryCost.toFixed(2)}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+              <p className="text-xs text-muted-foreground">
+                Operating cost
+              </p>
+              <p className="mt-1 text-sm font-semibold">
+                ৳{projectOperatingCost.toFixed(2)}
+              </p>
+            </div>
           </div>
 
-          <div>
-            <h1 className="text-4xl font-semibold tracking-[-0.03em] text-foreground sm:text-5xl">
-              Finance
-            </h1>
+          <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Project economics
+            </p>
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Track project finances, transactions, shared costs, and production
-              economics.
+            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Recorded revenue
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  ৳{projectRevenue.toFixed(2)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Operating cost
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  ৳{projectOperatingCost.toFixed(2)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Operating margin
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  ৳{operatingMargin.toFixed(2)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Cost / unit
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {costPerUnit != null
+                    ? `৳${costPerUnit.toFixed(2)}`
+                    : "—"}
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-2 text-xs text-muted-foreground">
+              Operating cost includes consumed inventory.
             </p>
           </div>
-        </div>
-      </div>
 
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Assigned entities
+            </p>
+
+            {projectEntities.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No entities assigned
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {projectEntities.map((entity) => (
+                  <Badge
+                    key={entity.id}
+                    variant="secondary"
+                    className="font-normal"
+                  >
+                    {entity.label}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {project.status === "active" &&
+            entities.some((e) => e.project_id !== project.id) && (
+              <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row">
+                <select
+                  value={assignSelection[project.id] ?? ""}
+                  onChange={(e) =>
+                    setAssignSelection((prev) => ({
+                      ...prev,
+                      [project.id]: e.target.value,
+                    }))
+                  }
+                  className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                >
+                  <option value="">Assign entity…</option>
+
+                  {entities
+                    .filter((e) => e.project_id !== project.id)
+                    .map((entity) => (
+                      <option key={entity.id} value={entity.id}>
+                        {entity.label}
+                      </option>
+                    ))}
+                </select>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleAssignEntity(project.id)}
+                >
+                  Assign
+                </Button>
+              </div>
+            )}
+        </CardContent>
+
+        {project.status === "active" && (
+          <div className="flex justify-end border-t border-border/60 px-6 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={completingProjectId === project.id}
+              onClick={() => handleCompleteProject(project.id)}
+            >
+              {completingProjectId === project.id
+                ? "Completing…"
+                : "Complete project"}
+            </Button>
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+    return (
+    <div className="space-y-10">
       {pageError && (
         <Card className="border-destructive/30">
           <CardContent className="p-4">
@@ -501,222 +769,45 @@ function Finance() {
           </div>
         </div>
 
-        <div className="space-y-3">
-          {projects.map((project) => {
-            const projectTxns = transactions.filter(
-              (t) =>
-                t.project_id === project.id &&
-                t.category !== "Inventory Purchase",
-            );
-            const totals = computeTotals(projectTxns);
-            const projectConsumedInventoryCost = inventoryConsumptions
-              .filter(
-                (consumption) =>
-                  entities.find(
-                    (entity) =>
-                      entity.id === consumption.entity_events?.entity_id,
-                  )?.project_id === project.id,
-              )
-              .reduce(
-                (sum, consumption) => sum + Number(consumption.total_cost || 0),
-                0,
-              );
-            const projectOperatingCost =
-              totals.expense + projectConsumedInventoryCost;
-            const projectRevenue = totals.income;
+        <div className="space-y-8">
+  {activeProjects.length > 0 && (
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Active projects
+        </h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Projects currently in production or operation.
+        </p>
+      </div>
 
-            const operatingMargin = projectRevenue - projectOperatingCost;
-            const projectEntities = entities.filter(
-              (e) => e.project_id === project.id,
-            );
-            const totalYield = projectEntities.reduce(
-              (sum, e) => sum + (harvestByEntity[e.id] ?? 0),
-              0,
-            );
-            const costPerUnit = computeCostPerUnit(
-              projectOperatingCost,
-              totalYield,
-            );
-            return (
-              <Card
-                key={project.id}
-                className="border-border/70 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <CardTitle className="text-lg">{project.name}</CardTitle>
+      {activeProjects.map((project) => (
+  <div key={project.id}>
+    {renderProjectCard(project)}
+  </div>
+))}
+    </div>
+  )}
 
-                      <CardDescription className="mt-1">
-                        {project.started_at
-                          ? `Started ${project.started_at}`
-                          : "No start date recorded"}
-                      </CardDescription>
-                    </div>
+  {completedProjects.length > 0 && (
+    <div className="space-y-3">
+      <div>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Completed projects
+        </h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Historical projects and their preserved production records.
+        </p>
+      </div>
 
-                    <div className="shrink-0 text-right">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Net
-                      </p>
-                      <p className="mt-0.5 text-lg font-semibold tracking-[-0.02em] text-foreground">
-                        ৳{totals.net.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                    <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
-                      <p className="text-xs text-muted-foreground">Income</p>
-                      <p className="mt-1 text-sm font-semibold">
-                        ৳{totals.income.toFixed(2)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
-                      <p className="text-xs text-muted-foreground">Expense</p>
-                      <p className="mt-1 text-sm font-semibold">
-                        ৳{totals.expense.toFixed(2)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
-                      <p className="text-xs text-muted-foreground">Assets</p>
-                      <p className="mt-1 text-sm font-semibold">
-                        ৳{totals.asset.toFixed(2)}
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
-                      <p className="text-xs text-muted-foreground">
-                        Consumed inventory
-                      </p>
-                      <p className="mt-1 text-sm font-semibold">
-                        ৳{projectConsumedInventoryCost.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
-                      <p className="text-xs text-muted-foreground">
-                        Operating cost
-                      </p>
-                      <p className="mt-1 text-sm font-semibold">
-                        ৳{projectOperatingCost.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Project economics
-                    </p>
-
-                    <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Recorded revenue
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          ৳{projectRevenue.toFixed(2)}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Operating cost
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          ৳{projectOperatingCost.toFixed(2)}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Operating margin
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          ৳{operatingMargin.toFixed(2)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Cost / unit
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          {costPerUnit != null
-                            ? `৳${costPerUnit.toFixed(2)}`
-                            : "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Operating cost includes consumed inventory.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Assigned entities
-                    </p>
-
-                    {projectEntities.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No entities assigned
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
-                        {projectEntities.map((e) => (
-                          <Badge
-                            key={e.id}
-                            variant="secondary"
-                            className="font-normal"
-                          >
-                            {e.label}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {entities.some((e) => e.project_id !== project.id) && (
-                    <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row">
-                      <select
-                        value={assignSelection[project.id] ?? ""}
-                        onChange={(e) =>
-                          setAssignSelection((prev) => ({
-                            ...prev,
-                            [project.id]: e.target.value,
-                          }))
-                        }
-                        className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                      >
-                        <option value="">Assign entity…</option>
-
-                        {entities
-                          .filter((e) => e.project_id !== project.id)
-                          .map((e) => (
-                            <option key={e.id} value={e.id}>
-                              {e.label}
-                            </option>
-                          ))}
-                      </select>
-
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => handleAssignEntity(project.id)}
-                      >
-                        Assign
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
+      {completedProjects.map((project) => (
+  <div key={project.id}>
+    {renderProjectCard(project)}
+  </div>
+))}
+    </div>
+  )}
+</div>            
         <form
           onSubmit={handleAddProject}
           className="rounded-xl border border-dashed border-border bg-card shadow-sm"
@@ -898,7 +989,7 @@ function Finance() {
             >
               <option value="">No project (general)</option>
 
-              {projects.map((p) => (
+              {activeProjects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
@@ -1016,28 +1107,33 @@ function Finance() {
 
             <div className="space-y-3">
               <div>
-                <h3 className="text-sm font-medium">Project allocation</h3>
+                <p className="text-sm font-medium">Project allocations</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Make sure the percentages add up to 100%.
+                  Assign the shared cost across projects. Percentages must add
+                  up to 100%.
                 </p>
               </div>
 
-              <div className="space-y-3">
-                {split.allocations.map((alloc, i) => (
+              <div className="space-y-2">
+                {split.allocations.map((allocation, index) => (
                   <div
-                    key={i}
-                    className="grid gap-3 rounded-lg border border-border/70 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_140px_auto] sm:items-center"
+                    key={index}
+                    className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
                   >
                     <select
-                      value={alloc.projectId}
+                      value={allocation.projectId}
                       onChange={(e) =>
-                        updateAllocation(i, "projectId", e.target.value)
+                        updateAllocation(
+                          index,
+                          "projectId",
+                          e.target.value,
+                        )
                       }
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
-                      <option value="">Project…</option>
+                      <option value="">Select project</option>
 
-                      {projects.map((project) => (
+                      {activeProjects.map((project) => (
                         <option key={project.id} value={project.id}>
                           {project.name}
                         </option>
@@ -1046,41 +1142,63 @@ function Finance() {
 
                     <Input
                       type="number"
+                      min="0"
+                      max="100"
                       step="any"
                       placeholder="%"
-                      value={alloc.percent}
+                      value={allocation.percent}
                       onChange={(e) =>
-                        updateAllocation(i, "percent", e.target.value)
+                        updateAllocation(
+                          index,
+                          "percent",
+                          e.target.value,
+                        )
                       }
                     />
 
-                    {split.allocations.length > 1 ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => removeAllocationRow(i)}
-                        className="w-full sm:w-auto"
-                      >
-                        Remove
-                      </Button>
-                    ) : (
-                      <div className="hidden sm:block sm:w-[78px]" />
-                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={split.allocations.length === 1}
+                      onClick={() => removeAllocationRow(index)}
+                    >
+                      Remove
+                    </Button>
                   </div>
                 ))}
+              </div>
+
+              <div className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2">
+                <span className="text-sm text-muted-foreground">
+                  Total allocation
+                </span>
+
+                <span className="text-sm font-semibold">
+                  {split.allocations.reduce(
+                    (sum, allocation) =>
+                      sum + Number(allocation.percent || 0),
+                    0,
+                  )}
+                  %
+                </span>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="button" variant="outline" onClick={addAllocationRow}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addAllocationRow}
+            >
               + Add project
             </Button>
 
             <Button type="submit" disabled={savingSplit}>
               {savingSplit ? "Saving…" : "Save Split Expense"}
             </Button>
-          </div>
+          </div>            
         </form>
       </section>
 
@@ -1278,8 +1396,16 @@ function Finance() {
                   <option value="">No project (general)</option>
 
                   {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
+                    <option
+                      key={project.id}
+                      value={project.id}
+                      disabled={
+                        project.status === "completed" &&
+                        editingTxn?.projectId !== project.id
+                      }
+                    >
                       {project.name}
+                      {project.status === "completed" ? " (Completed)" : ""}
                     </option>
                   ))}
                 </select>

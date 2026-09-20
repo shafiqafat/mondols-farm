@@ -61,7 +61,10 @@ function Finance() {
 
   const [newProject, setNewProject] = useState({
     name: "",
+    projectType: "",
+    purpose: "",
     startedAt: todayISO(),
+    targetEndAt: "",
   });
   const [savingProject, setSavingProject] = useState(false);
 
@@ -206,7 +209,10 @@ function Finance() {
 
     const { error } = await supabase.from("farm_projects").insert({
       name: newProject.name.trim(),
+      project_type: newProject.projectType.trim() || null,
+      purpose: newProject.purpose.trim() || null,
       started_at: newProject.startedAt || null,
+      target_end_at: newProject.targetEndAt || null,
       status: "active",
     });
 
@@ -215,7 +221,13 @@ function Finance() {
       setPageError(error.message);
       return;
     }
-    setNewProject({ name: "", startedAt: todayISO() });
+    setNewProject({
+      name: "",
+      projectType: "",
+      purpose: "",
+      startedAt: todayISO(),
+      targetEndAt: "",
+    });
     loadAll();
   }
 
@@ -279,14 +291,18 @@ function Finance() {
   async function handleAssignEntity(projectId) {
     const entityId = assignSelection[projectId];
     if (!entityId) return;
-    const { error } = await supabase
-      .from("farm_entities")
-      .update({ project_id: projectId })
-      .eq("id", entityId);
+
+    const { error } = await supabase.rpc("assign_entity_to_project", {
+      p_entity_id: entityId,
+      p_project_id: projectId,
+      p_role: "primary",
+    });
+
     if (error) {
       setPageError(error.message);
       return;
     }
+
     setAssignSelection((prev) => ({ ...prev, [projectId]: "" }));
     loadAll();
   }
@@ -386,7 +402,6 @@ function Finance() {
     );
   }
 
-  const unassignedEntities = entities.filter((e) => !e.project_id);
   const monthlyFinance = transactions.reduce((acc, transaction) => {
     const month = transaction.occurred_at?.slice(0, 7);
 
@@ -509,7 +524,7 @@ function Finance() {
             const projectOperatingCost =
               totals.expense + projectConsumedInventoryCost;
             const projectRevenue = totals.income;
-            
+
             const operatingMargin = projectRevenue - projectOperatingCost;
             const projectEntities = entities.filter(
               (e) => e.project_id === project.id,
@@ -664,7 +679,7 @@ function Finance() {
                     )}
                   </div>
 
-                  {unassignedEntities.length > 0 && (
+                  {entities.some((e) => e.project_id !== project.id) && (
                     <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row">
                       <select
                         value={assignSelection[project.id] ?? ""}
@@ -678,11 +693,13 @@ function Finance() {
                       >
                         <option value="">Assign entity…</option>
 
-                        {unassignedEntities.map((e) => (
-                          <option key={e.id} value={e.id}>
-                            {e.label}
-                          </option>
-                        ))}
+                        {entities
+                          .filter((e) => e.project_id !== project.id)
+                          .map((e) => (
+                            <option key={e.id} value={e.id}>
+                              {e.label}
+                            </option>
+                          ))}
                       </select>
 
                       <Button
@@ -719,38 +736,91 @@ function Finance() {
             </p>
           </div>
 
-          <div className="grid gap-3 p-5 sm:grid-cols-[1fr_220px_auto]">
-            <Input
-              type="text"
-              placeholder="Project name, e.g. Mustard Project #001"
-              value={newProject.name}
-              onChange={(e) =>
-                setNewProject((p) => ({
-                  ...p,
-                  name: e.target.value,
-                }))
-              }
-              required
-            />
+          <div className="grid gap-4 p-5 lg:grid-cols-5">
+            <div>
+              <label className="text-sm font-medium">Project Name</label>
+              <Input
+                type="text"
+                placeholder="Project name, e.g. Mustard Project #001"
+                value={newProject.name}
+                onChange={(e) =>
+                  setNewProject((p) => ({
+                    ...p,
+                    name: e.target.value,
+                  }))
+                }
+                required
+                className="mt-1 w-full"
+              />
+            </div>
 
-            <Input
-              type="date"
-              value={newProject.startedAt}
-              onChange={(e) =>
-                setNewProject((p) => ({
-                  ...p,
-                  startedAt: e.target.value,
-                }))
-              }
-            />
+            <div>
+              <label className="text-sm font-medium">Project type</label>
+              <Input
+                type="text"
+                value={newProject.projectType}
+                onChange={(e) =>
+                  setNewProject((prev) => ({
+                    ...prev,
+                    projectType: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Livestock production"
+                className="mt-1 w-full"
+              />
+            </div>
 
-            <Button
-              type="submit"
-              disabled={savingProject}
-              className="w-full sm:w-auto"
-            >
-              {savingProject ? "Adding…" : "Add project"}
-            </Button>
+            <div>
+              <label className="text-sm font-medium">Start date</label>
+              <Input
+                type="date"
+                value={newProject.startedAt}
+                onChange={(e) =>
+                  setNewProject((p) => ({
+                    ...p,
+                    startedAt: e.target.value,
+                  }))
+                }
+                className="mt-1 w-full"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Target end date</label>
+              <Input
+                type="date"
+                value={newProject.targetEndAt}
+                onChange={(e) =>
+                  setNewProject((prev) => ({
+                    ...prev,
+                    targetEndAt: e.target.value,
+                  }))
+                }
+                className="mt-1 w-full"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Purpose</label>
+              <textarea
+                value={newProject.purpose}
+                onChange={(e) =>
+                  setNewProject((prev) => ({
+                    ...prev,
+                    purpose: e.target.value,
+                  }))
+                }
+                placeholder="What is this project intended to produce or achieve?"
+                rows={2}
+                className="mt-1 min-h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              />
+            </div>
+
+            <div className="flex items-end">
+              <Button type="submit" disabled={savingProject} className="w-full">
+                {savingProject ? "Adding…" : "Add project"}
+              </Button>
+            </div>
           </div>
         </form>
       </section>

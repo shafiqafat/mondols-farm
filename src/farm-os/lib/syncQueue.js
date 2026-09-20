@@ -1,5 +1,4 @@
 import { supabase } from "./supabaseClient";
-import { consumeFIFO } from "../engines/inventoryEngine";
 import { getQueue, removeFromQueue } from "./offlineQueue";
 
 /**
@@ -12,19 +11,25 @@ import { getQueue, removeFromQueue } from "./offlineQueue";
 async function resolveItem(item) {
   switch (item.type) {
     case "entity_events_insert": {
-      const { error } = await supabase.from("entity_events").insert(item.payload);
+      const { error } = await supabase
+        .from("entity_events")
+        .insert(item.payload);
       if (error) throw error;
       return { ok: true };
     }
 
     case "finance_transactions_insert": {
-      const { error } = await supabase.from("finance_transactions").insert(item.payload);
+      const { error } = await supabase
+        .from("finance_transactions")
+        .insert(item.payload);
       if (error) throw error;
       return { ok: true };
     }
 
     case "content_items_insert": {
-      const { error } = await supabase.from("content_items").insert(item.payload);
+      const { error } = await supabase
+        .from("content_items")
+        .insert(item.payload);
       if (error) throw error;
       return { ok: true };
     }
@@ -41,33 +46,14 @@ async function resolveItem(item) {
     }
 
     case "inventory_consume": {
-      const { itemId, qtyKg, itemName } = item.payload;
-      const { data: lots, error: lotsError } = await supabase
-        .from("inventory_lots")
-        .select("*")
-        .eq("item_id", itemId);
-      if (lotsError) throw lotsError;
-
-      const result = consumeFIFO(lots ?? [], qtyKg);
-      for (const updated of result.updatedLots) {
-        const { error } = await supabase
-          .from("inventory_lots")
-          .update({ qty_remaining: updated.qty_remaining })
-          .eq("id", updated.id);
-        if (error) throw error;
-      }
-
-      return {
-        ok: true,
-        shortfall: result.shortfall > 0 ? { itemName, shortfall: result.shortfall } : null,
-      };
+      throw new Error(
+        "Legacy inventory consumption operation is no longer supported. " +
+          "Re-save this operation through Daily Log while online.",
+      );
     }
 
     default:
-      // Unknown item types are skipped rather than blocking the whole
-      // queue forever — this can happen if a future version adds a type
-      // and an old queued item from before that update is still pending.
-      return { ok: true, skipped: true };
+      throw new Error(`Unsupported offline queue operation: ${item.type}`);
   }
 }
 

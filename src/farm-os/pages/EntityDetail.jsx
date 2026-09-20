@@ -18,7 +18,7 @@ import {
   Wheat,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
-import { computeExpectedHarvest } from "../engines/entityEventTypes";
+import { computeExpectedHarvest } from "../engines/cropForecastEngine";
 
 import { EVENT_SCHEMAS } from "../config/eventDefinitions";
 
@@ -33,6 +33,8 @@ import { recommendationsFor } from "../engines/cropRotationEngine";
 import { localDateISO } from "../lib/localDate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const todayISO = localDateISO;
 
@@ -507,12 +509,11 @@ function EntityDetail() {
                 Date
               </label>
 
-              <input
+              <Input
                 id="entity-event-date"
                 type="date"
                 disabled={isClosedEntity}
                 value={form.date}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
                 onChange={(e) =>
                   setForm((p) => ({
                     ...p,
@@ -556,7 +557,7 @@ function EntityDetail() {
                       </label>
 
                       <div className="relative">
-                        <input
+                        <Input
                           id={`entity-event-${field.key}`}
                           type={field.type}
                           min={field.min}
@@ -572,9 +573,7 @@ function EntityDetail() {
                               },
                             }))
                           }
-                          className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring ${
-                            field.unit ? "pr-12" : ""
-                          }`}
+                          className={field.unit ? "pr-12" : ""}
                         />
 
                         {field.unit && (
@@ -591,13 +590,12 @@ function EntityDetail() {
           )}
 
           <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
-            <button
+            <Button
               type="submit"
               disabled={!form.type || saving || isClosedEntity}
-              className="inline-flex h-10 items-center justify-center rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
             >
               {saving ? "Saving…" : "Log event"}
-            </button>
+            </Button>
           </div>
         </form>
       </section>

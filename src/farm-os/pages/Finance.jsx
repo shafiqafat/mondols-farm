@@ -53,8 +53,9 @@ function Finance() {
   const [projects, setProjects] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [entities, setEntities] = useState([]);
-  const [harvestByEntity, setHarvestByEntity] = useState({});
+  const [harvestEvents, setHarvestEvents] = useState([]);
   const [inventoryConsumptions, setInventoryConsumptions] = useState([]);
+  const [projectEntityHistory, setProjectEntityHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
@@ -103,6 +104,7 @@ function Finance() {
       entitiesRes,
       harvestRes,
       inventoryConsumptionsRes,
+      projectEntityHistoryRes,
     ] = await Promise.all([
       supabase.from("farm_projects").select("*").order("name"),
 
@@ -118,19 +120,24 @@ function Finance() {
 
       supabase
         .from("entity_events")
-        .select("entity_id, payload")
+        .select("entity_id, occurred_at, payload")
         .eq("type", "harvest"),
 
       supabase
         .from("inventory_consumptions")
-        .select(`id, entity_events!inner (entity_id), total_cost`),
+        .select(`id, entity_events!inner (entity_id, occurred_at), total_cost`),
+
+      supabase
+        .from("farm_project_entities")
+        .select("project_id, entity_id, started_at, ended_at"),
     ]);
     const loadErrorResult =
       projectsRes.error ||
       txnRes.error ||
       entitiesRes.error ||
       harvestRes.error ||
-      inventoryConsumptionsRes.error;
+      inventoryConsumptionsRes.error ||
+      projectEntityHistoryRes.error;
 
     if (loadErrorResult) {
       setLoadError(loadErrorResult.message);
@@ -142,21 +149,9 @@ function Finance() {
     setTransactions(txnRes.data ?? []);
     setEntities(entitiesRes.data ?? []);
     setInventoryConsumptions(inventoryConsumptionsRes.data ?? []);
-
-
-    const harvestTotals = {};
-    for (const row of harvestRes.data ?? []) {
-      const qtyKg = Number(row.payload?.qty_kg ?? 0);
-
-      if (!Number.isFinite(qtyKg) || qtyKg <= 0) {
-        continue;
-      }
-
-      harvestTotals[row.entity_id] =
-        (harvestTotals[row.entity_id] ?? 0) + qtyKg;
-    }
-    setHarvestByEntity(harvestTotals);
-
+    setHarvestEvents(harvestRes.data ?? []);
+    setProjectEntityHistory(projectEntityHistoryRes.data ?? []);
+    
     setLoading(false);
   }
 
@@ -405,6 +400,16 @@ function Finance() {
     });
     loadAll();
   }
+  function getProjectIdAtDate(entityId, date) {
+    const relationship = projectEntityHistory.find(
+      (item) =>
+        item.entity_id === entityId &&
+        item.started_at <= date &&
+        (item.ended_at === null || date < item.ended_at),
+    );
+
+    return relationship?.project_id ?? null;
+  }
 
   if (loading) {
     return (
@@ -490,22 +495,21 @@ function Finance() {
   // const unassignedTransactions = transactions.filter((t) => !t.project_id);
 
     const renderProjectCard = (project) => {
-    const projectTxns = transactions.filter(
-      (t) =>
-        t.project_id === project.id &&
-        t.category !== "Inventory Purchase",
-    );
+    const projectTxns = transactions.filter((t) => t.project_id === project.id);
 
     const totals = computeTotals(projectTxns);
 
     const projectConsumedInventoryCost = inventoryConsumptions
-      .filter(
-        (consumption) =>
-          entities.find(
-            (entity) =>
-              entity.id === consumption.entity_events?.entity_id,
-          )?.project_id === project.id,
-      )
+      .filter((consumption) => {
+        const entityId = consumption.entity_events?.entity_id;
+        const occurredAt = consumption.entity_events?.occurred_at;
+
+        if (!entityId || !occurredAt) {
+          return false;
+        }
+
+        return getProjectIdAtDate(entityId, occurredAt) === project.id;
+      })
       .reduce(
         (sum, consumption) => sum + Number(consumption.total_cost || 0),
         0,
@@ -521,10 +525,23 @@ function Finance() {
       (e) => e.project_id === project.id,
     );
 
-    const totalYield = projectEntities.reduce(
-      (sum, e) => sum + (harvestByEntity[e.id] ?? 0),
-      0,
-    );
+    const totalYield = harvestEvents.reduce((sum, event) => {
+      const qtyKg = Number(event.payload?.qty_kg ?? 0);
+
+      if (
+        !Number.isFinite(qtyKg) ||
+        qtyKg <= 0 ||
+        !event.entity_id ||
+        !event.occurred_at
+      ) {
+        return sum;
+      }
+
+      return getProjectIdAtDate(event.entity_id, event.occurred_at) ===
+        project.id
+        ? sum + qtyKg
+        : sum;
+    }, 0);
 
     const costPerUnit = computeCostPerUnit(
       projectOperatingCost,

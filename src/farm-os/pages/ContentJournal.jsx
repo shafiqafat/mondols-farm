@@ -13,6 +13,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 function ContentJournal() {
   const [items, setItems] = useState([]);
@@ -335,12 +336,12 @@ function ContentJournal() {
             Notes
           </label>
 
-          <Input
+          <Textarea
             id="content-notes"
-            type="text"
             placeholder="Optional notes"
             value={form.notes}
             onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+            rows={3}
           />
         </div>
 

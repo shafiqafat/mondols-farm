@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const todayISO = localDateISO;
 
@@ -305,7 +306,7 @@ function Tasks() {
           </div>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-6">
           <div className="space-y-2 sm:col-span-2 lg:col-span-2">
             <label htmlFor="task-title" className="text-sm font-medium">
               Task
@@ -404,12 +405,12 @@ function Tasks() {
             Notes
           </label>
 
-          <Input
+          <Textarea
             id="task-notes"
-            type="text"
             placeholder="Optional notes"
             value={form.notes}
             onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+            rows={3}
           />
         </div>
         <div className="mt-5 flex justify-end border-t border-border/60 pt-5">

@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { Pencil, Sprout } from "lucide-react";
+import {
+  Activity,
+  CircleDot,
+  ClipboardList,
+  Leaf,
+  Pencil,
+  Plus,
+  Sprout,
+  Users,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -27,7 +36,10 @@ const CATEGORY_OPTIONS = ["poultry", "livestock", "crop", "fodder"];
 const STATUS_OPTIONS = ["active", "sold", "deceased", "harvested"];
 
 function emptyCapabilitySet() {
-  return CAPABILITY_OPTIONS.reduce((acc, c) => ({ ...acc, [c.key]: false }), {});
+  return CAPABILITY_OPTIONS.reduce(
+    (acc, c) => ({ ...acc, [c.key]: false }),
+    {},
+  );
 }
 
 function Species() {
@@ -60,9 +72,15 @@ function Species() {
   });
   const [savingEntity, setSavingEntity] = useState(false);
   const [updatingStatusId, setUpdatingStatusId] = useState(null);
+  const [entityFilter, setEntityFilter] = useState("all");
+  const [entitySearch, setEntitySearch] = useState("");
 
   const [rotationRules, setRotationRules] = useState([]);
-  const [newRule, setNewRule] = useState({ fromSpeciesId: "", toSpeciesId: "", reason: "" });
+  const [newRule, setNewRule] = useState({
+    fromSpeciesId: "",
+    toSpeciesId: "",
+    reason: "",
+  });
   const [savingRule, setSavingRule] = useState(false);
 
   async function loadAll() {
@@ -73,11 +91,15 @@ function Species() {
       supabase.from("species_config").select("*").order("name"),
       supabase
         .from("farm_entities")
-        .select("id, label, quantity, status, species_config:species_config_id(id, name)")
+        .select(
+          "id, label, quantity, status, species_config:species_config_id(id, name)",
+        )
         .order("label"),
       supabase
         .from("crop_rotation_rules")
-        .select("*, from_species:from_species_id(name), to_species:to_species_id(name)")
+        .select(
+          "*, from_species:from_species_id(name), to_species:to_species_id(name)",
+        )
         .order("created_at"),
     ]);
 
@@ -243,7 +265,12 @@ function Species() {
 
   async function handleAddRule(e) {
     e.preventDefault();
-    if (!newRule.fromSpeciesId || !newRule.toSpeciesId || !newRule.reason.trim()) return;
+    if (
+      !newRule.fromSpeciesId ||
+      !newRule.toSpeciesId ||
+      !newRule.reason.trim()
+    )
+      return;
     setSavingRule(true);
     setPageError("");
 
@@ -271,6 +298,24 @@ function Species() {
       </div>
     );
   }
+  const activeEntities = entities.filter(
+    (entity) => entity.status === "active",
+  );
+  const totalQuantity = activeEntities.reduce(
+    (sum, entity) => sum + (Number(entity.quantity) || 0),
+    0,
+  );
+  const filteredEntities = entities.filter((entity) => {
+    const matchesStatus =
+      entityFilter === "all" || entity.status === entityFilter;
+    const query = entitySearch.trim().toLowerCase();
+    const matchesSearch =
+      !query ||
+      entity.label?.toLowerCase().includes(query) ||
+      entity.species_config?.name?.toLowerCase().includes(query);
+    return matchesStatus && matchesSearch;
+  });
+
   if (loadError) {
     return (
       <Card className="border-destructive/30">
@@ -308,36 +353,82 @@ function Species() {
       </div>
 
       {pageError && (
-        <Card className="border-destructive/30">
+        <Card className="border-destructive/30 bg-destructive/[0.03]">
           <CardContent className="p-4">
             <p className="text-sm font-medium text-destructive">{pageError}</p>
           </CardContent>
         </Card>
       )}
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: "Species & crops", value: speciesList.length, icon: Leaf },
+          { label: "Registered entities", value: entities.length, icon: Users },
+          {
+            label: "Active entities",
+            value: activeEntities.length,
+            icon: Activity,
+          },
+          {
+            label: "Tracked quantity",
+            value: totalQuantity.toLocaleString(),
+            icon: ClipboardList,
+          },
+        ].map(({ label, value, icon: Icon }) => (
+          <Card key={label} className="border-border/70 shadow-none">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Icon className="size-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  {label}
+                </p>
+                <p className="mt-1 text-xl font-semibold tracking-tight">
+                  {value}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* --- Species / crop configuration --- */}
       <section className="space-y-4">
-        <div>
-          <h2 className="mb-3.5 text-xl font-semibold tracking-tight">
-            Species & Crops
-          </h2>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              Species & Crops
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Reusable definitions that control how Farm OS tracks each type.
+            </p>
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">
+            {speciesList.length} configured
+          </span>
         </div>
         <div className="grid gap-3 mb-4">
           {speciesList.map((species) => (
             <Card
               key={species.id}
-              className="border-border/70 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              className="group border-border/70 bg-card/80 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
             >
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <CardTitle className="truncate text-base">
-                      {species.name}
-                    </CardTitle>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Leaf className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-base">
+                        {species.name}
+                      </CardTitle>
 
-                    <CardDescription className="mt-1">
-                      {species.category}
-                    </CardDescription>
+                      <CardDescription className="mt-1 capitalize">
+                        {species.category}
+                      </CardDescription>
+                    </div>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
@@ -576,7 +667,12 @@ function Species() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={savingSpecies} className="w-auto">
+              <Button
+                type="submit"
+                disabled={savingSpecies}
+                className="w-auto gap-2"
+              >
+                <Plus className="size-4" />
                 {savingSpecies ? "Adding…" : "Add species"}
               </Button>
             </form>
@@ -586,22 +682,50 @@ function Species() {
 
       {/* --- Farm entities --- */}
       <section className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">
-            Farm entities
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Register and manage the actual animals, groups, plots, and other
-            operating units on your farm.
-          </p>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              Farm entities
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Register the actual animals, groups, plots, and operating units on
+              your farm.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <CircleDot className="size-3.5 text-primary" />
+            {activeEntities.length} active
+          </div>
         </div>
 
         <Card className="border-border/70 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">Registered entities</CardTitle>
-            <CardDescription>
-              Select an entity to view its detailed history and activity.
-            </CardDescription>
+          <CardHeader className="gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <CardTitle className="text-base">Registered entities</CardTitle>
+              <CardDescription>
+                Search and filter what is currently registered.
+              </CardDescription>
+            </div>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <Input
+                value={entitySearch}
+                onChange={(e) => setEntitySearch(e.target.value)}
+                placeholder="Search entities…"
+                className="sm:w-52"
+              />
+              <select
+                value={entityFilter}
+                onChange={(e) => setEntityFilter(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="all">All statuses</option>
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
           </CardHeader>
 
           <CardContent>
@@ -609,12 +733,19 @@ function Species() {
               <p className="text-sm text-muted-foreground">
                 No farm entities registered yet.
               </p>
+            ) : filteredEntities.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-8 text-center">
+                <p className="text-sm font-medium">No matching entities</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Try another search or status filter.
+                </p>
+              </div>
             ) : (
-              <div className="grid gap-3">
-                {entities.map((entity) => (
+              <div className="grid gap-2">
+                {filteredEntities.map((entity) => (
                   <div
                     key={entity.id}
-                    className="flex flex-col gap-3 rounded-xl border border-border/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background/70 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="min-w-0">
                       <Link
@@ -788,7 +919,12 @@ function Species() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={savingEntity} className="w-auto">
+              <Button
+                type="submit"
+                disabled={savingEntity}
+                className="w-auto gap-2"
+              >
+                <Plus className="size-4" />
                 {savingEntity ? "Registering…" : "Register entity"}
               </Button>
             </form>
@@ -948,7 +1084,12 @@ function Species() {
                 />
               </div>
 
-              <Button type="submit" disabled={savingRule} className="w-auto">
+              <Button
+                type="submit"
+                disabled={savingRule}
+                className="w-auto gap-2"
+              >
+                <Plus className="size-4" />
                 {savingRule ? "Adding…" : "Add rule"}
               </Button>
             </form>

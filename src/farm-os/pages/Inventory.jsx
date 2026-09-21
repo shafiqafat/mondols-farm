@@ -1,8 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { computeStock } from "../engines/inventoryEngine";
 import { localDateISO } from "../lib/localDate";
-import { Package } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDownToLine,
+  Boxes,
+  CalendarDays,
+  CheckCircle2,
+  Package,
+  Plus,
+  Receipt,
+  ShoppingCart,
+} from "lucide-react";
 
 import {
   Card,
@@ -27,8 +37,8 @@ function Inventory() {
     reorderLeadTimeDays: "",
     safetyStock: "",
   });
-  const [addingItem, setAddingItem] = useState(false);
 
+  const [addingItem, setAddingItem] = useState(false);
   const [purchaseForms, setPurchaseForms] = useState({});
   const [savingPurchase, setSavingPurchase] = useState(null);
   const [pageError, setPageError] = useState("");
@@ -60,6 +70,7 @@ function Inventory() {
     }
 
     const grouped = {};
+
     for (const lot of lotRows ?? []) {
       if (!grouped[lot.item_id]) grouped[lot.item_id] = [];
       grouped[lot.item_id].push(lot);
@@ -71,15 +82,15 @@ function Inventory() {
   }
 
   useEffect(() => {
-    // loadAll is intentionally reused by handleAddItem/handleRecordPurchase
-    // too, so it's defined at component scope rather than inline here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll();
   }, []);
 
   async function handleAddItem(e) {
     e.preventDefault();
+
     if (!newItem.name.trim()) return;
+
     setAddingItem(true);
     setPageError("");
 
@@ -93,16 +104,19 @@ function Inventory() {
     });
 
     setAddingItem(false);
+
     if (error) {
       setPageError(error.message);
       return;
     }
+
     setNewItem({
       name: "",
       unit: "kg",
       reorderLeadTimeDays: "",
       safetyStock: "",
     });
+
     loadAll();
   }
 
@@ -121,6 +135,7 @@ function Inventory() {
 
   async function handleRecordPurchase(item) {
     const form = purchaseForms[item.id] ?? {};
+
     const qty = Number(form.qty);
     const cost = Number(form.costPerUnit);
     const purchasedAt = form.purchasedAt || localDateISO();
@@ -156,15 +171,61 @@ function Inventory() {
 
     setPurchaseForms((prev) => ({
       ...prev,
-      [item.id]: { qty: "", costPerUnit: "", purchasedAt: localDateISO() },
+      [item.id]: {
+        qty: "",
+        costPerUnit: "",
+        purchasedAt: localDateISO(),
+      },
     }));
+
     loadAll();
   }
 
+  const inventorySummary = useMemo(() => {
+    let totalItems = items.length;
+    let lowStockItems = 0;
+    let totalLots = 0;
+    let estimatedValue = 0;
+
+    items.forEach((item) => {
+      const lots = lotsByItem[item.id] ?? [];
+      const { totalRemaining, weightedAvgCost } = computeStock(lots);
+
+      totalLots += lots.length;
+
+      if (
+        item.safety_stock != null &&
+        totalRemaining <= Number(item.safety_stock)
+      ) {
+        lowStockItems += 1;
+      }
+
+      estimatedValue += totalRemaining * weightedAvgCost;
+    });
+
+    return {
+      totalItems,
+      lowStockItems,
+      totalLots,
+      estimatedValue,
+    };
+  }, [items, lotsByItem]);
+
   if (loading) {
     return (
-      <div className="flex min-h-[240px] items-center justify-center">
-        <p className="text-sm text-muted-foreground">Loading inventory…</p>
+      <div className="space-y-6">
+        <div className="h-32 animate-pulse rounded-2xl bg-muted/60" />
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((item) => (
+            <div
+              key={item}
+              className="h-28 animate-pulse rounded-xl bg-muted/60"
+            />
+          ))}
+        </div>
+
+        <div className="h-56 animate-pulse rounded-2xl bg-muted/60" />
       </div>
     );
   }
@@ -176,6 +237,7 @@ function Inventory() {
           <p className="text-sm font-medium text-destructive">
             Unable to load inventory
           </p>
+
           <p className="mt-1 text-sm text-muted-foreground">{loadError}</p>
         </CardContent>
       </Card>
@@ -183,41 +245,212 @@ function Inventory() {
   }
 
   return (
-    <div className="space-y-7">
-      <div className="flex flex-col gap-5 border-b border-border/60 pb-7">
-        <div className="space-y-2.5">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-            <Package className="size-4 text-primary" />
-            <span>Farm operations</span>
+    <div className="space-y-8">
+      {/* Page header */}
+      <section className="border-b border-border/60 pb-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              <Package className="size-4 text-primary" />
+              <span>Farm operations</span>
+            </div>
+
+            <div>
+              <h1 className="text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl">
+                Inventory
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Keep track of farm supplies, available stock, purchase costs,
+                and items approaching their reorder point.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <h1 className="text-4xl font-semibold tracking-[-0.03em] text-foreground sm:text-5xl">
-              Inventory
-            </h1>
-
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Track farm supplies, current stock, purchase costs, and inventory
-              coverage in one place.
-            </p>
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              document
+                .getElementById("add-inventory-item")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+            className="w-full sm:w-auto"
+          >
+            <Plus className="size-4" />
+            Add inventory item
+          </Button>
         </div>
-      </div>
+      </section>
 
+      {/* Page error */}
       {pageError && (
-        <Card className="border-destructive/30">
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-destructive">{pageError}</p>
+        <Card className="border-destructive/30 bg-destructive/[0.03]">
+          <CardContent className="flex items-start gap-3 p-4">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+
+            <div>
+              <p className="text-sm font-medium text-destructive">
+                Inventory action failed
+              </p>
+
+              <p className="mt-1 text-sm text-muted-foreground">{pageError}</p>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="space-y-4">
+      {/* Summary */}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Inventory items
+                </p>
+
+                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                  {inventorySummary.totalItems}
+                </p>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Supplies currently tracked
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-muted p-2.5">
+                <Boxes className="size-4 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          className={
+            inventorySummary.lowStockItems > 0
+              ? "border-amber-500/30 bg-amber-500/[0.03] shadow-sm"
+              : "border-border/70 shadow-sm"
+          }
+        >
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Low stock
+                </p>
+
+                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                  {inventorySummary.lowStockItems}
+                </p>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Items at or below safety stock
+                </p>
+              </div>
+
+              <div
+                className={
+                  inventorySummary.lowStockItems > 0
+                    ? "rounded-lg bg-amber-500/10 p-2.5"
+                    : "rounded-lg bg-muted p-2.5"
+                }
+              >
+                <AlertTriangle
+                  className={
+                    inventorySummary.lowStockItems > 0
+                      ? "size-4 text-amber-600"
+                      : "size-4 text-muted-foreground"
+                  }
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Stock value
+                </p>
+
+                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                  ৳{inventorySummary.estimatedValue.toFixed(0)}
+                </p>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Estimated from weighted average cost
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-muted p-2.5">
+                <Receipt className="size-4 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Purchase lots
+                </p>
+
+                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                  {inventorySummary.totalLots}
+                </p>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Historical lots recorded
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-muted p-2.5">
+                <ShoppingCart className="size-4 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Inventory list */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">
+              Stock overview
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Current quantity and purchase history for every inventory item.
+            </p>
+          </div>
+
+          {items.length > 0 && (
+            <span className="hidden text-xs text-muted-foreground sm:block">
+              {items.length} tracked item{items.length === 1 ? "" : "s"}
+            </span>
+          )}
+        </div>
+
         {items.length === 0 && (
-          <Card className="border-dashed">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">
-                No inventory items yet — add your first one below.
+          <Card className="border-dashed shadow-none">
+            <CardContent className="flex flex-col items-center justify-center px-6 py-14 text-center">
+              <div className="rounded-full bg-muted p-3">
+                <Package className="size-5 text-muted-foreground" />
+              </div>
+
+              <h3 className="mt-4 text-base font-semibold">
+                No inventory items yet
+              </h3>
+
+              <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">
+                Add your first feed, medicine, material, or other farm supply
+                below to start tracking stock.
               </p>
             </CardContent>
           </Card>
@@ -227,8 +460,12 @@ function Inventory() {
           const lots = lotsByItem[item.id] ?? [];
           const { totalRemaining, weightedAvgCost } = computeStock(lots);
 
-          const isLow =
-            item.safety_stock != null && totalRemaining <= item.safety_stock;
+          const safetyStock =
+            item.safety_stock != null ? Number(item.safety_stock) : null;
+
+          const isLow = safetyStock != null && totalRemaining <= safetyStock;
+
+          const stockValue = totalRemaining * weightedAvgCost;
 
           const form = purchaseForms[item.id] ?? {
             qty: "",
@@ -239,163 +476,305 @@ function Inventory() {
           return (
             <Card
               key={item.id}
-              className="border-border/70 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              className={
+                isLow
+                  ? "overflow-hidden border-amber-500/30 shadow-sm"
+                  : "overflow-hidden border-border/70 shadow-sm"
+              }
             >
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <CardTitle className="text-lg">{item.name}</CardTitle>
+              <CardHeader className="border-b border-border/50 bg-muted/[0.18] pb-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div
+                      className={
+                        isLow
+                          ? "mt-0.5 rounded-lg bg-amber-500/10 p-2.5"
+                          : "mt-0.5 rounded-lg bg-primary/10 p-2.5"
+                      }
+                    >
+                      {isLow ? (
+                        <AlertTriangle className="size-4 text-amber-600" />
+                      ) : (
+                        <Package className="size-4 text-primary" />
+                      )}
+                    </div>
 
-                    <CardDescription className="mt-1">
-                      Average cost ৳{weightedAvgCost.toFixed(2)}/{item.unit}
-                      {item.safety_stock != null &&
-                        ` · Safety stock ${item.safety_stock} ${item.unit}`}
-                    </CardDescription>
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-lg">
+                        {item.name}
+                      </CardTitle>
+
+                      <CardDescription className="mt-1">
+                        Average cost ৳{weightedAvgCost.toFixed(2)}/{item.unit}
+                        {safetyStock != null &&
+                          ` · Safety stock ${safetyStock} ${item.unit}`}
+                      </CardDescription>
+                    </div>
                   </div>
 
                   <Badge
                     variant={isLow ? "destructive" : "secondary"}
-                    className="shrink-0"
+                    className="w-fit shrink-0 gap-1.5 px-2.5 py-1"
                   >
-                    {totalRemaining.toFixed(2)} {item.unit}
+                    {isLow ? (
+                      <AlertTriangle className="size-3" />
+                    ) : (
+                      <CheckCircle2 className="size-3" />
+                    )}
+
+                    {isLow ? "Low stock" : "In stock"}
                   </Badge>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 p-5">
+                {/* Stock metrics */}
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl border border-border/60 bg-background p-4">
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                      <Boxes className="size-3.5" />
+                      Available
+                    </div>
+
+                    <p className="mt-2 text-xl font-semibold tracking-tight">
+                      {totalRemaining.toFixed(2)}
+                      <span className="ml-1 text-sm font-normal text-muted-foreground">
+                        {item.unit}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border/60 bg-background p-4">
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                      <Receipt className="size-3.5" />
+                      Stock value
+                    </div>
+
+                    <p className="mt-2 text-xl font-semibold tracking-tight">
+                      ৳{stockValue.toFixed(0)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border/60 bg-background p-4">
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                      <ArrowDownToLine className="size-3.5" />
+                      Lots
+                    </div>
+
+                    <p className="mt-2 text-xl font-semibold tracking-tight">
+                      {lots.length}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Lot history */}
                 {lots.length > 0 && (
-                  <details className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-                    <summary className="cursor-pointer text-sm font-medium text-foreground">
-                      {lots.length} lot{lots.length > 1 ? "s" : ""} on record
+                  <details className="group rounded-xl border border-border/60">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5">
+                      <div>
+                        <p className="text-sm font-medium">Purchase history</p>
+
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {lots.length} recorded lot
+                          {lots.length > 1 ? "s" : ""}
+                        </p>
+                      </div>
+
+                      <span className="text-xs text-muted-foreground transition-transform group-open:rotate-180">
+                        ▼
+                      </span>
                     </summary>
 
-                    <ul className="mt-3 space-y-2 border-t border-border/60 pt-3">
-                      {lots.map((lot) => (
-                        <li
-                          key={lot.id}
-                          className="text-xs leading-5 text-muted-foreground"
-                        >
-                          {lot.purchased_at}:{" "}
-                          {Number(lot.qty_remaining).toFixed(2)} /{" "}
-                          {Number(lot.qty_purchased).toFixed(2)} {item.unit}{" "}
-                          remaining at ৳{Number(lot.cost_per_unit).toFixed(2)}/
-                          {item.unit}
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="border-t border-border/60 px-4 pb-4">
+                      <div className="mt-3 overflow-hidden rounded-lg border border-border/50">
+                        <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 border-b border-border/50 bg-muted/30 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                          <span>Date</span>
+                          <span>Remaining</span>
+                          <span>Cost / unit</span>
+                        </div>
+
+                        <div className="divide-y divide-border/50">
+                          {lots.map((lot) => (
+                            <div
+                              key={lot.id}
+                              className="grid grid-cols-[1fr_1fr_1fr] gap-3 px-3 py-2.5 text-xs"
+                            >
+                              <span className="flex items-center gap-1.5 text-muted-foreground">
+                                <CalendarDays className="size-3.5" />
+                                {lot.purchased_at}
+                              </span>
+
+                              <span className="font-medium">
+                                {Number(lot.qty_remaining).toFixed(2)}{" "}
+                                {item.unit}
+                              </span>
+
+                              <span className="text-muted-foreground">
+                                ৳{Number(lot.cost_per_unit).toFixed(2)}/
+                                {item.unit}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </details>
                 )}
 
-                <div className="grid gap-2 border-t border-border/60 pt-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <Input
-                    type="number"
-                    step="any"
-                    placeholder={`Qty (${item.unit})`}
-                    value={form.qty}
-                    onChange={(e) =>
-                      updatePurchaseForm(item.id, "qty", e.target.value)
-                    }
-                  />
+                {/* Purchase */}
+                <div className="rounded-xl border border-border/60 bg-muted/[0.18] p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <ShoppingCart className="size-4 text-primary" />
 
-                  <Input
-                    type="number"
-                    step="any"
-                    placeholder="Cost/unit (৳)"
-                    value={form.costPerUnit}
-                    onChange={(e) =>
-                      updatePurchaseForm(item.id, "costPerUnit", e.target.value)
-                    }
-                  />
+                    <div>
+                      <p className="text-sm font-medium">Record purchase</p>
+                      <p className="text-xs text-muted-foreground">
+                        Add a new stock lot for {item.name}.
+                      </p>
+                    </div>
+                  </div>
 
-                  <Input
-                    type="date"
-                    value={form.purchasedAt}
-                    onChange={(e) =>
-                      updatePurchaseForm(item.id, "purchasedAt", e.target.value)
-                    }
-                  />
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
+                    <Input
+                      type="number"
+                      step="any"
+                      min="0"
+                      placeholder={`Quantity (${item.unit})`}
+                      value={form.qty}
+                      onChange={(e) =>
+                        updatePurchaseForm(item.id, "qty", e.target.value)
+                      }
+                    />
 
-                  <Button
-                    type="button"
-                    onClick={() => handleRecordPurchase(item)}
-                    disabled={savingPurchase === item.id}
-                    className="w-full"
-                  >
-                    {savingPurchase === item.id ? "Saving…" : "Record purchase"}
-                  </Button>
+                    <Input
+                      type="number"
+                      step="any"
+                      min="0"
+                      placeholder="Cost / unit (৳)"
+                      value={form.costPerUnit}
+                      onChange={(e) =>
+                        updatePurchaseForm(
+                          item.id,
+                          "costPerUnit",
+                          e.target.value,
+                        )
+                      }
+                    />
+
+                    <Input
+                      type="date"
+                      value={form.purchasedAt}
+                      onChange={(e) =>
+                        updatePurchaseForm(
+                          item.id,
+                          "purchasedAt",
+                          e.target.value,
+                        )
+                      }
+                    />
+
+                    <Button
+                      type="button"
+                      onClick={() => handleRecordPurchase(item)}
+                      disabled={savingPurchase === item.id}
+                      className="w-full"
+                    >
+                      <Plus className="size-4" />
+                      {savingPurchase === item.id
+                        ? "Saving…"
+                        : "Record purchase"}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           );
         })}
-      </div>
+      </section>
 
-      <form
-        onSubmit={handleAddItem}
-        className="rounded-xl border border-dashed border-border bg-card shadow-sm"
-      >
-        <div className="border-b border-border/60 px-5 py-4">
-          <h2 className="text-base font-semibold tracking-[-0.01em]">
-            Add inventory item
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Add a new supply or resource to your farm inventory.
-          </p>
-        </div>
+      {/* Add item */}
+      <section id="add-inventory-item">
+        <form
+          onSubmit={handleAddItem}
+          className="overflow-hidden rounded-2xl border border-dashed border-border bg-card shadow-sm"
+        >
+          <div className="border-b border-border/60 bg-muted/[0.18] px-5 py-5">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-primary/10 p-2.5">
+                <Plus className="size-4 text-primary" />
+              </div>
 
-        <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-5">
-          <Input
-            type="text"
-            placeholder="Name, e.g. Quail Layer Feed"
-            value={newItem.name}
-            onChange={(e) =>
-              setNewItem((p) => ({ ...p, name: e.target.value }))
-            }
-            required
-          />
+              <div>
+                <h2 className="text-base font-semibold tracking-tight">
+                  Add inventory item
+                </h2>
 
-          <select
-            value={newItem.unit}
-            onChange={(e) =>
-              setNewItem((p) => ({ ...p, unit: e.target.value }))
-            }
-            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <option value="kg">kg</option>
-            <option value="liter">liter</option>
-            <option value="bag">bag</option>
-            <option value="unit">unit</option>
-          </select>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create a reusable inventory item for feed, medicine,
+                  materials, or other farm supplies.
+                </p>
+              </div>
+            </div>
+          </div>
 
-          <Input
-            type="number"
-            placeholder="Reorder lead time (days)"
-            value={newItem.reorderLeadTimeDays}
-            onChange={(e) =>
-              setNewItem((p) => ({
-                ...p,
-                reorderLeadTimeDays: e.target.value,
-              }))
-            }
-          />
+          <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-5">
+            <Input
+              type="text"
+              placeholder="Name, e.g. Quail Layer Feed"
+              value={newItem.name}
+              onChange={(e) =>
+                setNewItem((p) => ({ ...p, name: e.target.value }))
+              }
+              required
+            />
 
-          <Input
-            type="number"
-            placeholder="Safety stock"
-            value={newItem.safetyStock}
-            onChange={(e) =>
-              setNewItem((p) => ({
-                ...p,
-                safetyStock: e.target.value,
-              }))
-            }
-          />
+            <select
+              value={newItem.unit}
+              onChange={(e) =>
+                setNewItem((p) => ({ ...p, unit: e.target.value }))
+              }
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            >
+              <option value="kg">kg</option>
+              <option value="liter">liter</option>
+              <option value="bag">bag</option>
+              <option value="unit">unit</option>
+            </select>
 
-          <Button type="submit" disabled={addingItem} className="w-full">
-            {addingItem ? "Adding…" : "Add item"}
-          </Button>
-        </div>
-      </form>
+            <Input
+              type="number"
+              min="0"
+              placeholder="Reorder lead time (days)"
+              value={newItem.reorderLeadTimeDays}
+              onChange={(e) =>
+                setNewItem((p) => ({
+                  ...p,
+                  reorderLeadTimeDays: e.target.value,
+                }))
+              }
+            />
+
+            <Input
+              type="number"
+              min="0"
+              step="any"
+              placeholder="Safety stock"
+              value={newItem.safetyStock}
+              onChange={(e) =>
+                setNewItem((p) => ({
+                  ...p,
+                  safetyStock: e.target.value,
+                }))
+              }
+            />
+
+            <Button type="submit" disabled={addingItem} className="w-full">
+              <Plus className="size-4" />
+              {addingItem ? "Adding…" : "Add item"}
+            </Button>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }

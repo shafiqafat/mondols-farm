@@ -12,6 +12,12 @@ import {
   Receipt,
   Split,
   Plus,
+  ArrowDownRight,
+  ArrowUpRight,
+  Wallet,
+  TrendingUp,
+  Landmark,
+  CalendarDays,
 } from "lucide-react";
 import {
   Dialog,
@@ -172,6 +178,36 @@ function Finance() {
       return;
     }
 
+    if (editingTxn.entityId && !editingTxn.projectId) {
+      setTxnActionError("Select a project before assigning an entity.");
+      return;
+    }
+
+    if (editingTxn.entityId && editingTxn.projectId) {
+      const entity = entities.find((item) => item.id === editingTxn.entityId);
+
+      if (!entity) {
+        setTxnActionError("The selected entity could not be found.");
+        return;
+      }
+
+      const projectAtDate = getProjectIdAtDate(
+        editingTxn.entityId,
+        editingTxn.date,
+      );
+
+      const isCurrentAssignment = entity.project_id === editingTxn.projectId;
+
+      const isHistoricalAssignment = projectAtDate === editingTxn.projectId;
+
+      if (!isCurrentAssignment && !isHistoricalAssignment) {
+        setTxnActionError(
+          "The selected entity was not assigned to this project on the transaction date.",
+        );
+        return;
+      }
+    }
+
     setTxnActionError("");
 
     const { error } = await supabase
@@ -229,9 +265,27 @@ function Finance() {
 
   async function handleAddTransaction(e) {
     e.preventDefault();
+
     const amount = Number(txn.amount);
+
     if (!amount || amount <= 0) {
       setPageError("Enter a valid amount.");
+      return;
+    }
+    if (txn.entityId && !txn.projectId) {
+      setPageError("Select a project before assigning an entity.");
+      return;
+    }
+
+    if (
+      txn.entityId &&
+      txn.projectId &&
+      !entities.some(
+        (entity) =>
+          entity.id === txn.entityId && entity.project_id === txn.projectId,
+      )
+    ) {
+      setPageError("The selected entity is not assigned to this project.");
       return;
     }
     setSavingTxn(true);
@@ -371,6 +425,14 @@ function Finance() {
       setPageError("Every allocation row needs a project selected.");
       return;
     }
+    const projectIds = split.allocations.map(
+      (allocation) => allocation.projectId,
+    );
+
+    if (new Set(projectIds).size !== projectIds.length) {
+      setPageError("Each project can only appear once in a shared expense.");
+      return;
+    }
 
     setSavingSplit(true);
     setPageError("");
@@ -439,6 +501,34 @@ function Finance() {
   const completedProjects = projects.filter(
     (project) => project.status === "completed",
   );
+  const transactionEntities = txn.projectId
+    ? entities.filter((entity) => entity.project_id === txn.projectId)
+    : [];
+
+  const editingTransactionEntities = editingTxn?.projectId
+    ? entities.filter(
+        (entity) =>
+          entity.project_id === editingTxn.projectId ||
+          entity.id === editingTxn.entityId,
+      )
+    : [];
+
+  const totalIncome = transactions
+    .filter((transaction) => transaction.type === "income")
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const totalExpenses = transactions
+    .filter((transaction) => transaction.type === "expense")
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const totalAssetPurchases = transactions
+    .filter((transaction) => transaction.type === "asset")
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const netCashFlow = totalIncome - totalExpenses - totalAssetPurchases;
+
+  const transactionCount = transactions.length;
+
   const monthlyFinance = transactions.reduce((acc, transaction) => {
     const month = transaction.occurred_at?.slice(0, 7);
 
@@ -492,7 +582,24 @@ function Finance() {
       color: "var(--color-earth)",
     },
   };
-  // const unassignedTransactions = transactions.filter((t) => !t.project_id);
+  const unassignedTransactions = transactions.filter(
+    (transaction) => !transaction.project_id,
+  );
+
+  const unassignedIncome = unassignedTransactions
+    .filter((transaction) => transaction.type === "income")
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const unassignedExpenses = unassignedTransactions
+    .filter((transaction) => transaction.type === "expense")
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const unassignedAssets = unassignedTransactions
+    .filter((transaction) => transaction.type === "asset")
+    .reduce((sum, transaction) => sum + Number(transaction.amount || 0), 0);
+
+  const unassignedNetCash =
+    unassignedIncome - unassignedExpenses - unassignedAssets;
 
     const renderProjectCard = (project) => {
     const projectTxns = transactions.filter((t) => t.project_id === project.id);
@@ -520,10 +627,13 @@ function Finance() {
 
     const projectRevenue = totals.income;
     const operatingMargin = projectRevenue - projectOperatingCost;
+    const hasFinancialActivity =
+      projectTxns.length > 0 || projectConsumedInventoryCost > 0;
 
     const projectEntities = entities.filter(
       (e) => e.project_id === project.id,
     );
+    const availableEntities = entities.filter((e) => !e.project_id);
 
     const totalYield = harvestEvents.reduce((sum, event) => {
       const qtyKg = Number(event.payload?.qty_kg ?? 0);
@@ -551,21 +661,17 @@ function Finance() {
     return (
       <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
         <CardHeader className="pb-4">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <CardTitle className="text-lg">{project.name}</CardTitle>
 
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Badge
                   variant={
-                    project.status === "completed"
-                      ? "secondary"
-                      : "default"
+                    project.status === "completed" ? "secondary" : "default"
                   }
                 >
-                  {project.status === "completed"
-                    ? "Completed"
-                    : "Active"}
+                  {project.status === "completed" ? "Completed" : "Active"}
                 </Badge>
 
                 <CardDescription>
@@ -584,7 +690,7 @@ function Finance() {
 
             <div className="shrink-0 text-right">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Net
+                Net cash flow
               </p>
               <p className="mt-0.5 text-lg font-semibold tracking-[-0.02em]">
                 ৳{totals.net.toFixed(2)}
@@ -594,29 +700,31 @@ function Finance() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
               <p className="text-xs text-muted-foreground">Income</p>
               <p className="mt-1 text-sm font-semibold">
                 ৳{totals.income.toFixed(2)}
               </p>
             </div>
 
-            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
-              <p className="text-xs text-muted-foreground">Expense</p>
+            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
+              <p className="text-xs text-muted-foreground">
+                Operating expenses
+              </p>
               <p className="mt-1 text-sm font-semibold">
                 ৳{totals.expense.toFixed(2)}
               </p>
             </div>
 
-            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
               <p className="text-xs text-muted-foreground">Assets</p>
               <p className="mt-1 text-sm font-semibold">
                 ৳{totals.asset.toFixed(2)}
               </p>
             </div>
 
-            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
               <p className="text-xs text-muted-foreground">
                 Consumed inventory
               </p>
@@ -625,22 +733,20 @@ function Finance() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
-              <p className="text-xs text-muted-foreground">
-                Operating cost
-              </p>
+            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
+              <p className="text-xs text-muted-foreground">Operating cost</p>
               <p className="mt-1 text-sm font-semibold">
                 ৳{projectOperatingCost.toFixed(2)}
               </p>
             </div>
           </div>
 
-          <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
+          <div className="rounded-xl border border-border/60 bg-background/70 px-4 py-4">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Project economics
             </p>
 
-            <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <p className="text-xs text-muted-foreground">
                   Recorded revenue
@@ -651,9 +757,7 @@ function Finance() {
               </div>
 
               <div>
-                <p className="text-xs text-muted-foreground">
-                  Operating cost
-                </p>
+                <p className="text-xs text-muted-foreground">Operating cost</p>
                 <p className="mt-1 text-sm font-semibold">
                   ৳{projectOperatingCost.toFixed(2)}
                 </p>
@@ -663,19 +767,20 @@ function Finance() {
                 <p className="text-xs text-muted-foreground">
                   Operating margin
                 </p>
-                <p className="mt-1 text-sm font-semibold">
-                  ৳{operatingMargin.toFixed(2)}
+                <p
+                  className={`mt-1 text-base font-semibold ${
+                    operatingMargin >= 0 ? "text-primary" : "text-destructive"
+                  }`}
+                >
+                  {operatingMargin >= 0 ? "+" : "-"}৳
+                  {Math.abs(operatingMargin).toFixed(2)}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs text-muted-foreground">
-                  Cost / unit
-                </p>
+                <p className="text-xs text-muted-foreground">Cost / unit</p>
                 <p className="mt-1 text-sm font-semibold">
-                  {costPerUnit != null
-                    ? `৳${costPerUnit.toFixed(2)}`
-                    : "—"}
+                  {costPerUnit != null ? `৳${costPerUnit.toFixed(2)}` : "—"}
                 </p>
               </div>
             </div>
@@ -683,6 +788,16 @@ function Finance() {
             <p className="mt-2 text-xs text-muted-foreground">
               Operating cost includes consumed inventory.
             </p>
+            {!hasFinancialActivity && (
+              <div className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-3">
+                <p className="text-sm font-medium">No financial activity yet</p>
+
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Record a transaction against this project to start tracking
+                  its financial performance.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -691,9 +806,13 @@ function Finance() {
             </p>
 
             {projectEntities.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No entities assigned
-              </p>
+              <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-3">
+                <p className="text-sm font-medium">No entities assigned</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Assign animals or other farm entities to connect production
+                  activity with this project.
+                </p>
+              </div>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {projectEntities.map((entity) => (
@@ -709,43 +828,58 @@ function Finance() {
             )}
           </div>
 
-          {project.status === "active" &&
-            entities.some((e) => e.project_id !== project.id) && (
-              <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row">
-                <select
-                  value={assignSelection[project.id] ?? ""}
-                  onChange={(e) =>
-                    setAssignSelection((prev) => ({
-                      ...prev,
-                      [project.id]: e.target.value,
-                    }))
-                  }
-                  className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                >
-                  <option value="">Assign entity…</option>
-
-                  {entities
-                    .filter((e) => e.project_id !== project.id)
-                    .map((entity) => (
+          {project.status === "active" && (
+            <div className="border-t border-border/60 pt-4">
+              {availableEntities.length > 0 ? (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <select
+                    value={assignSelection[project.id] ?? ""}
+                    onChange={(e) =>
+                      setAssignSelection((prev) => ({
+                        ...prev,
+                        [project.id]: e.target.value,
+                      }))
+                    }
+                    className="h-10 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
+                    <option value="">Assign entity…</option>
+                    {availableEntities.map((entity) => (
                       <option key={entity.id} value={entity.id}>
                         {entity.label}
                       </option>
                     ))}
-                </select>
+                  </select>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => handleAssignEntity(project.id)}
-                >
-                  Assign
-                </Button>
-              </div>
-            )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 rounded-lg"
+                    disabled={!assignSelection[project.id]}
+                    onClick={() => handleAssignEntity(project.id)}
+                  >
+                    Assign
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-3">
+                  <p className="text-sm font-medium">No unassigned entities</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    All current farm entities are already assigned to a project.
+                    Complete a project before assigning those entities
+                    elsewhere.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
 
         {project.status === "active" && (
-          <div className="flex justify-end border-t border-border/60 px-6 py-4">
+          <div className="flex flex-col gap-3 border-t border-border/60 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs leading-5 text-muted-foreground">
+              Completing this project ends its active entity assignments while
+              preserving all project and financial history.
+            </p>
             <Button
               type="button"
               variant="outline"
@@ -763,7 +897,228 @@ function Finance() {
   };
 
     return (
-    <div className="space-y-10">
+    <div className="space-y-12">
+      <section className="border-b border-border/60 pb-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              <CircleDollarSign className="size-4 text-primary" />
+              <span>Farm operations</span>
+            </div>
+
+            <div>
+              <h1 className="text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl">
+                Finance
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Understand where money is going, where it is coming from,
+                and how each project contributes to the farm's financial picture.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                document
+                  .getElementById("finance-transaction-form")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              <Plus className="size-4" />
+              Transaction
+            </Button>
+
+            <Button
+              type="button"
+              onClick={() =>
+                document
+                  .getElementById("finance-project-form")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              <FolderKanban className="size-4" />
+              Project
+            </Button>
+          </div>
+        </div>
+      </section>
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Net cash flow
+                </p>
+
+                <p
+                  className={`mt-2 text-3xl font-semibold tracking-tight ${
+                    netCashFlow >= 0
+                      ? "text-primary"
+                      : "text-destructive"
+                  }`}
+                >
+                  {netCashFlow >= 0 ? "+" : "-"}৳
+                  {Math.abs(netCashFlow).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Income minus expenses and assets
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-primary/10 p-2.5">
+                <Wallet className="size-4 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Income
+                </p>
+
+                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                  ৳
+                  {totalIncome.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
+
+                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  <ArrowUpRight className="size-3.5 text-primary" />
+                  Recorded revenue
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-primary/10 p-2.5">
+                <TrendingUp className="size-4 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Expenses
+                </p>
+
+                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                  ৳
+                  {totalExpenses.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
+
+                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  <ArrowDownRight className="size-3.5 text-destructive" />
+                  Operating expenses
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-destructive/10 p-2.5">
+                <Receipt className="size-4 text-destructive" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Activity
+                </p>
+
+                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                  {transactionCount}
+                </p>
+
+                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                  <CalendarDays className="size-3.5" />
+                  {activeProjects.length} active project
+                  {activeProjects.length === 1 ? "" : "s"}
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-muted p-2.5">
+                <Landmark className="size-4 text-muted-foreground" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  General / Farm-level
+                </p>
+
+                <p
+                  className={`mt-2 text-3xl font-semibold tracking-tight ${
+                    unassignedNetCash >= 0
+                      ? "text-primary"
+                      : "text-destructive"
+                  }`}
+                >
+                  {unassignedNetCash >= 0 ? "+" : "-"}৳
+                  {Math.abs(unassignedNetCash).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Transactions not assigned to a project
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-muted p-2.5">
+                <Landmark className="size-4 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border/60 pt-3">
+              <div>
+                <p className="text-[11px] text-muted-foreground">Income</p>
+                <p className="mt-0.5 text-sm font-semibold">
+                  ৳{unassignedIncome.toLocaleString()}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[11px] text-muted-foreground">Expenses</p>
+                <p className="mt-0.5 text-sm font-semibold">
+                  ৳{unassignedExpenses.toLocaleString()}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-[11px] text-muted-foreground">Assets</p>
+                <p className="mt-0.5 text-sm font-semibold">
+                  ৳{unassignedAssets.toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
       {pageError && (
         <Card className="border-destructive/30">
           <CardContent className="p-4">
@@ -772,9 +1127,9 @@ function Finance() {
         </Card>
       )}
 
-      <section className="space-y-4">
+      <section className="space-y-5">
         <div className="flex items-start gap-3">
-          <FolderKanban className="mt-0.5 size-5 shrink-0 text-primary" />
+          <FolderKanban className="mt-1 size-5 shrink-0 text-primary" />
           <div>
             <h2 className="text-xl font-semibold tracking-[-0.02em]">
               Projects
@@ -787,66 +1142,67 @@ function Finance() {
         </div>
 
         <div className="space-y-8">
-  {activeProjects.length > 0 && (
-    <div className="space-y-3">
-      <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Active projects
-        </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Projects currently in production or operation.
-        </p>
-      </div>
-
-      {activeProjects.map((project) => (
-  <div key={project.id}>
-    {renderProjectCard(project)}
-  </div>
-))}
-    </div>
-  )}
-
-  {completedProjects.length > 0 && (
-    <div className="space-y-3">
-      <div>
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Completed projects
-        </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Historical projects and their preserved production records.
-        </p>
-      </div>
-
-      {completedProjects.map((project) => (
-  <div key={project.id}>
-    {renderProjectCard(project)}
-  </div>
-))}
-    </div>
-  )}
-</div>            
-        <form
-          onSubmit={handleAddProject}
-          className="rounded-xl border border-dashed border-border bg-card shadow-sm"
-        >
-          <div className="border-b border-border/60 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <Plus className="size-4 text-primary" />
-
-              <h3 className="text-base font-semibold tracking-[-0.01em]">
-                New project
+          {activeProjects.length > 0 && (
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Active projects
               </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Projects currently in production or operation.
+              </p>
             </div>
 
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create a project to track its costs, income, assets, and
-              production.
-            </p>
-          </div>
+            {activeProjects.map((project) => (
+            <div key={project.id}>
+              {renderProjectCard(project)}
+            </div>
+          ))}
+        </div>
+      )}
 
-          <div className="grid gap-4 p-5 lg:grid-cols-5">
-            <div>
-              <label className="text-sm font-medium">Project Name</label>
+      {completedProjects.length > 0 && (
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Completed projects
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Historical projects and their preserved production records.
+          </p>
+        </div>
+
+        {completedProjects.map((project) => (
+        <div key={project.id}>
+          {renderProjectCard(project)}
+        </div>
+        ))}
+      </div>
+      )}
+    </div>            
+    <form
+      id="finance-project-form"
+      onSubmit={handleAddProject}
+      className="rounded-2xl border border-border bg-card shadow-sm"
+    >
+      <div className="border-b border-border/60 px-5 py-4">
+        <div className="flex items-center gap-2">
+          <Plus className="size-4 text-primary" />
+
+            <h3 className="text-base font-semibold tracking-[-0.01em]">
+              New project
+            </h3>
+        </div>
+
+        <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Create the project first, then record its expenses, income, and
+          asset purchases through transactions linked to this project.
+        </p>
+      </div>
+
+      <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="sm:col-span-2">
+          <label className="text-sm font-medium">Project Name</label>
               <Input
                 type="text"
                 placeholder="Project name, e.g. Mustard Project #001"
@@ -858,12 +1214,12 @@ function Finance() {
                   }))
                 }
                 required
-                className="mt-1 w-full"
+                className="mt-2 w-full"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Project type</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Project type</label>
               <Input
                 type="text"
                 value={newProject.projectType}
@@ -874,12 +1230,12 @@ function Finance() {
                   }))
                 }
                 placeholder="e.g. Livestock production"
-                className="mt-1 w-full"
+                className="mt-2 w-full"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Start date</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Start date</label>
               <Input
                 type="date"
                 value={newProject.startedAt}
@@ -889,12 +1245,12 @@ function Finance() {
                     startedAt: e.target.value,
                   }))
                 }
-                className="mt-1 w-full"
+                className="mt-2 w-full"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium">Target end date</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Target end date</label>
               <Input
                 type="date"
                 value={newProject.targetEndAt}
@@ -904,12 +1260,12 @@ function Finance() {
                     targetEndAt: e.target.value,
                   }))
                 }
-                className="mt-1 w-full"
+                className="mt-2 w-full"
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium">Purpose</label>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Purpose</label>
               <textarea
                 value={newProject.purpose}
                 onChange={(e) =>
@@ -924,8 +1280,12 @@ function Finance() {
               />
             </div>
 
-            <div className="flex items-end">
-              <Button type="submit" disabled={savingProject} className="w-full">
+            <div className="flex items-end lg:col-span-1">
+              <Button
+                type="submit"
+                disabled={savingProject}
+                className="h-10 w-full"
+              >
                 {savingProject ? "Adding…" : "Add project"}
               </Button>
             </div>
@@ -933,9 +1293,9 @@ function Finance() {
         </form>
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-5">
         <div className="flex items-start gap-3">
-          <Receipt className="mt-0.5 size-5 shrink-0 text-primary" />
+          <Receipt className="mt-1 size-5 shrink-0 text-primary" />
 
           <div>
             <h2 className="text-xl font-semibold tracking-[-0.02em]">
@@ -949,10 +1309,11 @@ function Finance() {
         </div>
 
         <form
+          id="finance-transaction-form"
           onSubmit={handleAddTransaction}
           className="rounded-xl border border-dashed border-border bg-card shadow-sm"
         >
-          <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
             <select
               value={txn.type}
               onChange={(e) =>
@@ -961,7 +1322,7 @@ function Finance() {
                   type: e.target.value,
                 }))
               }
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <option value="expense">Expense</option>
               <option value="income">Income</option>
@@ -980,6 +1341,7 @@ function Finance() {
                 }))
               }
               required
+              className="h-10 text-base font-semibold"
             />
 
             <Input
@@ -997,18 +1359,19 @@ function Finance() {
             <select
               value={txn.projectId}
               onChange={(e) =>
-                setTxn((p) => ({
-                  ...p,
+                setTxn((prev) => ({
+                  ...prev,
                   projectId: e.target.value,
+                  entityId: "",
                 }))
               }
               className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <option value="">No project (general)</option>
 
-              {activeProjects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
+              {activeProjects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
                 </option>
               ))}
             </select>
@@ -1016,21 +1379,26 @@ function Finance() {
             <select
               value={txn.entityId}
               onChange={(e) =>
-                setTxn((p) => ({
-                  ...p,
+                setTxn((prev) => ({
+                  ...prev,
                   entityId: e.target.value,
                 }))
               }
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              disabled={!txn.projectId}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <option value="">No entity</option>
+              <option value="">
+                {txn.projectId
+                  ? "Select entity (optional)"
+                  : "Select a project first"}
+              </option>
 
-              {entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.label}
+              {transactionEntities.map((entity) => (
+                <option key={entity.id} value={entity.id}>
+                  {entity.label}
                 </option>
               ))}
-            </select>
+            </select>            
 
             <Input
               type="date"
@@ -1056,17 +1424,21 @@ function Finance() {
               className="sm:col-span-2 lg:col-span-3"
             />
           </div>
-          <div className="border-t border-border/60 px-5 py-4">
-            <Button type="submit" disabled={savingTxn}>
+          <div className="flex items-center justify-between border-t border-border/60 px-5 py-4">
+            <p className="text-xs text-muted-foreground">
+              Transactions update the farm's financial totals immediately.
+            </p>
+
+            <Button type="submit" disabled={savingTxn} className="h-10">
               {savingTxn ? "Saving…" : "Add transaction"}
             </Button>
           </div>
         </form>
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-5">
         <div className="flex items-start gap-3">
-          <Split className="mt-0.5 size-5 shrink-0 text-primary" />
+          <Split className="mt-1 size-5 shrink-0 text-primary" />
 
           <div>
             <h2 className="text-xl font-semibold tracking-[-0.02em]">
@@ -1081,10 +1453,10 @@ function Finance() {
 
         <form
           onSubmit={handleSaveSplit}
-          className="rounded-xl border border-dashed border-border bg-card shadow-sm"
+          className="rounded-2xl border border-border bg-card shadow-sm"
         >
-          <div className="space-y-5 p-5">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-6 p-5">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <Input
                 type="number"
                 step="any"
@@ -1124,10 +1496,10 @@ function Finance() {
 
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium">Project allocations</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Assign the shared cost across projects. Percentages must add
-                  up to 100%.
+                <p className="text-sm font-semibold">Project allocations</p>
+                <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+                  Assign the shared cost across projects. The allocation percentages
+                  must add up to 100%.
                 </p>
               </div>
 
@@ -1135,7 +1507,7 @@ function Finance() {
                 {split.allocations.map((allocation, index) => (
                   <div
                     key={index}
-                    className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
+                    className="grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
                   >
                     <select
                       value={allocation.projectId}
@@ -1150,11 +1522,20 @@ function Finance() {
                     >
                       <option value="">Select project</option>
 
-                      {activeProjects.map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.name}
-                        </option>
-                      ))}
+                      {activeProjects
+                        .filter(
+                          (project) =>
+                            project.id === allocation.projectId ||
+                            !split.allocations.some(
+                              (item, itemIndex) =>
+                                itemIndex !== index && item.projectId === project.id,
+                            ),
+                        )
+                        .map((project) => (
+                          <option key={project.id} value={project.id}>
+                            {project.name}
+                          </option>
+                        ))}
                     </select>
 
                     <Input
@@ -1186,7 +1567,7 @@ function Finance() {
                 ))}
               </div>
 
-              <div className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2">
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/40 px-4 py-3">
                 <span className="text-sm text-muted-foreground">
                   Total allocation
                 </span>
@@ -1208,20 +1589,21 @@ function Finance() {
               type="button"
               variant="outline"
               onClick={addAllocationRow}
+              className="h-10"
             >
               + Add project
             </Button>
 
-            <Button type="submit" disabled={savingSplit}>
+            <Button type="submit" disabled={savingSplit} className="h-10">
               {savingSplit ? "Saving…" : "Save Split Expense"}
             </Button>
           </div>            
         </form>
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-5">
         <div className="flex items-start gap-3">
-          <Receipt className="mt-0.5 size-5 shrink-0 text-primary" />
+          <Receipt className="mt-1 size-5 shrink-0 text-primary" />
 
           <div>
             <h2 className="text-xl font-semibold tracking-[-0.02em]">
@@ -1234,7 +1616,7 @@ function Finance() {
           </div>
         </div>
 
-        <Card className="border-border/70 bg-card shadow-sm">
+        <Card className="overflow-hidden border-border/70 bg-card shadow-sm">
           <CardContent className="p-0">
             {transactions.length === 0 ? (
               <div className="p-6 text-sm text-muted-foreground">
@@ -1245,7 +1627,7 @@ function Finance() {
                 {transactions.map((t) => (
                   <div
                     key={t.id}
-                    className="flex flex-col gap-3 p-5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-start sm:justify-between"
+                    className="flex flex-col gap-4 p-5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-start sm:justify-between"
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -1253,11 +1635,12 @@ function Finance() {
                           variant={
                             t.type === "income" ? "secondary" : "outline"
                           }
+                          className="capitalize"
                         >
-                          {t.type}
+                          {t.type === "asset" ? "Asset purchase" : t.type}
                         </Badge>
 
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-semibold">
                           {t.category || "Uncategorized"}
                         </span>
 
@@ -1266,6 +1649,23 @@ function Finance() {
                             ? new Date(t.occurred_at).toLocaleDateString()
                             : "—"}
                         </span>
+                        {t.project_id ? (
+                          <Badge variant="outline" className="font-normal">
+                            {projects.find((project) => project.id === t.project_id)?.name ||
+                              "Unknown project"}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="font-normal">
+                            General
+                          </Badge>
+                        )}
+
+                        {t.entity_id && (
+                          <Badge variant="secondary" className="font-normal">
+                            {entities.find((entity) => entity.id === t.entity_id)?.label ||
+                              "Unknown entity"}
+                          </Badge>
+                        )}
                       </div>
 
                       {t.notes && (
@@ -1277,7 +1677,7 @@ function Finance() {
 
                     <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
                       <div
-                        className={`text-left text-base font-semibold sm:text-right ${
+                        className={`text-left text-lg font-semibold tracking-tight sm:text-right ${
                           t.type === "income"
                             ? "text-primary"
                             : "text-foreground"
@@ -1292,10 +1692,10 @@ function Finance() {
                           From sale
                         </Badge>
                       ) : (
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-1">
                           <Button
                             type="button"
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() =>
                               setEditingTxn({
@@ -1343,22 +1743,22 @@ function Finance() {
             }
           }}
         >
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Edit transaction</DialogTitle>
+              <DialogTitle className="text-xl tracking-tight">Edit transaction</DialogTitle>
               <DialogDescription>
                 Update this manually recorded finance transaction.
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleUpdateTransaction} className="space-y-5">
+            <form onSubmit={handleUpdateTransaction} className="space-y-6">
               {txnActionError && (
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
                   <p className="text-sm text-destructive">{txnActionError}</p>
                 </div>
               )}
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <select
                   value={editingTxn.type}
                   onChange={(e) =>
@@ -1378,6 +1778,7 @@ function Finance() {
                   type="number"
                   step="any"
                   placeholder="Amount (৳)"
+                  className="h-10 text-base font-semibold"
                   value={editingTxn.amount}
                   onChange={(e) =>
                     setEditingTxn((prev) => ({
@@ -1406,9 +1807,10 @@ function Finance() {
                     setEditingTxn((prev) => ({
                       ...prev,
                       projectId: e.target.value,
+                      entityId: "",
                     }))
                   }
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <option value="">No project (general)</option>
 
@@ -1435,11 +1837,11 @@ function Finance() {
                       entityId: e.target.value,
                     }))
                   }
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
                   <option value="">No entity</option>
 
-                  {entities.map((entity) => (
+                  {editingTransactionEntities.map((entity) => (
                     <option key={entity.id} value={entity.id}>
                       {entity.label}
                     </option>
@@ -1467,14 +1869,14 @@ function Finance() {
                       notes: e.target.value,
                     }))
                   }
-                  className="sm:col-span-2"
+                  className="min-h-10 sm:col-span-2"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-border/60 pt-4">
+              <div className="flex justify-end gap-2 border-t border-border/60 pt-5">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => {
                     setEditingTxn(null);
                     setTxnActionError("");
@@ -1490,9 +1892,9 @@ function Finance() {
         </Dialog>
       )}
 
-      <section className="space-y-4">
+      <section className="space-y-5">
         <div className="flex items-start gap-3">
-          <CircleDollarSign className="mt-0.5 size-5 shrink-0 text-primary" />
+          <CircleDollarSign className="mt-1 size-5 shrink-0 text-primary" />
 
           <div>
             <h2 className="text-xl font-semibold tracking-[-0.02em]">
@@ -1505,8 +1907,8 @@ function Finance() {
           </div>
         </div>
 
-        <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-4 sm:p-6">
+        <Card className="overflow-hidden border-border/70 bg-card shadow-sm">
+          <CardContent className="p-4 sm:p-6 lg:p-7">
             {monthlyFinanceRows.length === 0 ? (
               <div className="flex h-[280px] items-center justify-center">
                 <p className="text-sm text-muted-foreground">
@@ -1516,25 +1918,25 @@ function Finance() {
             ) : (
               <ChartContainer
                 config={financeChartConfig}
-                className="h-[300px] w-full"
+                className="h-[340px] w-full"
               >
                 <ComposedChart
                   accessibilityLayer
                   data={[...monthlyFinanceRows].reverse()}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  margin={{ top: 12, right: 16, left: 8, bottom: 4 }}
                 >
-                  <CartesianGrid vertical={false} />
+                  <CartesianGrid vertical={false} stroke="currentColor" strokeOpacity={0.08} />
                   <ReferenceLine
                     y={0}
                     stroke="currentColor"
-                    strokeOpacity={0.35}
+                    strokeOpacity={0.2}
                   />
 
                   <XAxis
                     dataKey="month"
                     tickLine={false}
                     axisLine={false}
-                    tickMargin={8}
+                    tickMargin={10}
                     tickFormatter={(value) =>
                       new Date(`${value}-01`).toLocaleDateString(undefined, {
                         month: "short",
@@ -1560,14 +1962,20 @@ function Finance() {
                     dataKey="income"
                     name="Income"
                     fill="var(--color-income)"
-                    radius={[4, 4, 0, 0]}
+                    radius={[6, 6, 0, 0]}
                   />
 
                   <Bar
                     dataKey="expense"
                     name="Expenses"
                     fill="var(--color-expense)"
-                    radius={[4, 4, 0, 0]}
+                    radius={[6, 6, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="asset"
+                    name="Asset purchases"
+                    fill="var(--color-asset)"
+                    radius={[6, 6, 0, 0]}
                   />
 
                   <Line
@@ -1586,9 +1994,9 @@ function Finance() {
         </Card>
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-5">
         <div className="flex items-start gap-3">
-          <CircleDollarSign className="mt-0.5 size-5 shrink-0 text-primary" />
+          <CircleDollarSign className="mt-1 size-5 shrink-0 text-primary" />
 
           <div>
             <h2 className="text-xl font-semibold tracking-[-0.02em]">
@@ -1602,7 +2010,7 @@ function Finance() {
           </div>
         </div>
 
-        <Card className="border-border/70 bg-card shadow-sm">
+        <Card className="overflow-hidden border-border/70 bg-card shadow-sm">
           <CardContent className="p-0">
             {monthlyFinanceRows.length === 0 ? (
               <div className="p-6 text-sm text-muted-foreground">

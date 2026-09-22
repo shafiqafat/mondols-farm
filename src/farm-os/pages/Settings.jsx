@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/farm-os/lib/supabaseClient";
 import {
   Building2,
@@ -20,6 +21,8 @@ import {
 } from "@/components/ui/card";
 
 function Settings() {
+  const navigate = useNavigate();
+
   const [profile, setProfile] = useState({
     name: "",
     location: "",
@@ -132,18 +135,21 @@ function Settings() {
       description: "Configure how Farm OS understands your farm.",
       icon: SlidersHorizontal,
       items: ["Species & variants", "Tracking modes", "Event capabilities"],
+      action: () => navigate("/species"),
     },
     {
       title: "Inventory",
       description: "Configure inventory and stock-management defaults.",
       icon: Boxes,
       items: ["Units", "Reorder settings", "Safety stock"],
+      action: () => navigate("/inventory"),
     },
     {
       title: "Finance",
       description: "Configure financial defaults used throughout Farm OS.",
       icon: CircleDollarSign,
       items: ["Currency", "Expense categories", "Income categories"],
+      action: () => navigate("/finance"),
     },
     {
       title: "Users & Access",
@@ -180,10 +186,18 @@ function Settings() {
                 className="border-border/70 shadow-sm md:col-span-2"
               >
                 <CardHeader>
-                  <CardTitle>Farm Profile</CardTitle>
-                  <CardDescription>
-                    Basic information about your farm and organization.
-                  </CardDescription>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-lg bg-primary/10 p-2.5">
+                      <Building2 className="size-5 text-primary" />
+                    </div>
+
+                    <div>
+                      <CardTitle>Farm Profile</CardTitle>
+                      <CardDescription className="mt-1">
+                        Basic information about your farm and organization.
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
 
                 <CardContent>
@@ -310,7 +324,15 @@ function Settings() {
           }
 
           return (
-            <Card key={section.title} className="border-border/70 shadow-sm">
+            <Card
+              key={section.title}
+              className={`border-border/70 shadow-sm ${
+                section.action
+                  ? "cursor-pointer transition-colors hover:border-primary/30 hover:bg-muted/20"
+                  : ""
+              }`}
+              onClick={section.action}
+            >
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -327,11 +349,20 @@ function Settings() {
               </CardHeader>
 
               <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <div className="divide-y rounded-lg border">
                   {section.items.map((item) => (
-                    <li key={item}>• {item}</li>
+                    <div
+                      key={item}
+                      className="flex items-center justify-between px-3 py-2.5 text-sm"
+                    >
+                      <span className="text-muted-foreground">{item}</span>
+
+                      {section.action && (
+                        <span className="text-muted-foreground">→</span>
+                      )}
+                    </div>
                   ))}
-                </ul>
+                </div>
               </CardContent>
             </Card>
           );

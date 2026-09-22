@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -27,6 +28,20 @@ function FarmOSLayout() {
   const { user, role, signOut } = useAuth();
   const location = useLocation();
 
+  const [topBarMessage, setTopBarMessage] = useState("Shafique Mondol");
+
+  useEffect(() => {
+    const messages = ["Shafique Mondol??", "Happy Farming"];
+    let index = 0;
+
+    const interval = setInterval(() => {
+      index = (index + 1) % messages.length;
+      setTopBarMessage(messages[index]);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const pageLabels = {
     "/farm-os": "Overview",
     "/farm-os/species": "Species & Entities",
@@ -52,11 +67,14 @@ function FarmOSLayout() {
       <FarmOSSidebar />
 
       <SidebarInset className="min-h-svh bg-background font-sans [&_h1]:!font-sans [&_h2]:!font-sans [&_h3]:!font-sans [&_h4]:!font-sans">
-        <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center border-b bg-background/95 px-4 backdrop-blur">
+        <header className="relative sticky top-0 z-20 flex h-14 shrink-0 items-center border-b bg-background/95 px-4 backdrop-blur">
           <div className="flex min-w-0 items-center gap-2">
             <SidebarTrigger className="-ml-1" />
 
-            <Separator orientation="vertical" className="mx-2 h-4" />
+            <Separator
+              orientation="vertical"
+              className="mx-2 h-4 self-center"
+            />
 
             <div className="flex min-w-0 items-center gap-2 text-sm">
               <span className="hidden text-muted-foreground sm:inline">
@@ -65,10 +83,16 @@ function FarmOSLayout() {
 
               <span className="hidden text-muted-foreground sm:inline">/</span>
 
-              <span className="truncate font-medium text-foreground">
+              <span className="max-w-24 truncate font-medium text-foreground sm:max-w-none">
                 {currentPage}
               </span>
             </div>
+          </div>
+
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2">
+            <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">
+              {topBarMessage}
+            </span>
           </div>
 
           <div className="ml-auto flex items-center gap-2">

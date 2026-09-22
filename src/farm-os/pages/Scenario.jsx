@@ -62,11 +62,16 @@ function Scenario() {
         return;
       }
 
-      const { data: entities } = await supabase
+      const { data: entities, error: entitiesError } = await supabase
         .from("farm_entities")
         .select("id, quantity")
         .eq("species_config_id", selectedSpeciesId)
         .eq("status", "active");
+
+      if (entitiesError) {
+        setLoadError(entitiesError.message);
+        return;
+      }
 
       const total = (entities ?? []).reduce(
         (sum, e) => sum + Number(e.quantity ?? 0),
@@ -80,10 +85,15 @@ function Scenario() {
         return;
       }
 
-      const { data: events } = await supabase
+      const { data: events, error: eventsError } = await supabase
         .from("entity_events")
         .select("occurred_at")
         .in("entity_id", entityIds);
+
+      if (eventsError) {
+        setLoadError(eventsError.message);
+        return;
+      }
 
       if (!events || events.length === 0) {
         setMaturity({ eventCount: 0, daysOfHistory: 0 });
@@ -112,10 +122,40 @@ function Scenario() {
     e.preventDefault();
 
     const validConstraints = constraints
-      .filter((c) => c.name.trim() && c.capacity !== "")
+      .filter((c) => {
+        if (!c.name.trim() || c.capacity === "") return false;
+
+        const capacity = Number(c.capacity);
+        return Number.isFinite(capacity) && capacity > 0;
+      })
       .map((c) => ({ ...c, capacity: Number(c.capacity) }));
 
-    const proposedTotal = currentCount + Number(addCount || 0);
+    const add = Number(addCount);
+    const investment = Number(initialInvestmentPerUnit || 0);
+    const monthlyCost = Number(monthlyCostPerUnit || 0);
+    const monthlyRevenue = Number(monthlyRevenuePerUnit || 0);
+    const stretch = Number(stretchMultiplier);
+
+    if (
+      !selectedSpeciesId ||
+      !Number.isFinite(add) ||
+      add < 0 ||
+      !Number.isFinite(investment) ||
+      investment < 0 ||
+      !Number.isFinite(monthlyCost) ||
+      monthlyCost < 0 ||
+      !Number.isFinite(monthlyRevenue) ||
+      monthlyRevenue < 0 ||
+      !Number.isFinite(stretch) ||
+      stretch <= 0
+    ) {
+      setResult({
+        error: "Enter valid scenario values before running the simulation.",
+      });
+      return;
+    }
+
+    const proposedTotal = currentCount + add;
     const capacitySummary =
       validConstraints.length > 0
         ? summarizeCapacity(
@@ -126,10 +166,10 @@ function Scenario() {
         : null;
 
     const financials = computeScenarioFinancials({
-      count: Number(addCount || 0),
-      initialInvestmentPerUnit: Number(initialInvestmentPerUnit || 0),
-      monthlyCostPerUnit: Number(monthlyCostPerUnit || 0),
-      monthlyRevenuePerUnit: Number(monthlyRevenuePerUnit || 0),
+      count: add,
+      initialInvestmentPerUnit: investment,
+      monthlyCostPerUnit: monthlyCost,
+      monthlyRevenuePerUnit: monthlyRevenue,
     });
 
     const recommendation = capacitySummary
@@ -155,9 +195,11 @@ function Scenario() {
   const selectedSpecies = speciesList.find((s) => s.id === selectedSpeciesId);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <BarChart3 className="mt-1 size-5 shrink-0 text-primary" />
+        <div className="mt-0.5 rounded-lg bg-primary/10 p-2.5">
+          <BarChart3 className="size-5 text-primary" />
+        </div>
 
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.03em]">
@@ -174,17 +216,16 @@ function Scenario() {
       <Card className="border-border/70 bg-card shadow-sm">
         <CardContent className="space-y-5 p-5">
           <form onSubmit={handleRun} className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Calculator className="size-4 text-primary" />
-
-              <div>
+            <div>
+              <div className="flex items-center gap-2">
+                <Calculator className="size-4 shrink-0 text-primary" />
                 <h2 className="text-base font-semibold">Scenario inputs</h2>
-
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Choose what you want to scale and enter the assumptions for
-                  the scenario.
-                </p>
               </div>
+
+              <p className="mt-1 ml-6 text-sm text-muted-foreground">
+                Choose what you want to scale and enter the assumptions for the
+                scenario.
+              </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -202,6 +243,8 @@ function Scenario() {
               </select>
               <Input
                 type="number"
+                min="0"
+                step="any"
                 placeholder="Count to add"
                 value={addCount}
                 onChange={(e) => setAddCount(e.target.value)}
@@ -215,7 +258,7 @@ function Scenario() {
                   Currently {currentCount} {selectedSpecies.name}.
                 </span>{" "}
                 {maturity && maturity.eventCount > 0
-                  ? `Projection informed by ${maturity.eventCount} logged events over ${maturity.daysOfHistory} days of real history.`
+                  ? `${maturity.eventCount} logged events over ${maturity.daysOfHistory} days of real history are available for this species.`
                   : "No logged history for this species yet — treat projections below as rough estimates only."}
               </div>
             )}
@@ -234,6 +277,8 @@ function Scenario() {
                   <span>Investment/unit (৳)</span>
                   <Input
                     type="number"
+                    min="0"
+                    step="any"
                     value={initialInvestmentPerUnit}
                     onChange={(e) =>
                       setInitialInvestmentPerUnit(e.target.value)
@@ -245,6 +290,8 @@ function Scenario() {
                   <span>Monthly cost/unit (৳)</span>
                   <Input
                     type="number"
+                    min="0"
+                    step="any"
                     value={monthlyCostPerUnit}
                     onChange={(e) => setMonthlyCostPerUnit(e.target.value)}
                   />
@@ -254,6 +301,8 @@ function Scenario() {
                   <span>Monthly revenue/unit (৳)</span>
                   <Input
                     type="number"
+                    min="0"
+                    step="any"
                     value={monthlyRevenuePerUnit}
                     onChange={(e) => setMonthlyRevenuePerUnit(e.target.value)}
                   />
@@ -302,6 +351,8 @@ function Scenario() {
                     <span>Capacity</span>
                     <Input
                       type="number"
+                      min="0"
+                      step="any"
                       placeholder="Capacity"
                       value={c.capacity}
                       onChange={(e) =>
@@ -332,7 +383,17 @@ function Scenario() {
         </CardContent>
       </Card>
 
-      {result && (
+      {result?.error && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardContent className="p-4">
+            <p className="text-sm font-medium text-destructive">
+              {result.error}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {result && !result.error && (
         <Card
           className={`border-border/70 bg-card shadow-sm ${
             result.capacitySummary?.level === "safe"
@@ -365,23 +426,51 @@ function Scenario() {
             )}
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <span>
-                Investment: ৳{result.financials.totalInvestment.toFixed(2)}
-              </span>
-              <span>
-                Monthly cost: ৳{result.financials.totalMonthlyCost.toFixed(2)}
-              </span>
-              <span>
-                Monthly revenue: ৳
-                {result.financials.totalMonthlyRevenue.toFixed(2)}
-              </span>
-              <span>
-                Monthly margin: ৳{result.financials.monthlyMargin.toFixed(2)}
-              </span>
+              <div className="rounded-xl border border-border/60 bg-background p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Investment
+                </p>
+                <p className="mt-1 text-xl font-semibold">
+                  ৳{result.financials.totalInvestment.toFixed(2)}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/60 bg-background p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Monthly cost
+                </p>
+                <p className="mt-1 text-xl font-semibold">
+                  ৳{result.financials.totalMonthlyCost.toFixed(2)}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/60 bg-background p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Monthly revenue
+                </p>
+                <p className="mt-1 text-xl font-semibold">
+                  ৳{result.financials.totalMonthlyRevenue.toFixed(2)}
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-border/60 bg-background p-4">
+                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  Monthly margin
+                </p>
+                <p className="mt-1 text-xl font-semibold">
+                  ৳{result.financials.monthlyMargin.toFixed(2)}
+                </p>
+              </div>
+
               {result.financials.paybackMonths != null && (
-                <span>
-                  Payback: {result.financials.paybackMonths.toFixed(1)} months
-                </span>
+                <div className="rounded-xl border border-border/60 bg-background p-4">
+                  <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                    Payback
+                  </p>
+                  <p className="mt-1 text-xl font-semibold">
+                    {result.financials.paybackMonths.toFixed(1)} months
+                  </p>
+                </div>
               )}
             </div>
           </CardContent>

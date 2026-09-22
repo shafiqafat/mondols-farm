@@ -33,13 +33,24 @@ const CAPABILITY_OPTIONS = [
 ];
 
 const CATEGORY_OPTIONS = ["poultry", "livestock", "crop", "fodder"];
-const STATUS_OPTIONS = ["active", "sold", "deceased", "harvested"];
+const LIVESTOCK_STATUS_OPTIONS = ["active", "sold", "deceased"];
+const CROP_STATUS_OPTIONS = ["active", "harvested"];
 
 function emptyCapabilitySet() {
   return CAPABILITY_OPTIONS.reduce(
     (acc, c) => ({ ...acc, [c.key]: false }),
     {},
   );
+}
+
+function getStatusOptions(entity) {
+  const category = entity.species_config?.category;
+
+  if (category === "crop" || category === "fodder") {
+    return CROP_STATUS_OPTIONS;
+  }
+
+  return LIVESTOCK_STATUS_OPTIONS;
 }
 
 function Species() {
@@ -92,7 +103,7 @@ function Species() {
       supabase
         .from("farm_entities")
         .select(
-          "id, label, quantity, status, species_config:species_config_id(id, name)",
+          "id, label, quantity, status, species_config:species_config_id(id, name, category)",
         )
         .order("label"),
       supabase
@@ -105,6 +116,18 @@ function Species() {
 
     if (speciesRes.error) {
       setLoadError(speciesRes.error.message);
+      setLoading(false);
+      return;
+    }
+
+    if (entitiesRes.error) {
+      setLoadError(entitiesRes.error.message);
+      setLoading(false);
+      return;
+    }
+
+    if (rulesRes.error) {
+      setLoadError(rulesRes.error.message);
       setLoading(false);
       return;
     }
@@ -213,7 +236,7 @@ function Species() {
     const { error } = await supabase.from("farm_entities").insert({
       species_config_id: newEntity.speciesConfigId,
       label: newEntity.label.trim(),
-      quantity: newEntity.quantity ? Number(newEntity.quantity) : null,
+      quantity: newEntity.quantity !== "" ? Number(newEntity.quantity) : null,
       acquired_at: newEntity.acquiredAt || null,
       location: newEntity.location || null,
       notes: newEntity.notes || null,
@@ -238,6 +261,18 @@ function Species() {
   }
 
   async function handleStatusChange(entityId, status) {
+    const entity = entities.find((item) => item.id === entityId);
+
+    if (!entity || entity.status !== "active") {
+      return;
+    }
+
+    const allowedStatuses = getStatusOptions(entity);
+
+    if (!allowedStatuses.includes(status)) {
+      return;
+    }
+
     setUpdatingStatusId(entityId);
     setPageError("");
 
@@ -360,38 +395,52 @@ function Species() {
         </Card>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Species & crops", value: speciesList.length, icon: Leaf },
-          { label: "Registered entities", value: entities.length, icon: Users },
-          {
-            label: "Active entities",
-            value: activeEntities.length,
-            icon: Activity,
-          },
-          {
-            label: "Tracked quantity",
-            value: totalQuantity.toLocaleString(),
-            icon: ClipboardList,
-          },
-        ].map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="border-border/70 shadow-none">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Icon className="size-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                  {label}
-                </p>
-                <p className="mt-1 text-xl font-semibold tracking-tight">
-                  {value}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <section>
+        <Card className="border-border/70 shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                {
+                  label: "Species & crops",
+                  value: speciesList.length,
+                  icon: Leaf,
+                },
+                {
+                  label: "Registered entities",
+                  value: entities.length,
+                  icon: Users,
+                },
+                {
+                  label: "Active entities",
+                  value: activeEntities.length,
+                  icon: Activity,
+                },
+                {
+                  label: "Tracked quantity",
+                  value: totalQuantity.toLocaleString(),
+                  icon: ClipboardList,
+                },
+              ].map(({ label, value, icon: Icon }) => (
+                <Card key={label} className="border-border/70 shadow-none">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                        {label}
+                      </p>
+                      <p className="mt-1 text-xl font-semibold tracking-tight">
+                        {value}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </section>
 
       {/* --- Species / crop configuration --- */}
       <section className="space-y-4">
@@ -412,9 +461,9 @@ function Species() {
           {speciesList.map((species) => (
             <Card
               key={species.id}
-              className="group border-border/70 bg-card/80 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+              className="border-border/70 bg-card shadow-sm"
             >
-              <CardHeader className="pb-2">
+              <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -719,7 +768,12 @@ function Species() {
                 className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="all">All statuses</option>
-                {STATUS_OPTIONS.map((status) => (
+                {[
+                  ...new Set([
+                    ...LIVESTOCK_STATUS_OPTIONS,
+                    ...CROP_STATUS_OPTIONS,
+                  ]),
+                ].map((status) => (
                   <option key={status} value={status}>
                     {status}
                   </option>
@@ -767,20 +821,35 @@ function Species() {
                       </div>
                     </div>
 
-                    <select
-                      value={entity.status}
-                      onChange={(e) =>
-                        handleStatusChange(entity.id, e.target.value)
-                      }
-                      disabled={updatingStatusId === entity.id}
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm capitalize shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-36"
-                    >
-                      {STATUS_OPTIONS.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
+                    {entity.status === "active" ? (
+                      <select
+                        value={entity.status}
+                        onChange={(e) =>
+                          handleStatusChange(entity.id, e.target.value)
+                        }
+                        disabled={updatingStatusId === entity.id}
+                        className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm capitalize shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-36"
+                      >
+                        {getStatusOptions(entity).map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Badge
+                        variant={
+                          entity.status === "deceased"
+                            ? "destructive"
+                            : entity.status === "harvested"
+                              ? "outline"
+                              : "secondary"
+                        }
+                        className="w-full justify-center capitalize sm:w-36"
+                      >
+                        {entity.status}
+                      </Badge>
+                    )}
                   </div>
                 ))}
               </div>
@@ -789,7 +858,7 @@ function Species() {
         </Card>
 
         <Card className="border-border/70 shadow-sm">
-          <CardHeader>
+          <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
             <CardTitle className="text-base">
               Register a new farm entity
             </CardTitle>
@@ -917,6 +986,25 @@ function Species() {
                     }
                   />
                 </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label htmlFor="entity-notes" className="text-sm font-medium">
+                    Notes
+                  </label>
+
+                  <Input
+                    id="entity-notes"
+                    type="text"
+                    placeholder="Optional notes about this entity"
+                    value={newEntity.notes}
+                    onChange={(e) =>
+                      setNewEntity((p) => ({
+                        ...p,
+                        notes: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
 
               <Button
@@ -946,7 +1034,7 @@ function Species() {
         </div>
 
         <Card className="border-border/70 shadow-sm">
-          <CardHeader>
+          <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
             <CardTitle className="text-base">Existing rules</CardTitle>
             <CardDescription>
               Crop sequence recommendations configured for the farm.
@@ -980,7 +1068,7 @@ function Species() {
         </Card>
 
         <Card className="border-border/70 shadow-sm">
-          <CardHeader>
+          <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
             <CardTitle className="text-base">Add a rotation rule</CardTitle>
 
             <CardDescription>

@@ -46,11 +46,23 @@ function ContentJournal() {
       supabase.from("farm_projects").select("id, name").order("name"),
     ]);
 
-    if (itemsRes.error) {
-      setLoadError(itemsRes.error.message);
-      setLoading(false);
-      return;
-    }
+      if (itemsRes.error) {
+        setLoadError(itemsRes.error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (entitiesRes.error) {
+        setLoadError(entitiesRes.error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (projectsRes.error) {
+        setLoadError(projectsRes.error.message);
+        setLoading(false);
+        return;
+      }
 
     setItems(itemsRes.data ?? []);
     setEntities(entitiesRes.data ?? []);
@@ -134,8 +146,8 @@ function ContentJournal() {
   return (
     <div className="space-y-8">
       <div className="flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <ClipboardPenLine className="size-4" />
+        <div className="mt-0.5 rounded-lg bg-primary/10 p-2.5">
+          <ClipboardPenLine className="size-5" />
         </div>
 
         <div>
@@ -233,19 +245,15 @@ function ContentJournal() {
         className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
         onSubmit={handleAdd}
       >
-        <div className="mb-5 flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <ClipboardPenLine className="size-4" />
-          </div>
-
-          <div>
+        <div className="mb-5">
+          <div className="flex items-center gap-2">
+            <ClipboardPenLine className="size-5 shrink-0 text-primary" />
             <h2 className="text-base font-semibold">New content idea</h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Capture an idea and optionally link it to a farm entity or
-              project.
-            </p>
           </div>
+
+          <p className="mt-1 ml-7 text-sm text-muted-foreground">
+            Capture an idea and optionally link it to a farm entity or project.
+          </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">

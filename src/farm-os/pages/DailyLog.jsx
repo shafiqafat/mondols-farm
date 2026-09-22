@@ -57,6 +57,12 @@ function DailyLog() {
         return;
       }
 
+      if (itemsRes.error) {
+        setLoadError(itemsRes.error.message);
+        setLoading(false);
+        return;
+      }
+
       setEntities(entitiesRes.data ?? []);
       setInventoryItems(itemsRes.data ?? []);
 
@@ -86,6 +92,7 @@ function DailyLog() {
         entities,
         expense,
         content,
+        feedItemSelection,
       });
 
       if (inputValidationErrors.length > 0) {
@@ -241,36 +248,46 @@ function DailyLog() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <ClipboardList className="size-5 text-forest" />
-            <h1 className="text-2xl font-semibold tracking-tight">Daily Log</h1>
+      <section className="border-b border-border/60 pb-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              <ClipboardList className="size-4 text-primary" />
+              <span>Farm operations</span>
+            </div>
+
+            <div>
+              <h1 className="text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl">
+                Daily Log
+              </h1>
+
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Record farm activity, expenses, and content in one durable daily
+                log.
+              </p>
+            </div>
           </div>
 
-          <p className="text-sm text-muted-foreground">
-            Record today's farm activity, expenses, and content in one durable
-            log.
-          </p>
-        </div>
+          <div className="flex items-center gap-2">
+            <CalendarDays className="size-4 text-muted-foreground" />
 
-        <div className="flex items-center gap-2">
-          <CalendarDays className="size-4 text-muted-foreground" />
-          <label
-            htmlFor="log-date"
-            className="text-sm font-medium text-muted-foreground"
-          >
-            Date
-          </label>
-          <Input
-            id="log-date"
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-auto"
-          />
+            <label
+              htmlFor="log-date"
+              className="text-sm font-medium text-muted-foreground"
+            >
+              Date
+            </label>
+
+            <Input
+              id="log-date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-auto"
+            />
+          </div>
         </div>
-      </div>
+      </section>
 
       {entities.length === 0 ? (
         <Card>
@@ -292,9 +309,9 @@ function DailyLog() {
               return (
                 <Card
                   key={entity.id}
-                  className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                  className="border-border/70 bg-card shadow-sm"
                 >
-                  <CardHeader className="pb-3">
+                  <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
                     <CardTitle className="flex flex-col gap-1 text-base sm:flex-row sm:items-center sm:justify-between">
                       <span>{entity.label}</span>
                       <span className="text-sm font-normal text-muted-foreground">
@@ -365,8 +382,8 @@ function DailyLog() {
             })}
           </div>
 
-          <Card>
-            <CardHeader className="pb-3">
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
               <CardTitle className="text-base">
                 Today's expense{" "}
                 <span className="text-sm font-normal text-muted-foreground">
@@ -434,8 +451,8 @@ function DailyLog() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
+          <Card className="border-border/70 shadow-sm">
+            <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
               <CardTitle className="text-base">
                 Today's content{" "}
                 <span className="text-sm font-normal text-muted-foreground">

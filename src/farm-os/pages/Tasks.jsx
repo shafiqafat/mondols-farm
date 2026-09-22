@@ -72,6 +72,12 @@ function Tasks() {
       return;
     }
 
+    if (entitiesRes.error) {
+      setLoadError(entitiesRes.error.message);
+      setLoading(false);
+      return;
+    }
+
     setTasks(tasksRes.data ?? []);
     setEntities(entitiesRes.data ?? []);
     setLoading(false);
@@ -186,8 +192,8 @@ function Tasks() {
   return (
     <div className="space-y-8">
       <div className="flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <ListTodo className="size-4" />
+        <div className="mt-0.5 rounded-lg bg-primary/10 p-2.5">
+          <ListTodo className="size-5" />
         </div>
 
         <div>
@@ -293,17 +299,15 @@ function Tasks() {
         className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
         onSubmit={handleAdd}
       >
-        <div className="mb-5 flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <ClipboardList className="size-4" />
+        <div className="mb-5">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="size-5 shrink-0 text-primary" />
+            <h2 className="text-base font-semibold">Add a task</h2>
           </div>
 
-          <div>
-            <h2 className="text-base font-semibold">Add a task</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Create a one-time or recurring task for the farm.
-            </p>
-          </div>
+          <p className="mt-1 ml-7 text-sm text-muted-foreground">
+            Create a one-time or recurring task for the farm.
+          </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-6">

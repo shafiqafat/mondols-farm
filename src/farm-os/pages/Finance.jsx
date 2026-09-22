@@ -12,12 +12,8 @@ import {
   Receipt,
   Split,
   Plus,
-  ArrowDownRight,
-  ArrowUpRight,
   Wallet,
-  TrendingUp,
   Landmark,
-  CalendarDays,
 } from "lucide-react";
 import {
   Dialog,
@@ -577,6 +573,10 @@ function Finance() {
       label: "Expenses",
       color: "var(--color-terracotta)",
     },
+    asset: {
+      label: "Asset purchases",
+      color: "var(--color-earth)",
+    },
     netCash: {
       label: "Net cash",
       color: "var(--color-earth)",
@@ -946,179 +946,138 @@ function Finance() {
           </div>
         </div>
       </section>
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/70 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                  Net cash flow
-                </p>
+      <section className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+        {/* Main financial position */}
+        <Card className="border-border/70 bg-card shadow-sm">
+          <CardContent className="p-5 sm:p-6">
+            <div className="flex flex-col gap-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Cash position
+                  </p>
 
-                <p
-                  className={`mt-2 text-3xl font-semibold tracking-tight ${
-                    netCashFlow >= 0
-                      ? "text-primary"
-                      : "text-destructive"
-                  }`}
-                >
-                  {netCashFlow >= 0 ? "+" : "-"}৳
-                  {Math.abs(netCashFlow).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                  })}
-                </p>
+                  <p
+                    className={`mt-1 text-4xl font-semibold tracking-[-0.03em] sm:text-[2.75rem] ${
+                      netCashFlow >= 0
+                        ? "text-primary"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {netCashFlow >= 0 ? "+" : "-"}৳
+                    {Math.abs(netCashFlow).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
 
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Income minus expenses and assets
-                </p>
+                  <p className="mt-1.5 text-sm text-muted-foreground">
+                    Income minus operating expenses and asset purchases
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-primary/10 p-3">
+                  <Wallet className="size-5 text-primary" />
+                </div>
               </div>
 
-              <div className="rounded-lg bg-primary/10 p-2.5">
-                <Wallet className="size-4 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="grid grid-cols-3 gap-4 border-t border-border/60 pt-5">
+                <div>
+                  <p className="text-xs text-muted-foreground">Income</p>
+                  <p className="mt-1 text-base font-semibold">
+                    ৳
+                    {totalIncome.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                  Income
-                </p>
+                <div>
+                  <p className="text-xs text-muted-foreground">Expenses</p>
+                  <p className="mt-1 text-base font-semibold">
+                    ৳
+                    {totalExpenses.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
 
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
-                  ৳
-                  {totalIncome.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                  })}
-                </p>
-
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <ArrowUpRight className="size-3.5 text-primary" />
-                  Recorded revenue
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-primary/10 p-2.5">
-                <TrendingUp className="size-4 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                  Expenses
-                </p>
-
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
-                  ৳
-                  {totalExpenses.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                  })}
-                </p>
-
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <ArrowDownRight className="size-3.5 text-destructive" />
-                  Operating expenses
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-destructive/10 p-2.5">
-                <Receipt className="size-4 text-destructive" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Assets</p>
+                  <p className="mt-1 text-base font-semibold">
+                    ৳
+                    {totalAssetPurchases.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                  Activity
-                </p>
+        {/* Farm-level overview */}
+        <Card className="border-border/70 bg-card shadow-sm">
+          <CardContent className="p-6 sm:p-7">
+            <div className="flex flex-col gap-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Farm-level
+                  </p>
 
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
-                  {transactionCount}
-                </p>
+                  <p
+                    className={`mt-2 text-3xl font-semibold tracking-[-0.02em] ${
+                      unassignedNetCash >= 0
+                        ? "text-primary"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {unassignedNetCash >= 0 ? "+" : "-"}৳
+                    {Math.abs(unassignedNetCash).toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
 
-                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                  <CalendarDays className="size-3.5" />
-                  {activeProjects.length} active project
-                  {activeProjects.length === 1 ? "" : "s"}
-                </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Transactions not assigned to a project
+                  </p>
+                </div>
+
+                <div className="rounded-xl bg-muted p-3">
+                  <Landmark className="size-5 text-muted-foreground" />
+                </div>
               </div>
 
-              <div className="rounded-lg bg-muted p-2.5">
-                <Landmark className="size-4 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/70 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                  General / Farm-level
-                </p>
+              <div className="grid grid-cols-3 gap-3 border-t border-border/60 pt-5">
+                <div>
+                  <p className="text-xs text-muted-foreground">Transactions</p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {transactionCount}
+                  </p>
+                </div>
 
-                <p
-                  className={`mt-2 text-3xl font-semibold tracking-tight ${
-                    unassignedNetCash >= 0
-                      ? "text-primary"
-                      : "text-destructive"
-                  }`}
-                >
-                  {unassignedNetCash >= 0 ? "+" : "-"}৳
-                  {Math.abs(unassignedNetCash).toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                  })}
-                </p>
+                <div>
+                  <p className="text-xs text-muted-foreground">Active projects</p>
+                  <p className="mt-1 text-lg font-semibold">
+                    {activeProjects.length}
+                  </p>
+                </div>
 
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Transactions not assigned to a project
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-muted p-2.5">
-                <Landmark className="size-4 text-muted-foreground" />
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border/60 pt-3">
-              <div>
-                <p className="text-[11px] text-muted-foreground">Income</p>
-                <p className="mt-0.5 text-sm font-semibold">
-                  ৳{unassignedIncome.toLocaleString()}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[11px] text-muted-foreground">Expenses</p>
-                <p className="mt-0.5 text-sm font-semibold">
-                  ৳{unassignedExpenses.toLocaleString()}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[11px] text-muted-foreground">Assets</p>
-                <p className="mt-0.5 text-sm font-semibold">
-                  ৳{unassignedAssets.toLocaleString()}
-                </p>
+                <div>
+                  <p className="text-xs text-muted-foreground">General expenses</p>
+                  <p className="mt-1 text-sm font-semibold">
+                    ৳
+                    {unassignedExpenses.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </section>
+      
       {pageError && (
         <Card className="border-destructive/30">
           <CardContent className="p-4">
@@ -1611,7 +1570,7 @@ function Finance() {
             </h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Recent income and expenses recorded across the farm.
+              Recent income, expenses, and asset purchases recorded across the farm.
             </p>
           </div>
         </div>
@@ -1684,7 +1643,9 @@ function Finance() {
                         }`}
                       >
                         {t.type === "income" ? "+" : "-"}৳
-                        {Number(t.amount || 0).toLocaleString()}
+                        {Number(t.amount || 0).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                        })}
                       </div>
 
                       {t.sale_id ? (
@@ -1902,7 +1863,7 @@ function Finance() {
             </h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Monthly income, expenses, and net cash movement.
+              Monthly income, operating expenses, asset purchases, and net cash movement.
             </p>
           </div>
         </div>

@@ -111,9 +111,12 @@ function Overview() {
           .select(
             `id, entity_id, type, payload, occurred_at, created_at, farm_entities:entity_id (id, entity_name, label, species_config:species_config_id (id, name, category))`,
           )
+          .gte(
+            "occurred_at",
+            new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+          )
           .order("occurred_at", { ascending: false })
-          .order("created_at", { ascending: false })
-          .limit(100),
+          .order("created_at", { ascending: false }),
       ]);
 
       if (speciesRes.error) {
@@ -954,7 +957,7 @@ function buildActivityChartData(events) {
     date.setDate(date.getDate() - index);
 
     days.push({
-      date: date.toISOString().slice(0, 10),
+      date: formatLocalDateKey(date),
       livestock: 0,
       crops: 0,
       operations: 0,
@@ -970,7 +973,7 @@ function buildActivityChartData(events) {
       continue;
     }
 
-    const dateKey = date.toISOString().slice(0, 10);
+    const dateKey = formatLocalDateKey(date);
     const category = getActivityCategory(event.type);
 
     if (!categoryMap[dateKey]) {
@@ -988,6 +991,14 @@ function buildActivityChartData(events) {
     ...day,
     ...(categoryMap[day.date] ?? {}),
   }));
+}
+
+function formatLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getActivityCategory(type) {
@@ -1070,7 +1081,7 @@ function RecentActivity({ events }) {
                   </p>
 
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {formatActivityDate(event.created_at)}
+                    {formatActivityDate(event.occurred_at)}
                   </p>
 
                   <p className="mt-0.5 text-xs text-muted-foreground">

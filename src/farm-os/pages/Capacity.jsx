@@ -49,10 +49,25 @@ function Capacity() {
   function handleCalculate(e) {
     e.preventDefault();
     const valid = constraints
-      .filter((c) => c.name.trim() && c.capacity !== "")
+      .filter((c) => {
+        if (!c.name.trim() || c.capacity === "") return false;
+
+        const capacity = Number(c.capacity);
+        return Number.isFinite(capacity) && capacity > 0;
+      })
       .map((c) => ({ ...c, capacity: Number(c.capacity) }));
 
-    if (valid.length === 0 || proposedCount === "") {
+    const proposed = Number(proposedCount);
+    const stretch = Number(stretchMultiplier);
+
+    if (
+      valid.length === 0 ||
+      proposedCount === "" ||
+      !Number.isFinite(proposed) ||
+      proposed < 0 ||
+      !Number.isFinite(stretch) ||
+      stretch <= 0
+    ) {
       setResult({
         error:
           "Enter a proposed count and at least one constraint with a value.",
@@ -60,18 +75,16 @@ function Capacity() {
       return;
     }
 
-    const summary = summarizeCapacity(
-      valid,
-      Number(proposedCount),
-      Number(stretchMultiplier),
-    );
+    const summary = summarizeCapacity(valid, proposed, stretch);
     setResult(summary);
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <Boxes className="mt-1 size-5 shrink-0 text-primary" />
+        <div className="mt-0.5 rounded-lg bg-primary/10 p-2.5">
+          <Boxes className="size-5 text-primary" />
+        </div>
 
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.03em]">
@@ -110,12 +123,16 @@ function Capacity() {
               />
               <Input
                 type="number"
+                min="0"
+                step="any"
                 placeholder="Current count"
                 value={currentCount}
                 onChange={(e) => setCurrentCount(e.target.value)}
               />
               <Input
                 type="number"
+                min="0"
+                step="any"
                 placeholder="Proposed count"
                 value={proposedCount}
                 onChange={(e) => setProposedCount(e.target.value)}
@@ -141,6 +158,8 @@ function Capacity() {
 
                   <Input
                     type="number"
+                    min="0"
+                    step="any"
                     placeholder="Capacity (count supported)"
                     value={c.capacity}
                     onChange={(e) =>

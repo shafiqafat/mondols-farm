@@ -97,10 +97,12 @@ function Inventory() {
     const { error } = await supabase.from("inventory_items").insert({
       name: newItem.name.trim(),
       unit: newItem.unit,
-      reorder_lead_time_days: newItem.reorderLeadTimeDays
-        ? Number(newItem.reorderLeadTimeDays)
-        : null,
-      safety_stock: newItem.safetyStock ? Number(newItem.safetyStock) : null,
+      reorder_lead_time_days:
+        newItem.reorderLeadTimeDays !== ""
+          ? Number(newItem.reorderLeadTimeDays)
+          : null,
+      safety_stock:
+        newItem.safetyStock !== "" ? Number(newItem.safetyStock) : null,
     });
 
     setAddingItem(false);
@@ -216,7 +218,7 @@ function Inventory() {
       <div className="space-y-6">
         <div className="h-32 animate-pulse rounded-2xl bg-muted/60" />
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((item) => (
             <div
               key={item}
@@ -301,16 +303,16 @@ function Inventory() {
       )}
 
       {/* Summary */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section>
         <Card className="border-border/70 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
+          <CardContent className="p-5 sm:p-6">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
                   Inventory items
                 </p>
 
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                <p className="mt-1 text-3xl font-semibold tracking-tight">
                   {inventorySummary.totalItems}
                 </p>
 
@@ -319,28 +321,18 @@ function Inventory() {
                 </p>
               </div>
 
-              <div className="rounded-lg bg-muted p-2.5">
-                <Boxes className="size-4 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card
-          className={
-            inventorySummary.lowStockItems > 0
-              ? "border-amber-500/30 bg-amber-500/[0.03] shadow-sm"
-              : "border-border/70 shadow-sm"
-          }
-        >
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
                   Low stock
                 </p>
 
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                <p
+                  className={`mt-1 text-3xl font-semibold tracking-tight ${
+                    inventorySummary.lowStockItems > 0
+                      ? "text-amber-600"
+                      : "text-foreground"
+                  }`}
+                >
                   {inventorySummary.lowStockItems}
                 </p>
 
@@ -349,35 +341,16 @@ function Inventory() {
                 </p>
               </div>
 
-              <div
-                className={
-                  inventorySummary.lowStockItems > 0
-                    ? "rounded-lg bg-amber-500/10 p-2.5"
-                    : "rounded-lg bg-muted p-2.5"
-                }
-              >
-                <AlertTriangle
-                  className={
-                    inventorySummary.lowStockItems > 0
-                      ? "size-4 text-amber-600"
-                      : "size-4 text-muted-foreground"
-                  }
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
                   Stock value
                 </p>
 
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
-                  ৳{inventorySummary.estimatedValue.toFixed(0)}
+                <p className="mt-1 text-3xl font-semibold tracking-tight">
+                  ৳
+                  {inventorySummary.estimatedValue.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
                 </p>
 
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -385,32 +358,18 @@ function Inventory() {
                 </p>
               </div>
 
-              <div className="rounded-lg bg-muted p-2.5">
-                <Receipt className="size-4 text-muted-foreground" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/70 shadow-sm">
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
                   Purchase lots
                 </p>
 
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                <p className="mt-1 text-3xl font-semibold tracking-tight">
                   {inventorySummary.totalLots}
                 </p>
 
                 <p className="mt-1 text-xs text-muted-foreground">
                   Historical lots recorded
                 </p>
-              </div>
-
-              <div className="rounded-lg bg-muted p-2.5">
-                <ShoppingCart className="size-4 text-muted-foreground" />
               </div>
             </div>
           </CardContent>
@@ -482,7 +441,7 @@ function Inventory() {
                   : "overflow-hidden border-border/70 shadow-sm"
               }
             >
-              <CardHeader className="border-b border-border/50 bg-muted/[0.18] pb-5">
+              <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
                     <div
@@ -527,16 +486,16 @@ function Inventory() {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-6 p-5">
+              <CardContent className="space-y-5 p-5 sm:p-6">
                 {/* Stock metrics */}
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-xl border border-border/60 bg-background p-4">
+                  <div className="rounded-lg border border-border/50 bg-muted/[0.12] p-3.5">
                     <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       <Boxes className="size-3.5" />
                       Available
                     </div>
 
-                    <p className="mt-2 text-xl font-semibold tracking-tight">
+                    <p className="mt-1.5 text-lg font-semibold tracking-tight">
                       {totalRemaining.toFixed(2)}
                       <span className="ml-1 text-sm font-normal text-muted-foreground">
                         {item.unit}
@@ -544,24 +503,24 @@ function Inventory() {
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-border/60 bg-background p-4">
+                  <div className="rounded-lg border border-border/50 bg-muted/[0.12] p-3.5">
                     <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       <Receipt className="size-3.5" />
                       Stock value
                     </div>
 
-                    <p className="mt-2 text-xl font-semibold tracking-tight">
+                    <p className="mt-1.5 text-lg font-semibold tracking-tight">
                       ৳{stockValue.toFixed(0)}
                     </p>
                   </div>
 
-                  <div className="rounded-xl border border-border/60 bg-background p-4">
+                  <div className="rounded-lg border border-border/50 bg-muted/[0.12] p-3.5">
                     <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-muted-foreground">
                       <ArrowDownToLine className="size-3.5" />
                       Lots
                     </div>
 
-                    <p className="mt-2 text-xl font-semibold tracking-tight">
+                    <p className="mt-1.5 text-lg font-semibold tracking-tight">
                       {lots.length}
                     </p>
                   </div>
@@ -569,8 +528,8 @@ function Inventory() {
 
                 {/* Lot history */}
                 {lots.length > 0 && (
-                  <details className="group rounded-xl border border-border/60">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3.5">
+                  <details className="group rounded-lg border border-border/50">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3">
                       <div>
                         <p className="text-sm font-medium">Purchase history</p>
 
@@ -586,7 +545,7 @@ function Inventory() {
                     </summary>
 
                     <div className="border-t border-border/60 px-4 pb-4">
-                      <div className="mt-3 overflow-hidden rounded-lg border border-border/50">
+                      <div className="mt-2.5 overflow-hidden rounded-md border border-border/50">
                         <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 border-b border-border/50 bg-muted/30 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                           <span>Date</span>
                           <span>Remaining</span>
@@ -622,7 +581,7 @@ function Inventory() {
                 )}
 
                 {/* Purchase */}
-                <div className="rounded-xl border border-border/60 bg-muted/[0.18] p-4">
+                <div className="rounded-lg border border-border/50 bg-muted/[0.12] p-4">
                   <div className="mb-3 flex items-center gap-2">
                     <ShoppingCart className="size-4 text-primary" />
 

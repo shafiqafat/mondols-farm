@@ -73,6 +73,7 @@ export function validateDailyLogInput({
   entities = [],
   expense = null,
   content = null,
+  feedItemSelection = {},
 }) {
   const errors = [];
 
@@ -80,6 +81,18 @@ export function validateDailyLogInput({
     const values = entityValues[entity.id] ?? {};
     const capabilities = entity.species_config?.capabilities ?? {};
     const fields = getQuickFieldsForCapabilities(capabilities);
+
+    const feedValue = values.feed_kg;
+
+    if (
+      feedValue !== undefined &&
+      feedValue !== null &&
+      feedValue !== "" &&
+      Number(feedValue) > 0 &&
+      !feedItemSelection[entity.id]
+    ) {
+      errors.push(`Select a feed inventory item for ${entity.label}.`);
+    }
 
     for (const field of fields) {
       const raw = values[field.key];

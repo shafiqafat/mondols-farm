@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import gsap from "gsap";
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from "recharts";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
@@ -60,6 +61,16 @@ const activityChartConfig = {
 };
 import { getEventDisplayLabel, getEventSummary } from "../lib/eventUtils";
 function Overview() {
+  const prefersReducedMotion = useRef(
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const headerContentRef = useRef(null);
+  const headerButtonRef = useRef(null);
+  const statusCardRef = useRef(null);
+  const tasksCardRef = useRef(null);
+  const activityChartRef = useRef(null);
+  const recentActivityRef = useRef(null);
+
   const [species, setSpecies] = useState([]);
   const [entityCount, setEntityCount] = useState(null);
   const [feedAlerts, setFeedAlerts] = useState([]);
@@ -67,6 +78,144 @@ function Overview() {
   const [error, setError] = useState("");
   const [activityEvents, setActivityEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!headerContentRef.current || !headerButtonRef.current) {
+      return;
+    }
+
+    if (prefersReducedMotion.current) {
+      gsap.set([headerContentRef.current, headerButtonRef.current], {
+        clearProps: "all",
+      });
+      return;
+    }
+
+    const timeline = gsap.timeline();
+
+    timeline
+      .fromTo(
+        headerContentRef.current,
+        {
+          opacity: 0,
+          y: 12,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          ease: "power3.out",
+        },
+      )
+      .fromTo(
+        headerButtonRef.current,
+        {
+          opacity: 0,
+          y: 10,
+          scale: 0.97,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.45,
+          ease: "back.out(1.8)",
+        },
+        "-=0.25",
+      );
+
+    return () => {
+      timeline.kill();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (prefersReducedMotion.current) {
+      gsap.set([statusCardRef.current, tasksCardRef.current], {
+        clearProps: "all",
+      });
+      return;
+    }
+
+    const timeline = gsap.timeline();
+
+    timeline
+      .fromTo(
+        statusCardRef.current,
+        {
+          opacity: 0,
+          y: 16,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.55,
+          ease: "power3.out",
+        },
+      )
+      .fromTo(
+        tasksCardRef.current,
+        {
+          opacity: 0,
+          y: 16,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.45,
+          ease: "power3.out",
+        },
+        "-=0.3",
+      );
+
+    return () => {
+      timeline.kill();
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    if (prefersReducedMotion.current) {
+      gsap.set([activityChartRef.current, recentActivityRef.current], {
+        clearProps: "all",
+      });
+      return;
+    }
+
+    const timeline = gsap.timeline();
+
+    timeline
+      .fromTo(
+        activityChartRef.current,
+        {
+          opacity: 0,
+          y: 16,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.55,
+          ease: "power3.out",
+        },
+      )
+      .fromTo(
+        recentActivityRef.current,
+        {
+          opacity: 0,
+          y: 16,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.45,
+          ease: "power3.out",
+        },
+        "-=0.3",
+      );
+
+    return () => {
+      timeline.kill();
+    };
+  }, [loading]);
 
   useEffect(() => {
     async function load() {
@@ -218,7 +367,7 @@ function Overview() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col gap-5 border-b border-border/60 pb-7 sm:flex-row sm:items-end sm:justify-between">
-        <div className="space-y-2.5">
+        <div ref={headerContentRef}>
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
             <Sprout className="size-4 text-primary" />
             <span>Farm OS</span>
@@ -235,19 +384,21 @@ function Overview() {
           </div>
         </div>
 
-        <Button
-          asChild
-          size="lg"
-          className="w-auto shrink-0 rounded-xl px-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-        >
-          <Link
-            to="/farm-os/daily-log"
-            className="flex flex-row items-center gap-2 whitespace-nowrap"
+        <div ref={headerButtonRef}>
+          <Button
+            asChild
+            size="lg"
+            className="w-auto shrink-0 rounded-xl px-5 shadow-sm transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md"
           >
-            <ClipboardList className="size-4 shrink-0" />
-            <span>Add Daily Log</span>
-          </Link>
-        </Button>
+            <Link
+              to="/farm-os/daily-log"
+              className="flex flex-row items-center gap-2 whitespace-nowrap"
+            >
+              <ClipboardList className="size-4 shrink-0" />
+              <span>Add Daily Log</span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -266,145 +417,157 @@ function Overview() {
           {/* KPI CARDS */}
           <section>
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard
-                title="Species & Crops"
-                value={species.length}
-                description="Configured in Farm OS"
-                icon={Sprout}
-              />
+              <div className="overview-kpi-card" style={{ "--delay": "0ms" }}>
+                <MetricCard
+                  title="Species & Crops"
+                  value={species.length}
+                  description="Configured in Farm OS"
+                  icon={Sprout}
+                />
+              </div>
 
-              <MetricCard
-                title="Farm Entities"
-                value={entityCount ?? "—"}
-                description="Animals, plots & other entities"
-                icon={Boxes}
-              />
+              <div className="overview-kpi-card" style={{ "--delay": "80ms" }}>
+                <MetricCard
+                  title="Farm Entities"
+                  value={entityCount ?? "—"}
+                  description="Animals, plots & other entities"
+                  icon={Boxes}
+                />
+              </div>
 
-              <MetricCard
-                title="Open Tasks"
-                value={taskSummary?.total ?? 0}
-                description={
-                  taskSummary?.overdue
-                    ? `${taskSummary.overdue} overdue`
-                    : "No overdue tasks"
-                }
-                icon={ClipboardList}
-                warning={taskSummary?.overdue > 0}
-              />
+              <div className="overview-kpi-card" style={{ "--delay": "160ms" }}>
+                <MetricCard
+                  title="Open Tasks"
+                  value={taskSummary?.total ?? 0}
+                  description={
+                    taskSummary?.overdue
+                      ? `${taskSummary.overdue} overdue`
+                      : "No overdue tasks"
+                  }
+                  icon={ClipboardList}
+                  warning={taskSummary?.overdue > 0}
+                />
+              </div>
 
-              <MetricCard
-                title="Feed Items"
-                value={feedAlerts.length}
-                description={
-                  criticalFeed > 0
-                    ? `${criticalFeed} need attention now`
-                    : warningFeed > 0
-                      ? `${warningFeed} need attention soon`
-                      : "Stock levels healthy"
-                }
-                icon={Package}
-                warning={criticalFeed > 0}
-              />
+              <div className="overview-kpi-card" style={{ "--delay": "240ms" }}>
+                <MetricCard
+                  title="Feed Items"
+                  value={feedAlerts.length}
+                  description={
+                    criticalFeed > 0
+                      ? `${criticalFeed} need attention now`
+                      : warningFeed > 0
+                        ? `${warningFeed} need attention soon`
+                        : "Stock levels healthy"
+                  }
+                  icon={Package}
+                  warning={criticalFeed > 0}
+                />
+              </div>
             </div>
           </section>
 
           {/* OPERATIONAL STATUS */}
           <section className="grid items-start gap-5 lg:grid-cols-3">
-            <Card className="border-border/70 bg-card shadow-sm lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-              <CardHeader className="px-6 py-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
+            <div ref={statusCardRef} className="lg:col-span-2">
+              <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <CardHeader className="px-6 py-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-base font-semibold sm:text-lg">
+                        Farm Status
+                      </CardTitle>
+                      <CardDescription className="text-sm">
+                        Current operational signals from your farm data.
+                      </CardDescription>
+                    </div>
+
+                    <div className="flex size-9 items-center justify-center rounded-lg bg-secondary">
+                      <Activity className="size-4 text-primary" />
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="px-6 pb-6 pt-0">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <StatusItem
+                      icon={CheckCircle2}
+                      label="Healthy feed"
+                      value={healthyFeed}
+                    />
+
+                    <StatusItem
+                      icon={Clock}
+                      label="Reorder soon"
+                      value={warningFeed}
+                    />
+
+                    <StatusItem
+                      icon={AlertTriangle}
+                      label="Reorder now"
+                      value={criticalFeed}
+                      destructive
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div ref={tasksCardRef}>
+              <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
+                      <ClipboardList className="size-4 text-primary" />
+                    </div>
+
                     <CardTitle className="text-base font-semibold sm:text-lg">
-                      Farm Status
+                      Tasks
                     </CardTitle>
-                    <CardDescription className="text-sm">
-                      Current operational signals from your farm data.
-                    </CardDescription>
                   </div>
+                  <CardDescription className="text-sm">
+                    What needs attention today.
+                  </CardDescription>
+                </CardHeader>
 
-                  <div className="flex size-9 items-center justify-center rounded-lg bg-secondary">
-                    <Activity className="size-4 text-primary" />
-                  </div>
-                </div>
-              </CardHeader>
-
-              <CardContent className="px-6 pb-6 pt-0">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <StatusItem
-                    icon={CheckCircle2}
-                    label="Healthy feed"
-                    value={healthyFeed}
+                <CardContent className="space-y-2 pt-0">
+                  <TaskStat
+                    label="Due today"
+                    value={taskSummary?.dueToday ?? 0}
                   />
 
-                  <StatusItem
-                    icon={Clock}
-                    label="Reorder soon"
-                    value={warningFeed}
+                  <Separator />
+
+                  <TaskStat
+                    label="Overdue"
+                    value={taskSummary?.overdue ?? 0}
+                    destructive={taskSummary?.overdue > 0}
                   />
 
-                  <StatusItem
-                    icon={AlertTriangle}
-                    label="Reorder now"
-                    value={criticalFeed}
-                    destructive
+                  <Separator />
+
+                  <TaskStat
+                    label="Critical"
+                    value={taskSummary?.critical ?? 0}
+                    destructive={taskSummary?.critical > 0}
                   />
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
-                    <ClipboardList className="size-4 text-primary" />
-                  </div>
-
-                  <CardTitle className="text-base font-semibold sm:text-lg">
-                    Tasks
-                  </CardTitle>
-                </div>
-                <CardDescription className="text-sm">
-                  What needs attention today.
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-2 pt-0">
-                <TaskStat
-                  label="Due today"
-                  value={taskSummary?.dueToday ?? 0}
-                />
-
-                <Separator />
-
-                <TaskStat
-                  label="Overdue"
-                  value={taskSummary?.overdue ?? 0}
-                  destructive={taskSummary?.overdue > 0}
-                />
-
-                <Separator />
-
-                <TaskStat
-                  label="Critical"
-                  value={taskSummary?.critical ?? 0}
-                  destructive={taskSummary?.critical > 0}
-                />
-
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="mt-3 w-full !flex-row !items-center !justify-center gap-2 px-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <Link
-                    to="/farm-os/tasks"
-                    className="!flex !flex-row !items-center !justify-center gap-2 whitespace-nowrap"
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className="mt-3 w-full !flex-row !items-center !justify-center gap-2 px-3 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    <span>View tasks</span>
-                    <ArrowRight className="size-4 shrink-0" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+                    <Link
+                      to="/farm-os/tasks"
+                      className="!flex !flex-row !items-center !justify-center gap-2 whitespace-nowrap"
+                    >
+                      <span>View tasks</span>
+                      <ArrowRight className="size-4 shrink-0" />
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </section>
 
           {/* FEED INTELLIGENCE */}
@@ -457,23 +620,32 @@ function Overview() {
                 ) : (
                   <div className="space-y-3">
                     {feedAlerts.map(
-                      ({
-                        item,
-                        totalRemaining,
-                        rate,
-                        remaining,
-                        alert,
-                        monthlyReq,
-                      }) => (
-                        <FeedAlertRow
+                      (
+                        {
+                          item,
+                          totalRemaining,
+                          rate,
+                          remaining,
+                          alert,
+                          monthlyReq,
+                        },
+                        index,
+                      ) => (
+                        <div
                           key={item.id}
-                          item={item}
-                          totalRemaining={totalRemaining}
-                          rate={rate}
-                          remaining={remaining}
-                          alert={alert}
-                          monthlyReq={monthlyReq}
-                        />
+                          className="overview-feed-row"
+                          style={{ "--delay": `${index * 80}ms` }}
+                        >
+                          <FeedAlertRow
+                            key={item.id}
+                            item={item}
+                            totalRemaining={totalRemaining}
+                            rate={rate}
+                            remaining={remaining}
+                            alert={alert}
+                            monthlyReq={monthlyReq}
+                          />
+                        </div>
                       ),
                     )}
                   </div>
@@ -484,110 +656,123 @@ function Overview() {
 
           {/* FARM ACTIVITY */}
           <section className="grid gap-5 lg:grid-cols-3">
-            <Card className="border-border/70 bg-card shadow-sm lg:col-span-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-base font-semibold sm:text-lg">
-                      <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
-                        <Activity className="size-4 text-primary" />
-                      </div>
-                      Farm activity
-                    </CardTitle>
+            <div ref={activityChartRef} className="lg:col-span-2">
+              <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-base font-semibold sm:text-lg">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-secondary">
+                          <Activity className="size-4 text-primary" />
+                        </div>
+                        Farm activity
+                      </CardTitle>
 
-                    <CardDescription className="mt-1 text-sm">
-                      Recorded farm events over the last 14 days.
-                    </CardDescription>
+                      <CardDescription className="mt-1 text-sm">
+                        Recorded farm events over the last 14 days.
+                      </CardDescription>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
+                </CardHeader>
 
-              <CardContent>
-                {activityChartData.every(
-                  (day) =>
-                    day.livestock === 0 &&
-                    day.crops === 0 &&
-                    day.operations === 0,
-                ) ? (
-                  <EmptyState
-                    icon={Activity}
-                    title="No activity recorded yet"
-                    description="Start adding daily logs and farm events to build your activity history."
-                    href="/farm-os/daily-log"
-                    action="Add daily log"
-                  />
-                ) : (
-                  <ChartContainer
-                    config={activityChartConfig}
-                    className="h-[280px] w-full"
-                  >
-                    <BarChart
-                      accessibilityLayer
-                      data={activityChartData}
-                      margin={{
-                        top: 8,
-                        right: 8,
-                        left: 8,
-                        bottom: 8,
-                      }}
+                <CardContent>
+                  {activityChartData.every(
+                    (day) =>
+                      day.livestock === 0 &&
+                      day.crops === 0 &&
+                      day.operations === 0,
+                  ) ? (
+                    <EmptyState
+                      icon={Activity}
+                      title="No activity recorded yet"
+                      description="Start adding daily logs and farm events to build your activity history."
+                      href="/farm-os/daily-log"
+                      action="Add daily log"
+                    />
+                  ) : (
+                    <ChartContainer
+                      config={activityChartConfig}
+                      className="h-[280px] w-full"
                     >
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                      <BarChart
+                        accessibilityLayer
+                        data={activityChartData}
+                        margin={{
+                          top: 8,
+                          right: 8,
+                          left: 8,
+                          bottom: 8,
+                        }}
+                      >
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" />
 
-                      <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={false}
-                        tickMargin={10}
-                        tickFormatter={(value) => value.slice(5)}
-                        tick={{ fontSize: 12 }}
-                      />
-                      <YAxis
-                        allowDecimals={false}
-                        tickLine={false}
-                        axisLine={false}
-                        width={28}
-                        tick={{ fontSize: 12 }}
-                      />
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={10}
+                          tickFormatter={(value) => value.slice(5)}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          tickLine={false}
+                          axisLine={false}
+                          width={28}
+                          tick={{ fontSize: 12 }}
+                        />
 
-                      <Legend
-                        verticalAlign="top"
-                        align="right"
-                        height={32}
-                        iconType="circle"
-                      />
+                        <Legend
+                          verticalAlign="top"
+                          align="right"
+                          height={32}
+                          iconType="circle"
+                        />
 
-                      <ChartTooltip
-                        cursor={false}
-                        content={<ChartTooltipContent />}
-                      />
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent />}
+                        />
 
-                      <Bar
-                        dataKey="livestock"
-                        stackId="activity"
-                        fill="var(--color-livestock)"
-                        radius={[0, 0, 0, 0]}
-                      />
+                        <Bar
+                          dataKey="livestock"
+                          stackId="activity"
+                          fill="var(--color-livestock)"
+                          radius={[0, 0, 0, 0]}
+                          animationBegin={0}
+                          animationDuration={700}
+                          animationEasing="ease-out"
+                        />
 
-                      <Bar
-                        dataKey="crops"
-                        stackId="activity"
-                        fill="var(--color-crops)"
-                        radius={[0, 0, 0, 0]}
-                      />
+                        <Bar
+                          dataKey="crops"
+                          stackId="activity"
+                          fill="var(--color-crops)"
+                          radius={[0, 0, 0, 0]}
+                          animationBegin={120}
+                          animationDuration={700}
+                          animationEasing="ease-out"
+                        />
 
-                      <Bar
-                        dataKey="operations"
-                        stackId="activity"
-                        fill="var(--color-operations)"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ChartContainer>
-                )}
-              </CardContent>
-            </Card>
+                        <Bar
+                          dataKey="operations"
+                          stackId="activity"
+                          fill="var(--color-operations)"
+                          radius={[4, 4, 0, 0]}
+                          animationBegin={240}
+                          animationDuration={700}
+                          animationEasing="ease-out"
+                        />
+                      </BarChart>
+                    </ChartContainer>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-            <RecentActivity events={activityEvents} />
+            <div ref={recentActivityRef}>
+              <RecentActivity events={activityEvents} />
+            </div>
           </section>
 
           {/* SPECIES */}
@@ -636,10 +821,11 @@ function Overview() {
                   />
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {species.map((item) => (
+                    {species.map((item, index) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between rounded-lg border bg-card p-4"
+                        className="overview-species-card flex items-center justify-between rounded-lg border bg-card p-4"
+                        style={{ "--delay": `${index * 70}ms` }}
                       >
                         <div>
                           <p className="font-medium">{item.name}</p>
@@ -692,6 +878,46 @@ function Overview() {
   );
 }
 
+function AnimatedNumber({ value, duration = 800 }) {
+  const target = Number(value);
+  const isNumeric = Number.isFinite(target);
+
+  const [displayValue, setDisplayValue] = useState(isNumeric ? 0 : value);
+
+  const frameRef = useRef(null);
+
+  useEffect(() => {
+    if (!isNumeric) {
+      return;
+    }
+
+    const startTime = performance.now();
+
+    const animate = (currentTime) => {
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const currentValue = Math.round(target * easedProgress);
+
+      setDisplayValue(currentValue);
+
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    frameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, [target, duration, isNumeric]);
+
+  return displayValue;
+}
+
 function MetricCard({
   title,
   value,
@@ -710,7 +936,11 @@ function MetricCard({
               warning ? "text-destructive" : "text-foreground"
             }`}
           >
-            {value}
+            {typeof value === "number" ? (
+              <AnimatedNumber value={value} />
+            ) : (
+              value
+            )}
           </p>
 
           <p
@@ -748,7 +978,7 @@ function StatusItem({ icon: Icon, label, value, destructive = false }) {
           destructive && value > 0 ? "text-destructive" : "text-foreground"
         }`}
       >
-        {value}
+        <AnimatedNumber value={value} />
       </p>
     </div>
   );
@@ -778,6 +1008,12 @@ function FeedAlertRow({
   alert,
   monthlyReq,
 }) {
+  const progressValue =
+    remaining == null ? 0 : Math.min(100, Math.max(0, (remaining / 30) * 100));
+
+  const [animatedProgress, setAnimatedProgress] = useState(progressValue);
+  const animatedProgressRef = useRef({ value: progressValue });
+
   const badgeVariant =
     alert === "red"
       ? "destructive"
@@ -794,8 +1030,20 @@ function FeedAlertRow({
           ? "Reorder now"
           : "Insufficient data";
 
-  const progressValue =
-    remaining == null ? 0 : Math.min(100, Math.max(0, (remaining / 30) * 100));
+  useEffect(() => {
+    const animation = gsap.to(animatedProgressRef.current, {
+      value: progressValue,
+      duration: 0.8,
+      ease: "power2.out",
+      onUpdate: () => {
+        setAnimatedProgress(animatedProgressRef.current.value);
+      },
+    });
+
+    return () => {
+      animation.kill();
+    };
+  }, [progressValue]);
 
   return (
     <div className="rounded-xl border bg-background/60 p-5 transition-colors hover:bg-secondary/20">
@@ -833,7 +1081,7 @@ function FeedAlertRow({
               <span>{Math.round(progressValue)}%</span>
             </div>
 
-            <Progress value={progressValue} className="h-2" />
+            <Progress value={animatedProgress} className="h-2" />
           </div>
         )}
 
@@ -1038,6 +1286,31 @@ function getActivityCategory(type) {
 }
 
 function RecentActivity({ events }) {
+  const activityListRef = useRef(null);
+
+  useEffect(() => {
+    if (!activityListRef.current || events.length === 0) {
+      return;
+    }
+
+    const items = activityListRef.current.children;
+
+    gsap.fromTo(
+      items,
+      {
+        opacity: 0,
+        x: -10,
+      },
+      {
+        opacity: 1,
+        x: 0,
+        duration: 0.35,
+        stagger: 0.08,
+        ease: "power3.out",
+      },
+    );
+  }, [events]);
+
   return (
     <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <CardHeader className="pb-2">
@@ -1061,7 +1334,7 @@ function RecentActivity({ events }) {
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div ref={activityListRef} className="space-y-4">
             {events.slice(0, 3).map((event, index) => (
               <div
                 key={event.id}

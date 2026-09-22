@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   SidebarProvider,
@@ -29,17 +30,46 @@ function FarmOSLayout() {
   const location = useLocation();
 
   const [topBarMessage, setTopBarMessage] = useState("Shafique Mondol");
+  const topBarMessageRef = useRef(null);
 
   useEffect(() => {
-    const messages = ["Shafique Mondol??", "Happy Farming"];
+    const messages = ["Shafique Mondol", "Happy Farming"];
     let index = 0;
 
     const interval = setInterval(() => {
-      index = (index + 1) % messages.length;
-      setTopBarMessage(messages[index]);
+      if (!topBarMessageRef.current) {
+        return;
+      }
+
+      gsap.to(topBarMessageRef.current, {
+        opacity: 0,
+        y: -6,
+        duration: 0.25,
+        ease: "power2.in",
+        onComplete: () => {
+          index = (index + 1) % messages.length;
+          setTopBarMessage(messages[index]);
+
+          gsap.fromTo(
+            topBarMessageRef.current,
+            {
+              opacity: 0,
+              y: 6,
+            },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.35,
+              ease: "power3.out",
+            },
+          );
+        },
+      });
     }, 4000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const pageLabels = {
@@ -90,7 +120,10 @@ function FarmOSLayout() {
           </div>
 
           <div className="pointer-events-none absolute left-1/2 -translate-x-1/2">
-            <span className="whitespace-nowrap text-sm font-medium text-muted-foreground">
+            <span
+              ref={topBarMessageRef}
+              className="whitespace-nowrap text-sm font-medium text-muted-foreground"
+            >
               {topBarMessage}
             </span>
           </div>
@@ -161,7 +194,9 @@ function FarmOSLayout() {
 
         <main className="min-w-0 flex-1 font-sans">
           <div className="mx-auto w-full max-w-[1360px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 xl:px-12">
-            <Outlet />
+            <div className="farm-page-transition">
+              <Outlet />
+            </div>
           </div>
         </main>
       </SidebarInset>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
 import {
@@ -61,6 +61,9 @@ function Finance() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
+  const [projectsVisible, setProjectsVisible] = useState(false);
+  const [newProjectId, setNewProjectId] = useState(null);
+  const projectsSectionRef = useRef(null);
 
   const [newProject, setNewProject] = useState({
     name: "",
@@ -153,13 +156,35 @@ function Finance() {
     setInventoryConsumptions(inventoryConsumptionsRes.data ?? []);
     setHarvestEvents(harvestRes.data ?? []);
     setProjectEntityHistory(projectEntityHistoryRes.data ?? []);
-    
+
     setLoading(false);
   }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll();
+  }, []);
+
+  useEffect(() => {
+    const element = projectsSectionRef.current;
+
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setProjectsVisible(true);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.15,
+      },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
   }, []);
 
   async function handleUpdateTransaction(e) {
@@ -235,20 +260,26 @@ function Finance() {
     setSavingProject(true);
     setPageError("");
 
-    const { error } = await supabase.from("farm_projects").insert({
-      name: newProject.name.trim(),
-      project_type: newProject.projectType.trim() || null,
-      purpose: newProject.purpose.trim() || null,
-      started_at: newProject.startedAt || null,
-      target_end_at: newProject.targetEndAt || null,
-      status: "active",
-    });
+    const { data: createdProject, error } = await supabase
+      .from("farm_projects")
+      .insert({
+        name: newProject.name.trim(),
+        project_type: newProject.projectType.trim() || null,
+        purpose: newProject.purpose.trim() || null,
+        started_at: newProject.startedAt || null,
+        target_end_at: newProject.targetEndAt || null,
+        status: "active",
+      })
+      .select("id")
+      .single();
 
     setSavingProject(false);
     if (error) {
       setPageError(error.message);
       return;
     }
+
+    setNewProjectId(createdProject.id);
     setNewProject({
       name: "",
       projectType: "",
@@ -257,6 +288,10 @@ function Finance() {
       targetEndAt: "",
     });
     loadAll();
+
+    setTimeout(() => {
+      setNewProjectId(null);
+    }, 500);
   }
 
   async function handleAddTransaction(e) {
@@ -601,7 +636,7 @@ function Finance() {
   const unassignedNetCash =
     unassignedIncome - unassignedExpenses - unassignedAssets;
 
-    const renderProjectCard = (project) => {
+  const renderProjectCard = (project) => {
     const projectTxns = transactions.filter((t) => t.project_id === project.id);
 
     const totals = computeTotals(projectTxns);
@@ -622,17 +657,14 @@ function Finance() {
         0,
       );
 
-    const projectOperatingCost =
-      totals.expense + projectConsumedInventoryCost;
+    const projectOperatingCost = totals.expense + projectConsumedInventoryCost;
 
     const projectRevenue = totals.income;
     const operatingMargin = projectRevenue - projectOperatingCost;
     const hasFinancialActivity =
       projectTxns.length > 0 || projectConsumedInventoryCost > 0;
 
-    const projectEntities = entities.filter(
-      (e) => e.project_id === project.id,
-    );
+    const projectEntities = entities.filter((e) => e.project_id === project.id);
     const availableEntities = entities.filter((e) => !e.project_id);
 
     const totalYield = harvestEvents.reduce((sum, event) => {
@@ -653,10 +685,7 @@ function Finance() {
         : sum;
     }, 0);
 
-    const costPerUnit = computeCostPerUnit(
-      projectOperatingCost,
-      totalYield,
-    );
+    const costPerUnit = computeCostPerUnit(projectOperatingCost, totalYield);
 
     return (
       <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
@@ -896,7 +925,7 @@ function Finance() {
     );
   };
 
-    return (
+  return (
     <div className="space-y-12">
       <section className="border-b border-border/60 pb-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -912,8 +941,8 @@ function Finance() {
               </h1>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Understand where money is going, where it is coming from,
-                and how each project contributes to the farm's financial picture.
+                Understand where money is going, where it is coming from, and
+                how each project contributes to the farm's financial picture.
               </p>
             </div>
           </div>
@@ -959,15 +988,14 @@ function Finance() {
 
                   <p
                     className={`mt-1 text-4xl font-semibold tracking-[-0.03em] sm:text-[2.75rem] ${
-                      netCashFlow >= 0
-                        ? "text-primary"
-                        : "text-destructive"
+                      netCashFlow >= 0 ? "text-primary" : "text-destructive"
                     }`}
                   >
                     {netCashFlow >= 0 ? "+" : "-"}৳
-                    {Math.abs(netCashFlow).toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
+                    <AnimatedNumber
+                      value={Math.abs(netCashFlow)}
+                      duration={900}
+                    />
                   </p>
 
                   <p className="mt-1.5 text-sm text-muted-foreground">
@@ -985,9 +1013,7 @@ function Finance() {
                   <p className="text-xs text-muted-foreground">Income</p>
                   <p className="mt-1 text-base font-semibold">
                     ৳
-                    {totalIncome.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
+                    <AnimatedNumber value={totalIncome} />
                   </p>
                 </div>
 
@@ -995,9 +1021,7 @@ function Finance() {
                   <p className="text-xs text-muted-foreground">Expenses</p>
                   <p className="mt-1 text-base font-semibold">
                     ৳
-                    {totalExpenses.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
+                    <AnimatedNumber value={totalExpenses} />
                   </p>
                 </div>
 
@@ -1005,9 +1029,7 @@ function Finance() {
                   <p className="text-xs text-muted-foreground">Assets</p>
                   <p className="mt-1 text-base font-semibold">
                     ৳
-                    {totalAssetPurchases.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
+                    <AnimatedNumber value={totalAssetPurchases} />
                   </p>
                 </div>
               </div>
@@ -1057,14 +1079,18 @@ function Finance() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-muted-foreground">Active projects</p>
+                  <p className="text-xs text-muted-foreground">
+                    Active projects
+                  </p>
                   <p className="mt-1 text-lg font-semibold">
                     {activeProjects.length}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-muted-foreground">General expenses</p>
+                  <p className="text-xs text-muted-foreground">
+                    General expenses
+                  </p>
                   <p className="mt-1 text-sm font-semibold">
                     ৳
                     {unassignedExpenses.toLocaleString(undefined, {
@@ -1077,7 +1103,7 @@ function Finance() {
           </CardContent>
         </Card>
       </section>
-      
+
       {pageError && (
         <Card className="border-destructive/30">
           <CardContent className="p-4">
@@ -1086,7 +1112,12 @@ function Finance() {
         </Card>
       )}
 
-      <section className="space-y-5">
+      <section
+        ref={projectsSectionRef}
+        className={`space-y-5 ${
+          projectsVisible ? "finance-section-visible" : "finance-section-hidden"
+        }`}
+      >
         <div className="flex items-start gap-3">
           <FolderKanban className="mt-1 size-5 shrink-0 text-primary" />
           <div>
@@ -1102,66 +1133,74 @@ function Finance() {
 
         <div className="space-y-8">
           {activeProjects.length > 0 && (
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Active projects
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Active projects
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Projects currently in production or operation.
+                </p>
+              </div>
+
+              {activeProjects.map((project, index) => (
+                <div
+                  key={project.id}
+                  className={`finance-project-card ${
+                    projectsVisible || newProjectId === project.id
+                      ? "finance-project-card-visible"
+                      : ""
+                  }`}
+                  style={{
+                    "--delay": `${newProjectId === project.id ? 0 : index * 80}ms`,
+                  }}
+                >
+                  {renderProjectCard(project)}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {completedProjects.length > 0 && (
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Completed projects
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Historical projects and their preserved production records.
+                </p>
+              </div>
+
+              {completedProjects.map((project) => (
+                <div key={project.id}>{renderProjectCard(project)}</div>
+              ))}
+            </div>
+          )}
+        </div>
+        <form
+          id="finance-project-form"
+          onSubmit={handleAddProject}
+          className="rounded-2xl border border-border bg-card shadow-sm"
+        >
+          <div className="border-b border-border/60 px-5 py-4">
+            <div className="flex items-center gap-2">
+              <Plus className="size-4 text-primary" />
+
+              <h3 className="text-base font-semibold tracking-[-0.01em]">
+                New project
               </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Projects currently in production or operation.
-              </p>
             </div>
 
-            {activeProjects.map((project) => (
-            <div key={project.id}>
-              {renderProjectCard(project)}
-            </div>
-          ))}
-        </div>
-      )}
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Create the project first, then record its expenses, income, and
+              asset purchases through transactions linked to this project.
+            </p>
+          </div>
 
-      {completedProjects.length > 0 && (
-      <div className="space-y-3">
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Completed projects
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Historical projects and their preserved production records.
-          </p>
-        </div>
-
-        {completedProjects.map((project) => (
-        <div key={project.id}>
-          {renderProjectCard(project)}
-        </div>
-        ))}
-      </div>
-      )}
-    </div>            
-    <form
-      id="finance-project-form"
-      onSubmit={handleAddProject}
-      className="rounded-2xl border border-border bg-card shadow-sm"
-    >
-      <div className="border-b border-border/60 px-5 py-4">
-        <div className="flex items-center gap-2">
-          <Plus className="size-4 text-primary" />
-
-            <h3 className="text-base font-semibold tracking-[-0.01em]">
-              New project
-            </h3>
-        </div>
-
-        <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Create the project first, then record its expenses, income, and
-          asset purchases through transactions linked to this project.
-        </p>
-      </div>
-
-      <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="sm:col-span-2">
-          <label className="text-sm font-medium">Project Name</label>
+          <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="sm:col-span-2">
+              <label className="text-sm font-medium">Project Name</label>
               <Input
                 type="text"
                 placeholder="Project name, e.g. Mustard Project #001"
@@ -1178,7 +1217,9 @@ function Finance() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Project type</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Project type
+              </label>
               <Input
                 type="text"
                 value={newProject.projectType}
@@ -1194,7 +1235,9 @@ function Finance() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Start date</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Start date
+              </label>
               <Input
                 type="date"
                 value={newProject.startedAt}
@@ -1209,7 +1252,9 @@ function Finance() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Target end date</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Target end date
+              </label>
               <Input
                 type="date"
                 value={newProject.targetEndAt}
@@ -1224,7 +1269,9 @@ function Finance() {
             </div>
 
             <div className="sm:col-span-2 lg:col-span-3">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Purpose</label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Purpose
+              </label>
               <textarea
                 value={newProject.purpose}
                 onChange={(e) =>
@@ -1357,7 +1404,7 @@ function Finance() {
                   {entity.label}
                 </option>
               ))}
-            </select>            
+            </select>
 
             <Input
               type="date"
@@ -1457,8 +1504,8 @@ function Finance() {
               <div>
                 <p className="text-sm font-semibold">Project allocations</p>
                 <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-                  Assign the shared cost across projects. The allocation percentages
-                  must add up to 100%.
+                  Assign the shared cost across projects. The allocation
+                  percentages must add up to 100%.
                 </p>
               </div>
 
@@ -1466,16 +1513,13 @@ function Finance() {
                 {split.allocations.map((allocation, index) => (
                   <div
                     key={index}
-                    className="grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
+                    className="finance-allocation-row grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
+                    style={{ "--delay": `${index * 70}ms` }}
                   >
                     <select
                       value={allocation.projectId}
                       onChange={(e) =>
-                        updateAllocation(
-                          index,
-                          "projectId",
-                          e.target.value,
-                        )
+                        updateAllocation(index, "projectId", e.target.value)
                       }
                       className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                     >
@@ -1487,7 +1531,8 @@ function Finance() {
                             project.id === allocation.projectId ||
                             !split.allocations.some(
                               (item, itemIndex) =>
-                                itemIndex !== index && item.projectId === project.id,
+                                itemIndex !== index &&
+                                item.projectId === project.id,
                             ),
                         )
                         .map((project) => (
@@ -1505,11 +1550,7 @@ function Finance() {
                       placeholder="%"
                       value={allocation.percent}
                       onChange={(e) =>
-                        updateAllocation(
-                          index,
-                          "percent",
-                          e.target.value,
-                        )
+                        updateAllocation(index, "percent", e.target.value)
                       }
                     />
 
@@ -1533,8 +1574,7 @@ function Finance() {
 
                 <span className="text-sm font-semibold">
                   {split.allocations.reduce(
-                    (sum, allocation) =>
-                      sum + Number(allocation.percent || 0),
+                    (sum, allocation) => sum + Number(allocation.percent || 0),
                     0,
                   )}
                   %
@@ -1556,7 +1596,7 @@ function Finance() {
             <Button type="submit" disabled={savingSplit} className="h-10">
               {savingSplit ? "Saving…" : "Save Split Expense"}
             </Button>
-          </div>            
+          </div>
         </form>
       </section>
 
@@ -1570,7 +1610,8 @@ function Finance() {
             </h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Recent income, expenses, and asset purchases recorded across the farm.
+              Recent income, expenses, and asset purchases recorded across the
+              farm.
             </p>
           </div>
         </div>
@@ -1583,10 +1624,11 @@ function Finance() {
               </div>
             ) : (
               <div className="divide-y divide-border/60">
-                {transactions.map((t) => (
+                {transactions.map((t, index) => (
                   <div
                     key={t.id}
-                    className="flex flex-col gap-4 p-5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-start sm:justify-between"
+                    className="finance-transaction-row flex flex-col gap-4 p-5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-start sm:justify-between"
+                    style={{ "--delay": `${index * 60}ms` }}
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -1610,8 +1652,9 @@ function Finance() {
                         </span>
                         {t.project_id ? (
                           <Badge variant="outline" className="font-normal">
-                            {projects.find((project) => project.id === t.project_id)?.name ||
-                              "Unknown project"}
+                            {projects.find(
+                              (project) => project.id === t.project_id,
+                            )?.name || "Unknown project"}
                           </Badge>
                         ) : (
                           <Badge variant="secondary" className="font-normal">
@@ -1621,8 +1664,9 @@ function Finance() {
 
                         {t.entity_id && (
                           <Badge variant="secondary" className="font-normal">
-                            {entities.find((entity) => entity.id === t.entity_id)?.label ||
-                              "Unknown entity"}
+                            {entities.find(
+                              (entity) => entity.id === t.entity_id,
+                            )?.label || "Unknown entity"}
                           </Badge>
                         )}
                       </div>
@@ -1706,7 +1750,9 @@ function Finance() {
         >
           <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
-              <DialogTitle className="text-xl tracking-tight">Edit transaction</DialogTitle>
+              <DialogTitle className="text-xl tracking-tight">
+                Edit transaction
+              </DialogTitle>
               <DialogDescription>
                 Update this manually recorded finance transaction.
               </DialogDescription>
@@ -1863,7 +1909,8 @@ function Finance() {
             </h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Monthly income, operating expenses, asset purchases, and net cash movement.
+              Monthly income, operating expenses, asset purchases, and net cash
+              movement.
             </p>
           </div>
         </div>
@@ -1886,7 +1933,11 @@ function Finance() {
                   data={[...monthlyFinanceRows].reverse()}
                   margin={{ top: 12, right: 16, left: 8, bottom: 4 }}
                 >
-                  <CartesianGrid vertical={false} stroke="currentColor" strokeOpacity={0.08} />
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="currentColor"
+                    strokeOpacity={0.08}
+                  />
                   <ReferenceLine
                     y={0}
                     stroke="currentColor"
@@ -1924,19 +1975,27 @@ function Finance() {
                     name="Income"
                     fill="var(--color-income)"
                     radius={[6, 6, 0, 0]}
+                    animationBegin={0}
+                    animationDuration={700}
+                    animationEasing="ease-out"
                   />
-
                   <Bar
                     dataKey="expense"
                     name="Expenses"
                     fill="var(--color-expense)"
                     radius={[6, 6, 0, 0]}
+                    animationBegin={120}
+                    animationDuration={700}
+                    animationEasing="ease-out"
                   />
                   <Bar
                     dataKey="asset"
                     name="Asset purchases"
                     fill="var(--color-asset)"
                     radius={[6, 6, 0, 0]}
+                    animationBegin={240}
+                    animationDuration={700}
+                    animationEasing="ease-out"
                   />
 
                   <Line
@@ -1947,6 +2006,9 @@ function Finance() {
                     strokeWidth={2.5}
                     dot={{ r: 3 }}
                     activeDot={{ r: 5 }}
+                    animationBegin={360}
+                    animationDuration={900}
+                    animationEasing="ease-out"
                   />
                 </ComposedChart>
               </ChartContainer>
@@ -2055,4 +2117,50 @@ function Finance() {
   );
 }
 
+function AnimatedNumber({ value, duration = 800, decimals = 2 }) {
+  const target = Number(value);
+  const isNumeric = Number.isFinite(target);
+
+  const [displayValue, setDisplayValue] = useState(isNumeric ? 0 : value);
+
+  const frameRef = useRef(null);
+
+  useEffect(() => {
+    if (!isNumeric) {
+      return;
+    }
+
+    const startTime = performance.now();
+
+    const animate = (currentTime) => {
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      const currentValue = target * easedProgress;
+
+      setDisplayValue(currentValue);
+
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    frameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, [target, duration, isNumeric]);
+
+  if (!isNumeric) {
+    return value;
+  }
+
+  return displayValue.toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
 export default Finance;

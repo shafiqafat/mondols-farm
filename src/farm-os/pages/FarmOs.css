@@ -1,0 +1,167 @@
+.overview-kpi-card {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: overview-kpi-enter 500ms
+    cubic-bezier(0.22, 1, 0.36, 1)
+    var(--delay)
+    forwards;
+}
+@keyframes overview-kpi-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overview-kpi-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+
+.overview-species-card {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: overview-species-enter 450ms
+    cubic-bezier(0.22, 1, 0.36, 1)
+    var(--delay)
+    forwards;
+}
+@keyframes overview-species-enter {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .overview-species-card {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+
+.overview-feed-row {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: overview-feed-enter 450ms
+    cubic-bezier(0.22, 1, 0.36, 1)
+    var(--delay)
+    forwards;
+}
+
+@keyframes overview-feed-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overview-feed-row {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+
+.farm-page-transition {
+  animation: farm-page-enter 350ms
+    cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes farm-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .farm-page-transition {
+    animation: none;
+  }
+}
+
+.finance-project-card {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.finance-project-card-visible {
+  animation: finance-project-enter 450ms
+    cubic-bezier(0.22, 1, 0.36, 1)
+    var(--delay)
+    forwards;
+}
+
+@keyframes finance-project-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finance-project-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.finance-transaction-row {
+  opacity: 0;
+  transform: translateY(8px);
+  animation: finance-transaction-enter 400ms
+    cubic-bezier(0.22, 1, 0.36, 1)
+    var(--delay)
+    forwards;
+}
+
+@keyframes finance-transaction-enter {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finance-transaction-row {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.finance-section-hidden {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.finance-section-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 500ms ease-out,
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finance-section-hidden,
+  .finance-section-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

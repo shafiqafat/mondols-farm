@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
 import { supabase } from "../lib/supabaseClient";
 import {
   buildEventRows,
@@ -34,6 +35,27 @@ function DailyLog() {
   const [submitError, setSubmitError] = useState("");
   const [submitWarning, setSubmitWarning] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const submittedMessageRef = useRef(null);
+
+  useEffect(() => {
+    if (!submitted || !submittedMessageRef.current) {
+      return;
+    }
+
+    gsap.fromTo(
+      submittedMessageRef.current,
+      {
+        opacity: 0,
+        y: 8,
+      },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.35,
+        ease: "power3.out",
+      },
+    );
+  }, [submitted]);
 
   useEffect(() => {
     async function load() {
@@ -160,22 +182,20 @@ function DailyLog() {
             }
           : null;
 
-          const validationErrors = validateDailyLog({
-            entityRows: allRows,
-            expense: expenseRow,
-            content: contentRow,
-          });
-          if (allRows.length === 0 && !expenseRow && !contentRow) {
-            setSubmitError(
-              "Add at least one activity, expense, or content entry.",
-            );
-            return;
-          }
+      const validationErrors = validateDailyLog({
+        entityRows: allRows,
+        expense: expenseRow,
+        content: contentRow,
+      });
+      if (allRows.length === 0 && !expenseRow && !contentRow) {
+        setSubmitError("Add at least one activity, expense, or content entry.");
+        return;
+      }
 
-          if (validationErrors.length > 0) {
-            setSubmitError(validationErrors[0]);
-            return;
-          }
+      if (validationErrors.length > 0) {
+        setSubmitError(validationErrors[0]);
+        return;
+      }
 
       // A complete daily log is one durable unit, online or offline.
       if (!navigator.onLine) {
@@ -217,13 +237,11 @@ function DailyLog() {
       setExpense({ amount: "", category: "", entityId: "" });
       setContent({ photos: "", videos: "", note: "" });
       setSubmitted(true);
-    } 
-    catch (err) {
+    } catch (err) {
       setSubmitError(err.message ?? "Something went wrong saving today's log.");
     } finally {
       setSubmitting(false);
     }
-    
   }
 
   if (loading) {
@@ -528,7 +546,10 @@ function DailyLog() {
           )}
 
           {submitted && (
-            <div className="rounded-lg border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-forest">
+            <div
+              ref={submittedMessageRef}
+              className="rounded-lg border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-forest"
+            >
               Saved today's log.
             </div>
           )}

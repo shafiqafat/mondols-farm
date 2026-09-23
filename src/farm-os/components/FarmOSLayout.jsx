@@ -194,7 +194,7 @@ function FarmOSLayout() {
 
         <main className="min-w-0 flex-1 font-sans">
           <div className="mx-auto w-full max-w-[1360px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10 xl:px-12">
-            <div className="farm-page-transition">
+            <div key={location.pathname} className="farm-page-transition">
               <Outlet />
             </div>
           </div>

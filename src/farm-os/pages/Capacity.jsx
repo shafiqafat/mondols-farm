@@ -144,7 +144,8 @@ function Capacity() {
               {constraints.map((c, i) => (
                 <div
                   key={i}
-                  className="grid gap-3 rounded-lg border border-border/70 bg-muted/20 p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-center"
+                  className="capacity-constraint-row grid gap-3 rounded-lg border border-border/70 bg-muted/20 p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-center"
+                  style={{ "--delay": `${i * 70}ms` }}
                 >
                   <Input
                     type="text"
@@ -231,12 +232,12 @@ function Capacity() {
       )}
 
       {result && !result.error && (
-        <Card className="border-border/70 bg-card shadow-sm">
+        <Card className="capacity-result-enter border-border/70 bg-card shadow-sm">
           <CardContent className="space-y-5 p-5">
             <div>
-              <h2 className="text-lg font-semibold">
+              <h3 className="capacity-result-status text-lg font-semibold">
                 {LEVEL_LABEL[result.level]}
-              </h2>
+              </h3>
 
               <p className="mt-1 text-sm text-muted-foreground">
                 Capacity assessment based on the constraints you provided.
@@ -249,7 +250,7 @@ function Capacity() {
                 </p>
               </div>
             )}
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="capacity-result-metrics grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-border/70 p-4">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Bottleneck
@@ -287,11 +288,12 @@ function Capacity() {
                 </p>
               </div>
 
-              <div className="divide-y rounded-lg border border-border/70">
+              <div className="capacity-breakdown divide-y rounded-lg border border-border/70">
                 {result.allConstraints.map((c, i) => (
                   <div
                     key={i}
-                    className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    className="capacity-breakdown-row flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    style={{ "--delay": `${i * 60}ms` }}
                   >
                     <span className="text-sm font-medium">{c.name}</span>
 

@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { Flip } from "gsap/Flip";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import {
@@ -31,6 +33,7 @@ const CAPABILITY_OPTIONS = [
   { key: "milk", label: "Milk" },
   { key: "harvest", label: "Harvest" },
 ];
+gsap.registerPlugin(Flip);
 
 const CATEGORY_OPTIONS = ["poultry", "livestock", "crop", "fodder"];
 const LIVESTOCK_STATUS_OPTIONS = ["active", "sold", "deceased"];
@@ -52,6 +55,63 @@ function getStatusOptions(entity) {
 
   return LIVESTOCK_STATUS_OPTIONS;
 }
+function AnimatedNumber({ value }) {
+  const [displayValue, setDisplayValue] = useState(Number(value) || 0);
+  const previousValueRef = useRef(Number(value) || 0);
+
+  useEffect(() => {
+    const nextValue = Number(value) || 0;
+    const startValue = previousValueRef.current;
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (startValue === nextValue) {
+      return undefined;
+    }
+
+    if (reduceMotion) {
+      previousValueRef.current = nextValue;
+      return undefined;
+    }
+
+    const duration = 450;
+    const startTime = performance.now();
+
+    let frameId;
+
+    const animate = (currentTime) => {
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+      const currentValue =
+        startValue + (nextValue - startValue) * easedProgress;
+
+      setDisplayValue(currentValue);
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      } else {
+        previousValueRef.current = nextValue;
+      }
+    };
+
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [value]);
+
+  return (
+    <>
+      {Math.round(
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? Number(value) || 0
+          : displayValue,
+      ).toLocaleString()}
+    </>
+  );
+}
 
 function Species() {
   const [speciesList, setSpeciesList] = useState([]);
@@ -59,6 +119,8 @@ function Species() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
+  const [speciesVisible, setSpeciesVisible] = useState(false);
+  const speciesSectionRef = useRef(null);
 
   const [newSpecies, setNewSpecies] = useState({
     name: "",
@@ -68,6 +130,7 @@ function Species() {
     feedUnit: "",
   });
   const [savingSpecies, setSavingSpecies] = useState(false);
+  const [newSpeciesId, setNewSpeciesId] = useState(null);
 
   const [editingSpeciesId, setEditingSpeciesId] = useState(null);
   const [editingCapabilities, setEditingCapabilities] = useState({});
@@ -82,7 +145,9 @@ function Species() {
     notes: "",
   });
   const [savingEntity, setSavingEntity] = useState(false);
+  const [newEntityId, setNewEntityId] = useState(null);
   const [updatingStatusId, setUpdatingStatusId] = useState(null);
+  const [updatedEntityId, setUpdatedEntityId] = useState(null);
   const [entityFilter, setEntityFilter] = useState("all");
   const [entitySearch, setEntitySearch] = useState("");
 
@@ -93,6 +158,10 @@ function Species() {
     reason: "",
   });
   const [savingRule, setSavingRule] = useState(false);
+  const [newRuleId, setNewRuleId] = useState(null);
+  const [rotationRulesVisible, setRotationRulesVisible] = useState(false);
+  const rotationRulesSectionRef = useRef(null);
+  const entityListRef = useRef(null);
 
   async function loadAll() {
     setLoading(true);
@@ -144,6 +213,44 @@ function Species() {
     loadAll();
   }, []);
 
+  useEffect(() => {
+    const element = speciesSectionRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setSpeciesVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const element = rotationRulesSectionRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setRotationRulesVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
   function toggleNewCapability(key) {
     setNewSpecies((prev) => ({
       ...prev,
@@ -165,13 +272,17 @@ function Species() {
     setSavingSpecies(true);
     setPageError("");
 
-    const { error } = await supabase.from("species_config").insert({
-      name: newSpecies.name.trim(),
-      category: newSpecies.category,
-      capabilities: capabilitiesToPayload(newSpecies.capabilities),
-      space_unit: newSpecies.spaceUnit || null,
-      feed_unit: newSpecies.feedUnit || null,
-    });
+    const { data: createdSpecies, error } = await supabase
+      .from("species_config")
+      .insert({
+        name: newSpecies.name.trim(),
+        category: newSpecies.category,
+        capabilities: capabilitiesToPayload(newSpecies.capabilities),
+        space_unit: newSpecies.spaceUnit || null,
+        feed_unit: newSpecies.feedUnit || null,
+      })
+      .select("id")
+      .single();
 
     setSavingSpecies(false);
     if (error) {
@@ -186,7 +297,11 @@ function Species() {
       spaceUnit: "",
       feedUnit: "",
     });
+
+    setNewSpeciesId(createdSpecies.id);
     loadAll();
+
+    setTimeout(() => setNewSpeciesId(null), 700);
   }
 
   function startEditing(species) {
@@ -233,15 +348,19 @@ function Species() {
     setSavingEntity(true);
     setPageError("");
 
-    const { error } = await supabase.from("farm_entities").insert({
-      species_config_id: newEntity.speciesConfigId,
-      label: newEntity.label.trim(),
-      quantity: newEntity.quantity !== "" ? Number(newEntity.quantity) : null,
-      acquired_at: newEntity.acquiredAt || null,
-      location: newEntity.location || null,
-      notes: newEntity.notes || null,
-      status: "active",
-    });
+    const { data: createdEntity, error } = await supabase
+      .from("farm_entities")
+      .insert({
+        species_config_id: newEntity.speciesConfigId,
+        label: newEntity.label.trim(),
+        quantity: newEntity.quantity !== "" ? Number(newEntity.quantity) : null,
+        acquired_at: newEntity.acquiredAt || null,
+        location: newEntity.location || null,
+        notes: newEntity.notes || null,
+        status: "active",
+      })
+      .select("id")
+      .single();
 
     setSavingEntity(false);
     if (error) {
@@ -257,7 +376,11 @@ function Species() {
       location: "",
       notes: "",
     });
+
+    setNewEntityId(createdEntity.id);
     loadAll();
+
+    setTimeout(() => setNewEntityId(null), 700);
   }
 
   async function handleStatusChange(entityId, status) {
@@ -295,6 +418,9 @@ function Species() {
           entity.id === entityId ? { ...entity, status: data.status } : entity,
         ),
       );
+
+      setUpdatedEntityId(entityId);
+      setTimeout(() => setUpdatedEntityId(null), 700);
     }
   }
 
@@ -309,11 +435,15 @@ function Species() {
     setSavingRule(true);
     setPageError("");
 
-    const { error } = await supabase.from("crop_rotation_rules").insert({
-      from_species_id: newRule.fromSpeciesId,
-      to_species_id: newRule.toSpeciesId,
-      reason: newRule.reason.trim(),
-    });
+    const { data: createdRule, error } = await supabase
+      .from("crop_rotation_rules")
+      .insert({
+        from_species_id: newRule.fromSpeciesId,
+        to_species_id: newRule.toSpeciesId,
+        reason: newRule.reason.trim(),
+      })
+      .select("id")
+      .single();
 
     setSavingRule(false);
     if (error) {
@@ -321,9 +451,32 @@ function Species() {
       return;
     }
     setNewRule({ fromSpeciesId: "", toSpeciesId: "", reason: "" });
+
+    setNewRuleId(createdRule.id);
     loadAll();
+
+    setTimeout(() => setNewRuleId(null), 700);
   }
 
+  useEffect(() => {
+    const element = entityListRef.current;
+    if (!element) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    const state = Flip.getState(element.children);
+
+    requestAnimationFrame(() => {
+      Flip.from(state, {
+        duration: 0.4,
+        ease: "power2.out",
+        absolute: false,
+        fade: true,
+      });
+    });
+  }, [entityFilter, entitySearch]);
   if (loading) {
     return (
       <div className="flex min-h-[240px] items-center justify-center">
@@ -350,6 +503,7 @@ function Species() {
       entity.species_config?.name?.toLowerCase().includes(query);
     return matchesStatus && matchesSearch;
   });
+
 
   if (loadError) {
     return (
@@ -420,8 +574,12 @@ function Species() {
                   value: totalQuantity.toLocaleString(),
                   icon: ClipboardList,
                 },
-              ].map(({ label, value, icon: Icon }) => (
-                <Card key={label} className="border-border/70 shadow-none">
+              ].map(({ label, value, icon: Icon }, index) => (
+                <Card
+                  key={label}
+                  className="species-summary-card border-border/70 shadow-none"
+                  style={{ "--delay": `${index * 80}ms` }}
+                >
                   <CardContent className="flex items-center gap-3 p-4">
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <Icon className="size-4" />
@@ -431,7 +589,7 @@ function Species() {
                         {label}
                       </p>
                       <p className="mt-1 text-xl font-semibold tracking-tight">
-                        {value}
+                        <AnimatedNumber value={value} />
                       </p>
                     </div>
                   </CardContent>
@@ -443,7 +601,7 @@ function Species() {
       </section>
 
       {/* --- Species / crop configuration --- */}
-      <section className="space-y-4">
+      <section ref={speciesSectionRef} className="space-y-4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">
@@ -458,10 +616,15 @@ function Species() {
           </span>
         </div>
         <div className="grid gap-3 mb-4">
-          {speciesList.map((species) => (
+          {speciesList.map((species, index) => (
             <Card
               key={species.id}
-              className="border-border/70 bg-card shadow-sm"
+              className={`species-config-card ${
+                speciesVisible ? "species-config-card-visible" : ""
+              } ${
+                newSpeciesId === species.id ? "species-config-card-updated" : ""
+              } border-border/70 bg-card shadow-sm`}
+              style={{ "--delay": `${index * 80}ms` }}
             >
               <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
                 <div className="flex items-start justify-between gap-4">
@@ -502,7 +665,7 @@ function Species() {
               </CardHeader>
 
               {editingSpeciesId === species.id ? (
-                <CardContent className="pt-1">
+                <CardContent className="species-edit-panel pt-1">
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm font-medium">Capabilities</p>
@@ -566,11 +729,12 @@ function Species() {
                         No capabilities set
                       </span>
                     ) : (
-                      Object.keys(species.capabilities).map((key) => (
+                      Object.keys(species.capabilities).map((key, index) => (
                         <Badge
                           key={key}
                           variant="outline"
-                          className="font-normal"
+                          className="species-capability-badge font-normal"
+                          style={{ "--delay": `${index * 60}ms` }}
                         >
                           {CAPABILITY_OPTIONS.find((c) => c.key === key)
                             ?.label ?? key}
@@ -795,11 +959,17 @@ function Species() {
                 </p>
               </div>
             ) : (
-              <div className="grid gap-2">
+              <div ref={entityListRef} className="grid gap-2">
                 {filteredEntities.map((entity) => (
                   <div
                     key={entity.id}
-                    className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background/70 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                    className={`species-entity-row ${
+                      updatedEntityId === entity.id
+                        ? "species-entity-row-updated"
+                        : ""
+                    } ${
+                      newEntityId === entity.id ? "species-entity-row-new" : ""
+                    } flex flex-col gap-3 rounded-xl border border-border/70 bg-background/70 p-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between`}
                   >
                     <div className="min-w-0">
                       <Link
@@ -823,6 +993,25 @@ function Species() {
 
                     {entity.status === "active" ? (
                       <select
+                        ref={(element) => {
+                          if (
+                            element &&
+                            updatedEntityId === entity.id &&
+                            !window.matchMedia(
+                              "(prefers-reduced-motion: reduce)",
+                            ).matches
+                          ) {
+                            gsap.fromTo(
+                              element,
+                              { scale: 0.96 },
+                              {
+                                scale: 1,
+                                duration: 0.4,
+                                ease: "back.out(2)",
+                              },
+                            );
+                          }
+                        }}
                         value={entity.status}
                         onChange={(e) =>
                           handleStatusChange(entity.id, e.target.value)
@@ -1021,7 +1210,12 @@ function Species() {
       </section>
 
       {/* --- Crop rotation rules --- */}
-      <section className="space-y-4">
+      <section
+        ref={rotationRulesSectionRef}
+        className={`species-rotation-section ${
+          rotationRulesVisible ? "species-rotation-section-visible" : ""
+        } space-y-4`}
+      >
         <div>
           <h2 className="text-xl font-semibold tracking-tight">
             Crop rotation rules
@@ -1048,10 +1242,17 @@ function Species() {
               </p>
             ) : (
               <div className="grid gap-3">
-                {rotationRules.map((rule) => (
+                {rotationRules.map((rule, index) => (
                   <div
                     key={rule.id}
-                    className="rounded-xl border border-border/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                    className={`species-rotation-rule-card ${
+                      rotationRulesVisible
+                        ? "species-rotation-rule-card-visible"
+                        : ""
+                    } ${
+                      newRuleId === rule.id ? "species-rotation-rule-new" : ""
+                    } rounded-xl border border-border/70 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md`}
+                    style={{ "--delay": `${index * 80}ms` }}
                   >
                     <p className="text-sm font-medium">
                       {rule.from_species?.name} → {rule.to_species?.name}

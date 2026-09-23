@@ -253,7 +253,7 @@ function Scenario() {
             </div>
 
             {selectedSpecies && (
-              <div className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+              <div className="scenario-species-context rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">
                   Currently {currentCount} {selectedSpecies.name}.
                 </span>{" "}
@@ -334,7 +334,8 @@ function Scenario() {
               {constraints.map((c, i) => (
                 <div
                   key={i}
-                  className="grid gap-3 rounded-lg border border-border/70 bg-background/50 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end"
+                  className="scenario-constraint-row grid gap-3 rounded-lg border border-border/70 bg-background/50 p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto] sm:items-end"
+                  style={{ "--delay": `${i * 70}ms` }}
                 >
                   <label className="flex flex-col gap-1.5 text-sm font-medium">
                     <span>Resource</span>
@@ -376,7 +377,10 @@ function Scenario() {
               ))}
             </div>
 
-            <Button type="submit" className="w-full sm:w-auto">
+            <Button
+              type="submit"
+              className="scenario-run-button w-full sm:w-auto"
+            >
               Run scenario
             </Button>
           </form>
@@ -395,7 +399,7 @@ function Scenario() {
 
       {result && !result.error && (
         <Card
-          className={`border-border/70 bg-card shadow-sm ${
+          className={`scenario-result-enter border-border/70 bg-card shadow-sm ${
             result.capacitySummary?.level === "safe"
               ? "border-l-4 border-l-primary"
               : result.capacitySummary?.level === "stretch"
@@ -407,12 +411,12 @@ function Scenario() {
         >
           <CardContent className="space-y-4 p-5">
             <h2 className="text-base font-semibold">Result</h2>
-            <p className="rounded-lg bg-muted/50 px-3 py-2.5 text-sm leading-6 text-foreground">
+            <p className="scenario-recommendation rounded-lg bg-muted/50 px-3 py-2.5 text-sm leading-6 text-foreground">
               {result.recommendation}
             </p>
 
             {result.capacitySummary && (
-              <p className="text-sm leading-6 text-muted-foreground">
+              <p className="scenario-bottleneck rounded-md px-1 text-sm leading-6 text-muted-foreground">
                 Bottleneck:{" "}
                 <strong className="font-semibold text-foreground">
                   {result.capacitySummary.bottleneck.name}
@@ -425,7 +429,7 @@ function Scenario() {
               </p>
             )}
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="scenario-result-metrics grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <div className="rounded-xl border border-border/60 bg-background p-4">
                 <p className="text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground">
                   Investment

@@ -91,7 +91,11 @@ function Overview() {
       return;
     }
 
-    const timeline = gsap.timeline();
+    const timeline = gsap.timeline({
+      defaults: {
+        ease: "power3.out",
+      },
+    });
 
     timeline
       .fromTo(
@@ -137,7 +141,9 @@ function Overview() {
       return;
     }
 
-    const timeline = gsap.timeline();
+    const timeline = gsap.timeline({
+      delay: 0.65,
+    });
 
     timeline
       .fromTo(
@@ -181,7 +187,9 @@ function Overview() {
       return;
     }
 
-    const timeline = gsap.timeline();
+    const timeline = gsap.timeline({
+      delay: 1.15,
+    });
 
     timeline
       .fromTo(

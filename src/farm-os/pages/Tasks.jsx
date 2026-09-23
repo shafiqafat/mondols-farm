@@ -228,7 +228,10 @@ function Tasks() {
               {grouped[group].map((task) => (
                 <div
                   key={task.id}
-                  className={`flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                  style={{
+                    "--delay": `${grouped[group].indexOf(task) * 60}ms`,
+                  }}
+                  className={`tasks-task-card flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                     task.priority === "critical"
                       ? "border-l-4 border-l-destructive"
                       : task.priority === "high"
@@ -272,7 +275,9 @@ function Tasks() {
                     size="sm"
                     onClick={() => handleComplete(task)}
                     disabled={completingId === task.id}
-                    className="w-full shrink-0 sm:w-auto"
+                    className={
+                      completingId === task.id ? "tasks-completing-button" : ""
+                    }
                   >
                     <CheckCircle2 className="size-4" />
                     {completingId === task.id ? "Completing…" : "Done"}
@@ -285,7 +290,7 @@ function Tasks() {
       )}
 
       {incomplete.length === 0 && (
-        <Card className="border-border/70 bg-card shadow-sm">
+        <Card className="tasks-empty-state border-border/70 bg-card shadow-sm">
           <CardContent className="flex items-center gap-3 p-5">
             <CheckCircle2 className="size-5 text-primary" />
             <p className="text-sm text-muted-foreground">
@@ -436,7 +441,7 @@ function Tasks() {
             {showCompleted ? "Hide" : "Show"} completed ({completed.length})
           </Button>
           {showCompleted && (
-            <div className="space-y-2">
+            <div className="tasks-completed-list space-y-2">
               {completed.map((task) => (
                 <Card
                   key={task.id}

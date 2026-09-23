@@ -175,7 +175,7 @@ function Settings() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="settings-grid grid gap-4 md:grid-cols-2">
         {sections.map((section) => {
           const Icon = section.icon;
 
@@ -326,7 +326,7 @@ function Settings() {
           return (
             <Card
               key={section.title}
-              className={`border-border/70 shadow-sm ${
+              className={`settings-card border-border/70 shadow-sm ${
                 section.action
                   ? "cursor-pointer transition-colors hover:border-primary/30 hover:bg-muted/20"
                   : ""

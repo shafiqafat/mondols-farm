@@ -36,6 +36,8 @@ function DailyLog() {
   const [submitWarning, setSubmitWarning] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const submittedMessageRef = useRef(null);
+  const [entitiesVisible, setEntitiesVisible] = useState(false);
+  const entitiesSectionRef = useRef(null);
 
   useEffect(() => {
     if (!submitted || !submittedMessageRef.current) {
@@ -56,6 +58,25 @@ function DailyLog() {
       },
     );
   }, [submitted]);
+
+  useEffect(() => {
+    const element = entitiesSectionRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setEntitiesVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -318,8 +339,8 @@ function DailyLog() {
         </Card>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            {entities.map((entity) => {
+          <div ref={entitiesSectionRef} className="space-y-4">
+            {entities.map((entity, index) => {
               const capabilities = entity.species_config?.capabilities ?? {};
               const fields = getQuickFieldsForCapabilities(capabilities);
               const values = entityValues[entity.id] ?? {};
@@ -327,7 +348,10 @@ function DailyLog() {
               return (
                 <Card
                   key={entity.id}
-                  className="border-border/70 bg-card shadow-sm"
+                  className={`daily-log-entity-card ${
+                    entitiesVisible ? "daily-log-entity-card-visible" : ""
+                  } border-border/70 bg-card shadow-sm`}
+                  style={{ "--delay": `${index * 80}ms` }}
                 >
                   <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
                     <CardTitle className="flex flex-col gap-1 text-base sm:flex-row sm:items-center sm:justify-between">
@@ -534,13 +558,13 @@ function DailyLog() {
           </Card>
 
           {submitError && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <div className="daily-log-feedback rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {submitError}
             </div>
           )}
 
           {submitWarning && (
-            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
+            <div className="daily-log-feedback rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
               {submitWarning}
             </div>
           )}
@@ -557,7 +581,9 @@ function DailyLog() {
           <Button
             type="submit"
             disabled={submitting}
-            className="w-full sm:w-auto"
+            className={`w-full sm:w-auto ${
+              submitting ? "daily-log-submit-loading" : ""
+            }`}
           >
             {submitting ? "Saving…" : "Save today's log"}
           </Button>

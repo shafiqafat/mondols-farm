@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import {
-  ArrowRight,
-  ClipboardPenLine,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, ClipboardPenLine } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import gsap from "gsap";
+import { Flip } from "gsap/Flip";
+
+gsap.registerPlugin(Flip);
 import { localDateISO } from "../lib/localDate";
 import {
   STAGES,
@@ -32,6 +33,8 @@ function ContentJournal() {
   });
   const [saving, setSaving] = useState(false);
   const [advancingId, setAdvancingId] = useState(null);
+  const [newContentId, setNewContentId] = useState(null);
+  const contentBoardRef = useRef(null);
 
   async function loadAll() {
     setLoading(true);
@@ -46,23 +49,23 @@ function ContentJournal() {
       supabase.from("farm_projects").select("id, name").order("name"),
     ]);
 
-      if (itemsRes.error) {
-        setLoadError(itemsRes.error.message);
-        setLoading(false);
-        return;
-      }
+    if (itemsRes.error) {
+      setLoadError(itemsRes.error.message);
+      setLoading(false);
+      return;
+    }
 
-      if (entitiesRes.error) {
-        setLoadError(entitiesRes.error.message);
-        setLoading(false);
-        return;
-      }
+    if (entitiesRes.error) {
+      setLoadError(entitiesRes.error.message);
+      setLoading(false);
+      return;
+    }
 
-      if (projectsRes.error) {
-        setLoadError(projectsRes.error.message);
-        setLoading(false);
-        return;
-      }
+    if (projectsRes.error) {
+      setLoadError(projectsRes.error.message);
+      setLoading(false);
+      return;
+    }
 
     setItems(itemsRes.data ?? []);
     setEntities(entitiesRes.data ?? []);
@@ -81,21 +84,32 @@ function ContentJournal() {
     setSaving(true);
     setPageError("");
 
-    const { error } = await supabase.from("content_items").insert({
-      title: form.title.trim(),
-      type: form.type,
-      entity_id: form.entityId || null,
-      project_id: form.projectId || null,
-      notes: form.notes || null,
-      stage: "idea",
-      occurred_at: localDateISO(),
-    });
+    const { data: createdItem, error } = await supabase
+      .from("content_items")
+      .insert({
+        title: form.title.trim(),
+        type: form.type,
+        entity_id: form.entityId || null,
+        project_id: form.projectId || null,
+        notes: form.notes || null,
+        stage: "idea",
+        occurred_at: localDateISO(),
+      })
+      .select("id")
+      .single();
 
     setSaving(false);
     if (error) {
       setPageError(error.message);
       return;
     }
+
+    setNewContentId(createdItem?.id ?? null);
+
+    setTimeout(() => {
+      setNewContentId(null);
+    }, 500);
+
     setForm({
       title: "",
       type: "mixed",
@@ -109,17 +123,38 @@ function ContentJournal() {
   async function handleAdvance(item) {
     const next = nextStage(item.stage);
     if (!next) return;
+
+    const flipState =
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+      contentBoardRef.current
+        ? Flip.getState(contentBoardRef.current.children)
+        : null;
+
     setAdvancingId(item.id);
     const { error } = await supabase
       .from("content_items")
       .update({ stage: next })
       .eq("id", item.id);
     setAdvancingId(null);
+
     if (error) {
       setPageError(error.message);
       return;
     }
-    loadAll();
+    
+
+    await loadAll();
+
+    if (flipState) {
+      requestAnimationFrame(() => {
+        Flip.from(flipState, {
+          duration: 0.5,
+          ease: "power2.out",
+          absolute: false,
+          nested: true,
+        });
+      });
+    }
   }
 
   if (loading) {
@@ -167,9 +202,16 @@ function ContentJournal() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {STAGES.map((stage) => (
-          <Card key={stage} className="border-border/70 bg-card shadow-sm">
+      <div
+        ref={contentBoardRef}
+        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+      >
+        {STAGES.map((stage, index) => (
+          <Card
+            key={stage}
+            className="content-stage-card border-border/70 bg-card shadow-sm"
+            style={{ "--delay": `${index * 70}ms` }}
+          >
             <CardContent className="p-4">
               <div className="mb-4 flex items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold">{STAGE_LABEL[stage]}</h2>
@@ -192,7 +234,9 @@ function ContentJournal() {
                     return (
                       <Card
                         key={item.id}
-                        className="mb-3 border-border/70 bg-background shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                        className={`mb-3 border-border/70 bg-background shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                          newContentId === item.id ? "content-item-new" : ""
+                        }`}
                       >
                         <CardContent className="space-y-3 p-4">
                           <h3 className="text-sm font-semibold text-foreground">

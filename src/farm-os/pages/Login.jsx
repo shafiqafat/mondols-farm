@@ -33,11 +33,11 @@ function Login() {
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center justify-center">
         <form
           onSubmit={handleSubmit}
-          className="grid w-full overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl md:grid-cols-2"
+          className="login-card grid w-full overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xl md:grid-cols-2"
         >
           {/* Login panel */}
           <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-            <div className="mx-auto w-full max-w-md">
+            <div className="login-content mx-auto w-full max-w-md">
               <div className="mb-8 text-center">
                 <div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <Sprout className="size-5" />

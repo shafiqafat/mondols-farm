@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { computeStock } from "../engines/inventoryEngine";
 import { localDateISO } from "../lib/localDate";
@@ -30,6 +30,8 @@ function Inventory() {
   const [lotsByItem, setLotsByItem] = useState({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [inventoryVisible, setInventoryVisible] = useState(false);
+  const inventorySectionRef = useRef(null);
 
   const [newItem, setNewItem] = useState({
     name: "",
@@ -41,6 +43,7 @@ function Inventory() {
   const [addingItem, setAddingItem] = useState(false);
   const [purchaseForms, setPurchaseForms] = useState({});
   const [savingPurchase, setSavingPurchase] = useState(null);
+  const [updatedItemId, setUpdatedItemId] = useState(null);
   const [pageError, setPageError] = useState("");
 
   async function loadAll() {
@@ -84,6 +87,28 @@ function Inventory() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll();
+  }, []);
+
+  useEffect(() => {
+    const element = inventorySectionRef.current;
+
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInventoryVisible(true);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.12,
+      },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
   }, []);
 
   async function handleAddItem(e) {
@@ -180,7 +205,12 @@ function Inventory() {
       },
     }));
 
+    setUpdatedItemId(item.id);
     loadAll();
+
+    setTimeout(() => {
+      setUpdatedItemId(null);
+    }, 700);
   }
 
   const inventorySummary = useMemo(() => {
@@ -377,7 +407,7 @@ function Inventory() {
       </section>
 
       {/* Inventory list */}
-      <section className="space-y-4">
+      <section ref={inventorySectionRef} className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">
@@ -435,11 +465,14 @@ function Inventory() {
           return (
             <Card
               key={item.id}
-              className={
+              className={`inventory-card ${
+                inventoryVisible ? "inventory-card-visible" : ""
+              } ${updatedItemId === item.id ? "inventory-card-updated" : ""} ${
                 isLow
                   ? "overflow-hidden border-amber-500/30 shadow-sm"
                   : "overflow-hidden border-border/70 shadow-sm"
-              }
+              }`}
+              style={{ "--delay": `${items.indexOf(item) * 80}ms` }}
             >
               <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -528,7 +561,7 @@ function Inventory() {
 
                 {/* Lot history */}
                 {lots.length > 0 && (
-                  <details className="group rounded-lg border border-border/50">
+                  <details className="inventory-purchase-history">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3">
                       <div>
                         <p className="text-sm font-medium">Purchase history</p>

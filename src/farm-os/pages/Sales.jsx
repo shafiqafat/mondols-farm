@@ -471,8 +471,8 @@ function Sales() {
           </div>
         )}
       </form>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
+      <div className="sales-summary-grid grid gap-4 sm:grid-cols-3">
+        <Card className="sales-summary-card">
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Sales revenue
@@ -483,7 +483,7 @@ function Sales() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="sales-summary-card">
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Quantity sold
@@ -494,7 +494,7 @@ function Sales() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="sales-summary-card">
           <CardContent className="pt-6">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Sales recorded
@@ -626,8 +626,16 @@ function Sales() {
                 </thead>
 
                 <tbody>
-                  {filteredSales.map((sale) => (
-                    <tr key={sale.id} className="border-b last:border-0">
+                  {filteredSales.map((sale, index) => (
+                    <tr
+                      key={sale.id}
+                      className={`sales-history-row border-b last:border-0 ${
+                        deletingSaleId === sale.id
+                          ? "sales-history-row-deleting"
+                          : ""
+                      }`}
+                      style={{ "--delay": `${index * 35}ms` }}
+                    >
                       <td className="px-3 py-3 whitespace-nowrap">
                         {sale.sold_at}
                       </td>
@@ -707,7 +715,7 @@ function Sales() {
           </DialogHeader>
 
           {editingSale && (
-            <div className="space-y-4">
+            <div className="sales-edit-form space-y-4">
               <label className="flex flex-col gap-1.5 text-sm font-medium">
                 <span>Quantity</span>
                 <Input

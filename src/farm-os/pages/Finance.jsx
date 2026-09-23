@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import gsap from "gsap";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
 import {
@@ -63,7 +64,12 @@ function Finance() {
   const [pageError, setPageError] = useState("");
   const [projectsVisible, setProjectsVisible] = useState(false);
   const [newProjectId, setNewProjectId] = useState(null);
+  const [transactionsVisible, setTransactionsVisible] = useState(false);
+
   const projectsSectionRef = useRef(null);
+  const transactionsSectionRef = useRef(null);
+  const editDialogRef = useRef(null);
+  const transactionsListRef = useRef(null);
 
   const [newProject, setNewProject] = useState({
     name: "",
@@ -186,6 +192,50 @@ function Finance() {
 
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const element = transactionsSectionRef.current;
+
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTransactionsVisible(true);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: 0.15,
+      },
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const element = editDialogRef.current;
+
+    if (!element || !editingTxn) return;
+
+    gsap.fromTo(
+      element,
+      {
+        opacity: 0,
+        scale: 0.94,
+        y: 8,
+      },
+      {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        duration: 0.45,
+        ease: "back.out(1.4)",
+      },
+    );
+  }, [editingTxn]);
 
   async function handleUpdateTransaction(e) {
     e.preventDefault();
@@ -352,6 +402,8 @@ function Finance() {
   async function handleDeleteTransaction(id) {
     setDeletingTxnId(id);
     setTxnActionError("");
+
+    await new Promise((resolve) => setTimeout(resolve, 350));
 
     const { error } = await supabase
       .from("finance_transactions")
@@ -913,7 +965,32 @@ function Finance() {
               type="button"
               variant="outline"
               disabled={completingProjectId === project.id}
-              onClick={() => handleCompleteProject(project.id)}
+              onClick={(e) => {
+                const button = e.currentTarget;
+
+                if (
+                  !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ) {
+                  gsap.fromTo(
+                    button,
+                    {
+                      scale: 1,
+                    },
+                    {
+                      scale: 0.94,
+                      duration: 0.12,
+                      ease: "power2.out",
+                      yoyo: true,
+                      repeat: 1,
+                      onComplete: () => handleCompleteProject(project.id),
+                    },
+                  );
+
+                  return;
+                }
+
+                handleCompleteProject(project.id);
+              }}
             >
               {completingProjectId === project.id
                 ? "Completing…"
@@ -1299,7 +1376,7 @@ function Finance() {
         </form>
       </section>
 
-      <section className="space-y-5">
+      <section ref={transactionsSectionRef} className="space-y-5">
         <div className="flex items-start gap-3">
           <Receipt className="mt-1 size-5 shrink-0 text-primary" />
 
@@ -1623,11 +1700,22 @@ function Finance() {
                 No transactions recorded yet.
               </div>
             ) : (
-              <div className="divide-y divide-border/60">
+              <div
+                ref={transactionsListRef}
+                className="divide-y divide-border/60"
+              >
                 {transactions.map((t, index) => (
                   <div
                     key={t.id}
-                    className="finance-transaction-row flex flex-col gap-4 p-5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-start sm:justify-between"
+                    className={`finance-transaction-row flex flex-col gap-4 p-5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-start sm:justify-between ${
+                      deletingTxnId === t.id
+                        ? "finance-transaction-row-deleting"
+                        : ""
+                    } ${
+                      transactionsVisible
+                        ? "finance-transaction-row-visible"
+                        : ""
+                    }`}
                     style={{ "--delay": `${index * 60}ms` }}
                   >
                     <div className="min-w-0">
@@ -1748,7 +1836,7 @@ function Finance() {
             }
           }}
         >
-          <DialogContent className="sm:max-w-3xl">
+          <DialogContent ref={editDialogRef} className="sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle className="text-xl tracking-tight">
                 Edit transaction
@@ -1758,7 +1846,10 @@ function Finance() {
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleUpdateTransaction} className="space-y-6">
+            <form
+              onSubmit={handleUpdateTransaction}
+              className="finance-edit-form space-y-6"
+            >
               {txnActionError && (
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
                   <p className="text-sm text-destructive">{txnActionError}</p>

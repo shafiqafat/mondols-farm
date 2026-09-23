@@ -13,7 +13,7 @@ function PageLoader() {
 
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 350);
+    }, 600);
 
     return () => {
       clearTimeout(startTimer);

@@ -1,18 +1,21 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+
 import "./ProductCard.css";
 
 function ProductCard({
   slug,
   name,
-  category,
   description,
+  availability,
+  category,
+  image,
   price,
   unit,
-  availability,
-  image,
 }) {
   const cursorRef = useRef(null);
+  const imageRef = useRef(null);
 
   const targetPosition = useRef({ x: 0, y: 0 });
   const currentPosition = useRef({ x: 0, y: 0 });
@@ -45,6 +48,32 @@ function ProductCard({
     };
   }, []);
 
+  useEffect(() => {
+    const imageElement = imageRef.current;
+
+    if (!imageElement) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    const animation = gsap.fromTo(
+      imageElement,
+      {
+        scale: 1.08,
+      },
+      {
+        scale: 1,
+        duration: 1.2,
+        ease: "power2.out",
+      },
+    );
+
+    return () => {
+      animation.kill();
+    };
+  }, []);
+
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
 
@@ -74,7 +103,7 @@ function ProductCard({
         onMouseLeave={() => setIsHovering(false)}
         onMouseMove={handleMouseMove}
       >
-        <img src={image} alt={name} loading="lazy" />
+        <img ref={imageRef} src={image} alt={name} loading="lazy" />
 
         <span className="product-card__status">{availability}</span>
 

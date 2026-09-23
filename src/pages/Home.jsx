@@ -9,7 +9,6 @@ import FinalCTA from "../components/FinalCTA";
 import GallerySection from "../components/GallerySection";
 import PageMeta from "../components/PageMeta";
 
-
 function Home() {
   return (
     <main>

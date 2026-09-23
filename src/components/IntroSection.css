@@ -31,14 +31,7 @@
 
   object-fit: cover;
 
-  transform: scale(1);
-
-  transition:
-    transform 1s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.intro__image:hover img {
-  transform: scale(1.06);
+  will-change: transform;
 }
 
 /* Content */
@@ -117,4 +110,22 @@
 
 .intro__link:hover {
   gap: 18px;
+}
+.intro__image,
+.intro__eyebrow,
+.intro__content h2,
+.intro__content p,
+.intro__link {
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro__image,
+  .intro__image img,
+  .intro__eyebrow,
+  .intro__content h2,
+  .intro__content p,
+  .intro__link {
+    will-change: auto;
+  }
 }

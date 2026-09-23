@@ -196,13 +196,14 @@ function Scenario() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-lg bg-primary/10 p-2.5">
-          <BarChart3 className="size-5 text-primary" />
+      <div className="border-b border-border/60 pb-7">
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <BarChart3 className="size-4 text-primary" />
+          <span>Farm Scenario</span>
         </div>
 
         <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.03em]">
+          <h1 className="text-4xl font-semibold tracking-[-0.03em] text-foreground sm:text-5xl">
             Scenario Simulator
           </h1>
 

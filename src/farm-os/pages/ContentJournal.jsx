@@ -180,21 +180,25 @@ function ContentJournal() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 rounded-lg bg-primary/10 p-2.5">
-          <ClipboardPenLine className="size-5" />
-        </div>
+      <section className="border-b border-border/60 pb-7">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            <ClipboardPenLine className="size-4 text-primary" />
+            <span>Farm Content</span>
+          </div>
 
-        <div>
-          <h1 className="text-2xl font-semibold tracking-[-0.03em]">
-            Content Journal
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Capture farm stories and move them from idea to published content.
-            Link each piece back to the entity or project it belongs to.
-          </p>
+          <div>
+            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl">
+              Content Journal
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Capture farm stories and move them from idea to published content.
+              Link each piece back to the entity or project it belongs to.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
 
       {pageError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">

@@ -329,17 +329,25 @@ function Sales() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="size-5 text-forest" />
-          <h1 className="text-2xl font-semibold tracking-tight">Sales</h1>
-        </div>
+      <section className="border-b border-border/60 pb-7">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            <ShoppingCart className="size-4 text-primary" />
+            <span>Farm operations</span>
+          </div>
 
-        <p className="text-sm text-muted-foreground">
-          Record farm sales and automatically connect revenue to the related
-          entity and project.
-        </p>
-      </div>
+          <div>
+            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl">
+              Sales
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Record farm sales and automatically connect revenue to the related
+              entity and project.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>

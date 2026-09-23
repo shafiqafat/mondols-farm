@@ -167,13 +167,25 @@ function Settings() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+      <section className="border-b border-border/60 pb-7">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            <SlidersHorizontal className="size-4 text-primary" />
+            <span>Farm operations</span>
+          </div>
 
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Configure Mondol&apos;s Farm OS and manage how the system operates.
-        </p>
-      </div>
+          <div>
+            <h1 className="text-4xl font-semibold tracking-[-0.04em] text-foreground sm:text-5xl">
+              Settings
+            </h1>
+
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Configure Mondol&apos;s Farm OS and manage how the system
+              operates.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <div className="settings-grid grid gap-4 md:grid-cols-2">
         {sections.map((section) => {

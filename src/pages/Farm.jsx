@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import SectionHeading from "../components/SectionHeading";
 import ProjectCard from "../components/ProjectCard";
@@ -13,9 +15,19 @@ import mustardCultivation from "../assets/image/projects/mustard-cultivation.jpg
 import PageMeta from "../components/PageMeta";
 
 import "./Farm.css";
+gsap.registerPlugin(ScrollTrigger);
 
 function Farm() {
   const investmentOpportunities = getOpenInvestmentOpportunities();
+
+  const farmHeroRef = useRef(null);
+  const farmIntroductionRef = useRef(null);
+  const farmProjectsRef = useRef(null);
+  const farmGrowRef = useRef(null);
+  const farmInvestmentRef = useRef(null);
+  const farmGalleryRef = useRef(null);
+  const farmPhilosophyRef = useRef(null);
+  const farmCtaRef = useRef(null);
 
   const investmentCursorRef = useRef(null);
   const investmentTargetPosition = useRef({ x: 0, y: 0 });
@@ -64,6 +76,532 @@ function Farm() {
     investmentTargetPosition.current.y = e.clientY - rect.top;
   };
 
+  useEffect(() => {
+    const hero = farmHeroRef.current;
+
+    if (!hero) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const image = hero.querySelector(".farm-hero__image img");
+    const overlay = hero.querySelector(".farm-hero__overlay");
+    const eyebrow = hero.querySelector(".farm-hero__eyebrow");
+    const heading = hero.querySelector("h1");
+    const paragraph = hero.querySelector("p");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, {
+        scale: 1.08,
+      });
+
+      gsap.set(overlay, {
+        opacity: 0,
+      });
+
+      gsap.set([eyebrow, heading, paragraph], {
+        opacity: 0,
+        y: 30,
+      });
+
+      const timeline = gsap.timeline({
+        defaults: {
+          ease: "power3.out",
+        },
+      });
+
+      timeline
+        .to(image, {
+          scale: 1.03,
+          duration: 1.5,
+          ease: "power2.out",
+        })
+        .to(
+          overlay,
+          {
+            opacity: 0.5,
+            duration: 0.8,
+          },
+          0.1,
+        )
+        .to(
+          eyebrow,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+          },
+          0.35,
+        )
+        .to(
+          heading,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+          },
+          0.48,
+        )
+        .to(
+          paragraph,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+          },
+          0.68,
+        );
+    }, hero);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = farmIntroductionRef.current;
+
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const image = section.querySelector(".farm-introduction__image");
+    const content = section.querySelector(".farm-introduction__content");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, {
+        opacity: 0,
+        x: -40,
+      });
+
+      gsap.set(content, {
+        opacity: 0,
+        x: 40,
+      });
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 75%",
+            once: true,
+          },
+          defaults: {
+            ease: "power3.out",
+          },
+        })
+        .to(image, {
+          opacity: 1,
+          x: 0,
+          duration: 0.9,
+        })
+        .to(
+          content,
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.8,
+          },
+          "-=0.55",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = farmProjectsRef.current;
+
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const heading = section.querySelector(".section-heading");
+    const cards = section.querySelectorAll(".project-card");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, {
+        opacity: 0,
+        y: 25,
+      });
+
+      gsap.set(cards, {
+        opacity: 0,
+        y: 45,
+      });
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 75%",
+            once: true,
+          },
+          defaults: {
+            ease: "power3.out",
+          },
+        })
+        .to(heading, {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+        })
+        .to(
+          cards,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.75,
+            stagger: 0.12,
+          },
+          "-=0.35",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = farmGrowRef.current;
+
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const heading = section.querySelector(".section-heading");
+    const items = section.querySelectorAll(".farm-grow__item");
+    const footer = section.querySelector(".farm-grow__footer");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, {
+        opacity: 0,
+        y: 25,
+      });
+
+      gsap.set(items, {
+        opacity: 0,
+        x: -25,
+      });
+
+      gsap.set(footer, {
+        opacity: 0,
+        y: 20,
+      });
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 75%",
+            once: true,
+          },
+          defaults: {
+            ease: "power3.out",
+          },
+        })
+        .to(heading, {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+        })
+        .to(
+          items,
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.6,
+            stagger: 0.12,
+          },
+          "-=0.3",
+        )
+        .to(
+          footer,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+          },
+          "-=0.25",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = farmInvestmentRef.current;
+
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const image = section.querySelector(".farm-investment__image");
+    const content = section.querySelector(".farm-investment__content");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, {
+        opacity: 0,
+        x: -40,
+      });
+
+      gsap.set(content, {
+        opacity: 0,
+        x: 40,
+      });
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 75%",
+            once: true,
+          },
+          defaults: {
+            ease: "power3.out",
+          },
+        })
+        .to(image, {
+          opacity: 1,
+          x: 0,
+          duration: 0.9,
+        })
+        .to(
+          content,
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.85,
+          },
+          "-=0.55",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = farmGalleryRef.current;
+
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const heading = section.querySelector(".section-heading");
+    const items = section.querySelectorAll(".gallery-item");
+    const footer = section.querySelector(".farm-gallery__footer");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, {
+        opacity: 0,
+        y: 25,
+      });
+
+      gsap.set(items, {
+        opacity: 0,
+        y: 35,
+        scale: 0.96,
+      });
+
+      gsap.set(footer, {
+        opacity: 0,
+        y: 20,
+      });
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 75%",
+            once: true,
+          },
+          defaults: {
+            ease: "power3.out",
+          },
+        })
+        .to(heading, {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+        })
+        .to(
+          items,
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.7,
+            stagger: 0.1,
+          },
+          "-=0.3",
+        )
+        .to(
+          footer,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+          },
+          "-=0.25",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = farmPhilosophyRef.current;
+
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const intro = section.querySelector(
+      ".farm-philosophy__grid > div:first-child",
+    );
+    const values = section.querySelectorAll(".farm-philosophy__values > div");
+
+    const ctx = gsap.context(() => {
+      gsap.set(intro, {
+        opacity: 0,
+        x: -40,
+      });
+
+      gsap.set(values, {
+        opacity: 0,
+        x: 40,
+      });
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 75%",
+            once: true,
+          },
+          defaults: {
+            ease: "power3.out",
+          },
+        })
+        .to(intro, {
+          opacity: 1,
+          x: 0,
+          duration: 0.8,
+        })
+        .to(
+          values,
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.65,
+            stagger: 0.12,
+          },
+          "-=0.45",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = farmCtaRef.current;
+
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const content = section.querySelector(".farm-cta__content");
+    const eyebrow = content.querySelector(":scope > span");
+    const heading = content.querySelector("h2");
+    const actions = content.querySelector("a");
+
+    const ctx = gsap.context(() => {
+      gsap.set(content, {
+        opacity: 0,
+        y: 30,
+      });
+
+      gsap.set([eyebrow, heading, actions], {
+        opacity: 0,
+        y: 20,
+      });
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: "top 80%",
+            once: true,
+          },
+          defaults: {
+            ease: "power3.out",
+          },
+        })
+        .to(content, {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+        })
+        .to(
+          eyebrow,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.5,
+          },
+          "-=0.35",
+        )
+        .to(
+          heading,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+          },
+          "-=0.25",
+        )
+        .to(
+          actions,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.55,
+          },
+          "-=0.2",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <main className="farm-page">
       <PageMeta
@@ -72,7 +610,7 @@ function Farm() {
       />
       {/* Hero */}
 
-      <section className="farm-hero">
+      <section ref={farmHeroRef} className="farm-hero">
         <div className="farm-hero__image">
           <img src={mustardCultivation} alt="Countryside farm landscape" />
         </div>
@@ -97,7 +635,7 @@ function Farm() {
 
       {/* Introduction */}
 
-      <section className="farm-introduction section">
+      <section ref={farmIntroductionRef} className="farm-introduction section">
         <div className="container farm-introduction__grid">
           <div className="farm-introduction__image">
             <img
@@ -130,7 +668,7 @@ function Farm() {
 
       {/* Projects */}
 
-      <section className="farm-projects section">
+      <section ref={farmProjectsRef} className="farm-projects section">
         <div className="container">
           <div className="farm-projects__header">
             <SectionHeading
@@ -150,7 +688,7 @@ function Farm() {
 
       {/* What We Grow */}
 
-      <section className="farm-grow section">
+      <section ref={farmGrowRef} className="farm-grow section">
         <div className="container">
           <SectionHeading
             eyebrow="W H A T &nbsp; W E &nbsp; G R O W"
@@ -200,7 +738,7 @@ function Farm() {
       {/* Investment Opportunities */}
 
       {investmentOpportunities.length > 0 && (
-        <section className="farm-investment section">
+        <section ref={farmInvestmentRef} className="farm-investment section">
           <div className="container">
             <div className="farm-investment__grid">
               {/* Project Image */}
@@ -332,7 +870,7 @@ function Farm() {
 
       {/* Farm Gallery */}
 
-      <section className="farm-gallery section">
+      <section ref={farmGalleryRef} className="farm-gallery section">
         <div className="container">
           <div className="farm-gallery__header">
             <SectionHeading
@@ -359,7 +897,7 @@ function Farm() {
 
       {/* Philosophy */}
 
-      <section className="farm-philosophy section">
+      <section ref={farmPhilosophyRef} className="farm-philosophy section">
         <div className="container">
           <div className="farm-philosophy__grid">
             <div>
@@ -408,7 +946,7 @@ function Farm() {
 
       {/* CTA */}
 
-      <section className="farm-cta">
+      <section ref={farmCtaRef} className="farm-cta">
         <div className="container farm-cta__content">
           <span>C O M E &nbsp; S E E &nbsp; T H E &nbsp; F A R M</span>
 

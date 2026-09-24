@@ -1,10 +1,86 @@
 import { Link } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import "./Footer.css";
 
+gsap.registerPlugin(ScrollTrigger);
+
 function Footer() {
+  const footerRef = useRef(null);
+
+  useEffect(() => {
+    const footer = footerRef.current;
+
+    if (!footer) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) return;
+
+    const mainItems = footer.querySelectorAll(
+      ".footer__brand, .footer__column",
+    );
+    const newsletter = footer.querySelector(".footer__newsletter");
+    const bottom = footer.querySelector(".footer__bottom");
+
+    const ctx = gsap.context(() => {
+      gsap.set(mainItems, {
+        opacity: 0,
+        y: 25,
+      });
+
+      gsap.set([newsletter, bottom], {
+        opacity: 0,
+        y: 30,
+      });
+
+      const timeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: footer,
+          start: "top 85%",
+          once: true,
+        },
+        defaults: {
+          ease: "power3.out",
+        },
+      });
+
+      timeline
+        .to(mainItems, {
+          opacity: 1,
+          y: 0,
+          duration: 0.65,
+          stagger: 0.08,
+        })
+        .to(
+          newsletter,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+          },
+          "-=0.45",
+        )
+        .to(
+          bottom,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+          },
+          "-=0.4",
+        );
+    }, footer);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <footer className="footer">
+    <footer ref={footerRef} className="footer">
       <div className="container">
         {/* ========================================
             MAIN FOOTER

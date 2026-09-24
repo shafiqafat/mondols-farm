@@ -1,4 +1,7 @@
 import { Link } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import PageMeta from "../components/PageMeta";
 import {
@@ -10,11 +13,200 @@ import investHero from "../assets/image/hero/invest-hero.png";
 
 import "./Invest.css";
 
+gsap.registerPlugin(ScrollTrigger);
+
 function Invest() {
+  const investHeroRef = useRef(null);
+  const opportunitiesRef = useRef(null);
+  const upcomingRef = useRef(null);
+  const processRef = useRef(null);
+  const ctaRef = useRef(null);
   const opportunities = getOpenInvestmentOpportunities();
   const upcomingOpportunities = getInvestmentOpportunities().filter(
     (opportunity) => opportunity.status === "COMING_SOON",
   );
+
+  useEffect(() => {
+    const section = investHeroRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const image = section.querySelector(".invest-hero__image img");
+    const overlay = section.querySelector(".invest-hero__overlay");
+    const back = section.querySelector(".invest-hero__back");
+    const eyebrow = section.querySelector(".invest-hero__eyebrow");
+    const heading = section.querySelector("h1");
+    const paragraph = section.querySelector("p");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { scale: 1.08 });
+      gsap.set(overlay, { opacity: 0 });
+      gsap.set([back, eyebrow, heading, paragraph], { opacity: 0, y: 24 });
+
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .to(image, { scale: 1.03, duration: 1.5, ease: "power2.out" })
+        .to(overlay, { opacity: 1, duration: 0.8 }, 0.1)
+        .to(back, { opacity: 1, y: 0, duration: 0.5 }, 0.2)
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.25")
+        .to(heading, { opacity: 1, y: 0, duration: 0.8 }, "-=0.2")
+        .to(paragraph, { opacity: 1, y: 0, duration: 0.65 }, "-=0.2");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = opportunitiesRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const header = section.querySelector(".invest-opportunities__header");
+    const cards = section.querySelectorAll(".invest-opportunity");
+    const empty = section.querySelector(".invest-empty");
+
+    const ctx = gsap.context(() => {
+      gsap.set(header, { opacity: 0, y: 25 });
+
+      if (cards.length) {
+        gsap.set(cards, { opacity: 0, y: 45 });
+      }
+
+      if (empty) {
+        gsap.set(empty, { opacity: 0, y: 35 });
+      }
+
+      const timeline = gsap.timeline({
+        scrollTrigger: { trigger: section, start: "top 75%", once: true },
+        defaults: { ease: "power3.out" },
+      });
+
+      timeline.to(header, { opacity: 1, y: 0, duration: 0.7 });
+
+      if (cards.length) {
+        timeline.to(
+          cards,
+          { opacity: 1, y: 0, duration: 0.8, stagger: 0.14 },
+          "-=0.25",
+        );
+      }
+
+      if (empty) {
+        timeline.to(empty, { opacity: 1, y: 0, duration: 0.7 }, "-=0.2");
+      }
+    }, section);
+
+    return () => ctx.revert();
+  }, [opportunities.length]);
+
+  useEffect(() => {
+    const section = upcomingRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const header = section.querySelector(".invest-upcoming__header");
+    const cards = section.querySelectorAll(".invest-opportunity");
+
+    const ctx = gsap.context(() => {
+      gsap.set(header, { opacity: 0, y: 25 });
+      gsap.set(cards, { opacity: 0, y: 45 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(header, { opacity: 1, y: 0, duration: 0.7 })
+        .to(
+          cards,
+          { opacity: 1, y: 0, duration: 0.8, stagger: 0.14 },
+          "-=0.25",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, [upcomingOpportunities.length]);
+
+  useEffect(() => {
+    const section = processRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const intro = section.querySelector(
+      ".invest-process__grid > div:first-child",
+    );
+    const steps = section.querySelectorAll(".invest-process__step");
+
+    const ctx = gsap.context(() => {
+      gsap.set(intro, { opacity: 0, x: -40 });
+      gsap.set(steps, { opacity: 0, x: 40 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(intro, { opacity: 1, x: 0, duration: 0.8 })
+        .to(
+          steps,
+          { opacity: 1, x: 0, duration: 0.65, stagger: 0.12 },
+          "-=0.45",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = ctaRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const content = section.querySelector(".invest-cta__content");
+    const eyebrow = section.querySelector(".invest-cta__eyebrow");
+    const heading = section.querySelector("h2");
+    const paragraph = section.querySelector("p");
+    const link = section.querySelector(".invest-cta__link");
+
+    const ctx = gsap.context(() => {
+      gsap.set(section, { backgroundSize: "108% auto" });
+      gsap.set(content, { opacity: 0, y: 30 });
+      gsap.set([eyebrow, heading, paragraph, link], { opacity: 0, y: 20 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 80%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(section, {
+          backgroundSize: "100% auto",
+          duration: 1.4,
+          ease: "power2.out",
+        })
+        .to(content, { opacity: 1, y: 0, duration: 0.7 }, 0.15)
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.35")
+        .to(heading, { opacity: 1, y: 0, duration: 0.75 }, "-=0.2")
+        .to(paragraph, { opacity: 1, y: 0, duration: 0.6 }, "-=0.2")
+        .to(link, { opacity: 1, y: 0, duration: 0.55 }, "-=0.15");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
 
   return (
     <main className="invest-page">
@@ -25,7 +217,7 @@ function Invest() {
 
       {/* HERO */}
 
-      <section className="invest-hero">
+      <section ref={investHeroRef} className="invest-hero">
         <div className="invest-hero__image">
           <img src={investHero} alt="Countryside farm landscape" />
         </div>
@@ -56,7 +248,7 @@ function Invest() {
 
       {/* OPPORTUNITIES */}
 
-      <section className="invest-opportunities section">
+      <section ref={opportunitiesRef} className="invest-opportunities section">
         <div className="container">
           <div className="invest-opportunities__header">
             <div>
@@ -113,7 +305,7 @@ function Invest() {
       {/* UPCOMING OPPORTUNITIES */}
 
       {upcomingOpportunities.length > 0 && (
-        <section className="invest-upcoming section">
+        <section ref={upcomingRef} className="invest-upcoming section">
           <div className="container">
             <div className="invest-upcoming__header">
               <div>
@@ -148,7 +340,7 @@ function Invest() {
 
       {/* HOW IT WORKS */}
 
-      <section className="invest-process section">
+      <section ref={processRef} className="invest-process section">
         <div className="container">
           <div className="invest-process__grid">
             <div>
@@ -211,6 +403,7 @@ function Invest() {
 
       {/* FINAL CTA */}
       <section
+        ref={ctaRef}
         className="invest-cta"
         style={{ backgroundImage: `url(${investHero})` }}
       >

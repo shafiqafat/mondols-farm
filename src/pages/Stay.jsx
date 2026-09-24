@@ -1,4 +1,7 @@
 import { Link } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import SectionHeading from "../components/SectionHeading";
 import StayCard from "../components/StayCard";
@@ -8,7 +11,225 @@ import PageMeta from "../components/PageMeta";
 
 import "./Stay.css";
 
+gsap.registerPlugin(ScrollTrigger);
+
 function Stay() {
+  const stayHeroRef = useRef(null);
+  const stayIntroRef = useRef(null);
+  const stayAccommodationRef = useRef(null);
+  const stayExpectRef = useRef(null);
+  const stayExperiencesRef = useRef(null);
+  const guestJourneyRef = useRef(null);
+  const stayCtaRef = useRef(null);
+
+  useEffect(() => {
+    const hero = stayHeroRef.current;
+    if (!hero) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const image = hero.querySelector(".stay-hero__image img");
+    const overlay = hero.querySelector(".stay-hero__overlay");
+    const eyebrow = hero.querySelector(".stay-hero__eyebrow");
+    const heading = hero.querySelector("h1");
+    const paragraph = hero.querySelector("p");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { scale: 1.08 });
+      gsap.set(overlay, { opacity: 0 });
+      gsap.set([eyebrow, heading, paragraph], { opacity: 0, y: 30 });
+
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .to(image, { scale: 1.05, duration: 1.5, ease: "power2.out" })
+        .to(overlay, { opacity: 0.55, duration: 0.8 }, 0.1)
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.6 }, 0.35)
+        .to(heading, { opacity: 1, y: 0, duration: 0.8 }, 0.48)
+        .to(paragraph, { opacity: 1, y: 0, duration: 0.7 }, 0.68);
+    }, hero);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = stayIntroRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const image = section.querySelector(".stay-intro__image");
+    const content = section.querySelector(".stay-intro__content");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { opacity: 0, x: -40 });
+      gsap.set(content, { opacity: 0, x: 40 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(image, { opacity: 1, x: 0, duration: 0.9 })
+        .to(content, { opacity: 1, x: 0, duration: 0.8 }, "-=0.55");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = stayAccommodationRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const heading = section.querySelector(".section-heading");
+    const cards = section.querySelectorAll(".stay-card");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { opacity: 0, y: 25 });
+      gsap.set(cards, { opacity: 0, y: 45 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+        .to(
+          cards,
+          { opacity: 1, y: 0, duration: 0.75, stagger: 0.12 },
+          "-=0.35",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = stayExpectRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const heading = section.querySelector(".stay-expect__heading");
+    const items = section.querySelectorAll(".stay-expect__item");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { opacity: 0, x: -40 });
+      gsap.set(items, { opacity: 0, x: 40 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(heading, { opacity: 1, x: 0, duration: 0.8 })
+        .to(
+          items,
+          { opacity: 1, x: 0, duration: 0.65, stagger: 0.12 },
+          "-=0.45",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = stayExperiencesRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const image = section.querySelector(".stay-experiences__image");
+    const content = section.querySelector(".stay-experiences__content");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { opacity: 0, x: -40 });
+      gsap.set(content, { opacity: 0, x: 40 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(image, { opacity: 1, x: 0, duration: 0.9 })
+        .to(content, { opacity: 1, x: 0, duration: 0.8 }, "-=0.55");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = guestJourneyRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const heading = section.querySelector(".section-heading");
+    const steps = section.querySelectorAll(".guest-journey__step");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { opacity: 0, y: 25 });
+      gsap.set(steps, { opacity: 0, y: 35 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+        .to(steps, { opacity: 1, y: 0, duration: 0.65, stagger: 0.1 }, "-=0.3");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = stayCtaRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const image = section.querySelector(".stay-cta__image img");
+    const overlay = section.querySelector(".stay-cta__overlay");
+    const content = section.querySelector(".stay-cta__content");
+    const eyebrow = content.querySelector(":scope > span");
+    const heading = content.querySelector("h2");
+    const button = content.querySelector("a");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { scale: 1.08 });
+      gsap.set(overlay, { opacity: 0 });
+      gsap.set(content, { opacity: 0, y: 30 });
+      gsap.set([eyebrow, heading, button], { opacity: 0, y: 20 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 80%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(image, { scale: 1.03, duration: 1.4, ease: "power2.out" })
+        .to(overlay, { opacity: 1, duration: 0.8 }, 0.1)
+        .to(content, { opacity: 1, y: 0, duration: 0.7 }, 0.2)
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.35")
+        .to(heading, { opacity: 1, y: 0, duration: 0.7 }, "-=0.25")
+        .to(button, { opacity: 1, y: 0, duration: 0.55 }, "-=0.2");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <main className="stay-page">
       <PageMeta
@@ -19,7 +240,7 @@ function Stay() {
           HERO
       ======================================== */}
 
-      <section className="stay-hero">
+      <section ref={stayHeroRef} className="stay-hero">
         <div className="stay-hero__image">
           <img src={mudHouse} alt="Countryside accommodation" />
         </div>
@@ -48,7 +269,7 @@ function Stay() {
           INTRO
       ======================================== */}
 
-      <section className="stay-intro section">
+      <section ref={stayIntroRef} className="stay-intro section">
         <div className="container stay-intro__grid">
           <div className="stay-intro__image">
             <img
@@ -86,7 +307,10 @@ function Stay() {
           ACCOMMODATION
       ======================================== */}
 
-      <section className="stay-accommodation section">
+      <section
+        ref={stayAccommodationRef}
+        className="stay-accommodation section"
+      >
         <div className="container">
           <div className="stay-accommodation__header">
             <SectionHeading
@@ -108,7 +332,7 @@ function Stay() {
           WHAT TO EXPECT
       ======================================== */}
 
-      <section className="stay-expect section">
+      <section ref={stayExpectRef} className="stay-expect section">
         <div className="container">
           <div className="stay-expect__layout">
             <div className="stay-expect__heading">
@@ -183,7 +407,7 @@ function Stay() {
           EXPERIENCES
       ======================================== */}
 
-      <section className="stay-experiences section">
+      <section ref={stayExperiencesRef} className="stay-experiences section">
         <div className="container stay-experiences__grid">
           <div className="stay-experiences__image">
             <img
@@ -222,7 +446,7 @@ function Stay() {
           GUEST JOURNEY
       ======================================== */}
 
-      <section className="guest-journey section">
+      <section ref={guestJourneyRef} className="guest-journey section">
         <div className="container">
           <div className="guest-journey__header">
             <SectionHeading
@@ -296,7 +520,7 @@ function Stay() {
           CTA
       ======================================== */}
 
-      <section className="stay-cta">
+      <section ref={stayCtaRef} className="stay-cta">
         <div className="stay-cta__image">
           <img
             src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"

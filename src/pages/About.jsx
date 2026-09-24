@@ -1,9 +1,245 @@
 import { Link } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import PageMeta from "../components/PageMeta";
 
 import "./About.css";
 
+gsap.registerPlugin(ScrollTrigger);
+
 function About() {
+  const aboutHeroRef = useRef(null);
+  const aboutStoryRef = useRef(null);
+  const aboutPhilosophyRef = useRef(null);
+  const aboutValuesRef = useRef(null);
+  const aboutTimelineRef = useRef(null);
+  const aboutVisionRef = useRef(null);
+  const aboutCtaRef = useRef(null);
+  useEffect(() => {
+    const hero = aboutHeroRef.current;
+    if (!hero || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
+
+    const image = hero.querySelector(".about-hero__image img");
+    const overlay = hero.querySelector(".about-hero__overlay");
+    const eyebrow = hero.querySelector(".about-hero__eyebrow");
+    const heading = hero.querySelector("h1");
+    const paragraph = hero.querySelector("p");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { scale: 1.08 });
+      gsap.set(overlay, { opacity: 0 });
+      gsap.set([eyebrow, heading, paragraph], { opacity: 0, y: 30 });
+
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .to(image, { scale: 1.05, duration: 1.5, ease: "power2.out" })
+        .to(overlay, { opacity: 1, duration: 0.8 }, 0.1)
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.6 }, 0.35)
+        .to(heading, { opacity: 1, y: 0, duration: 0.8 }, 0.48)
+        .to(paragraph, { opacity: 1, y: 0, duration: 0.7 }, 0.68);
+    }, hero);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = aboutStoryRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const image = section.querySelector(".about-story__image");
+    const content = section.querySelector(".about-story__content");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { opacity: 0, x: -40 });
+      gsap.set(content, { opacity: 0, x: 40 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(image, { opacity: 1, x: 0, duration: 0.9 })
+        .to(content, { opacity: 1, x: 0, duration: 0.8 }, "-=0.55");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = aboutPhilosophyRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const heading = section.querySelector(".about-philosophy__heading");
+    const text = section.querySelector(".about-philosophy__text");
+    const paragraphs = section.querySelectorAll(".about-philosophy__text p");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { opacity: 0, x: -40 });
+      gsap.set(text, { opacity: 0, x: 40 });
+      gsap.set(paragraphs, { opacity: 0, y: 20 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(heading, { opacity: 1, x: 0, duration: 0.8 })
+        .to(text, { opacity: 1, x: 0, duration: 0.75 }, "-=0.55")
+        .to(
+          paragraphs,
+          { opacity: 1, y: 0, duration: 0.55, stagger: 0.1 },
+          "-=0.4",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = aboutValuesRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const heading = section.querySelector(".about-section-heading");
+    const values = section.querySelectorAll(".about-values__grid article");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { opacity: 0, y: 25 });
+      gsap.set(values, { opacity: 0, y: 40 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+        .to(
+          values,
+          { opacity: 1, y: 0, duration: 0.65, stagger: 0.12 },
+          "-=0.3",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = aboutTimelineRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const heading = section.querySelector(".about-section-heading");
+    const items = section.querySelectorAll(".about-timeline__item");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { opacity: 0, y: 25 });
+      gsap.set(items, { opacity: 0, x: 40 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+        .to(
+          items,
+          { opacity: 1, x: 0, duration: 0.65, stagger: 0.12 },
+          "-=0.3",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = aboutVisionRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const content = section.querySelector(".about-vision__content");
+    const eyebrow = content.querySelector(":scope > span");
+    const heading = content.querySelector("h2");
+    const paragraph = content.querySelector("p");
+
+    const ctx = gsap.context(() => {
+      gsap.set(content, { opacity: 0, y: 30 });
+      gsap.set([eyebrow, heading, paragraph], { opacity: 0, y: 20 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 80%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(content, { opacity: 1, y: 0, duration: 0.7 })
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.35")
+        .to(heading, { opacity: 1, y: 0, duration: 0.75 }, "-=0.25")
+        .to(paragraph, { opacity: 1, y: 0, duration: 0.65 }, "-=0.25");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = aboutCtaRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const image = section.querySelector(".about-cta__image img");
+    const overlay = section.querySelector(".about-cta__overlay");
+    const content = section.querySelector(".about-cta__content");
+    const eyebrow = content.querySelector(":scope > span");
+    const heading = content.querySelector("h2");
+    const buttons = content.querySelectorAll(".about-cta__buttons .button");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { scale: 1.08 });
+      gsap.set(overlay, { opacity: 0 });
+      gsap.set(content, { opacity: 0, y: 30 });
+      gsap.set([eyebrow, heading], { opacity: 0, y: 20 });
+      gsap.set(buttons, { opacity: 0, y: 20 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 80%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(image, { scale: 1.03, duration: 1.4, ease: "power2.out" })
+        .to(overlay, { opacity: 1, duration: 0.8 }, 0.1)
+        .to(content, { opacity: 1, y: 0, duration: 0.7 }, 0.2)
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.35")
+        .to(heading, { opacity: 1, y: 0, duration: 0.7 }, "-=0.25")
+        .to(
+          buttons,
+          { opacity: 1, y: 0, duration: 0.55, stagger: 0.1 },
+          "-=0.2",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <main className="about-page">
       <PageMeta
@@ -14,7 +250,7 @@ function About() {
           HERO
       ======================================== */}
 
-      <section className="about-hero">
+      <section ref={aboutHeroRef} className="about-hero">
         <div className="about-hero__image">
           <img
             src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"
@@ -47,7 +283,7 @@ function About() {
           OUR STORY
       ======================================== */}
 
-      <section className="about-story section">
+      <section ref={aboutStoryRef} className="about-story section">
         <div className="container about-story__grid">
           <div className="about-story__image">
             <img
@@ -87,7 +323,7 @@ function About() {
           PHILOSOPHY
       ======================================== */}
 
-      <section className="about-philosophy section">
+      <section ref={aboutPhilosophyRef} className="about-philosophy section">
         <div className="container">
           <div className="about-philosophy__heading">
             <span className="about-eyebrow">
@@ -126,7 +362,7 @@ function About() {
           VALUES
       ======================================== */}
 
-      <section className="about-values section">
+      <section ref={aboutValuesRef} className="about-values section">
         <div className="container">
           <div className="about-section-heading">
             <span className="about-eyebrow">
@@ -190,7 +426,7 @@ function About() {
           TIMELINE
       ======================================== */}
 
-      <section className="about-timeline section">
+      <section ref={aboutTimelineRef} className="about-timeline section">
         <div className="container">
           <div className="about-section-heading">
             <span className="about-eyebrow">T H E &nbsp; J O U R N E Y</span>
@@ -270,7 +506,7 @@ function About() {
           VISION
       ======================================== */}
 
-      <section className="about-vision">
+      <section ref={aboutVisionRef} className="about-vision">
         <div className="about-vision__overlay"></div>
 
         <div className="container about-vision__content">
@@ -294,7 +530,7 @@ function About() {
           CTA
       ======================================== */}
 
-      <section className="about-cta">
+      <section ref={aboutCtaRef} className="about-cta">
         <div className="about-cta__image">
           <img
             src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"

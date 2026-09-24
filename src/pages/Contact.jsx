@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import stays from "../data/stays";
 import contactHero from "../assets/image/experiences/river.jpg";
@@ -11,7 +13,14 @@ import { getInvestmentOpportunityBySlug } from "../data/investmentUtils";
 
 import "./Contact.css";
 
+gsap.registerPlugin(ScrollTrigger);
+
 function Contact() {
+  const contactHeroRef = useRef(null);
+  const contactInfoRef = useRef(null);
+  const contactFormRef = useRef(null);
+  const contactLocationRef = useRef(null);
+  const contactCtaRef = useRef(null);
   const [searchParams] = useSearchParams();
   const [submitted, setSubmitted] = useState(false);
   const [checkIn, setCheckIn] = useState("");
@@ -19,7 +28,7 @@ function Contact() {
   const product = searchParams.get("product");
   const stay = searchParams.get("stay");
   const investment = searchParams.get("investment");
-  
+
   const selectedStay = stays.find((item) => item.name === stay);
   const selectedInvestment = investment
     ? getInvestmentOpportunityBySlug(investment)
@@ -85,6 +94,189 @@ function Contact() {
     setSubmitted(true);
   };
 
+  useEffect(() => {
+    const hero = contactHeroRef.current;
+    if (!hero || window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
+
+    const image = hero.querySelector(".contact-hero__image img");
+    const overlay = hero.querySelector(".contact-hero__overlay");
+    const inner = hero.querySelector(".contact-hero__inner");
+    const eyebrow = inner.querySelector(":scope > span");
+    const heading = inner.querySelector("h1");
+    const paragraph = inner.querySelector("p");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { scale: 1.08 });
+      gsap.set(overlay, { opacity: 0 });
+      gsap.set(inner, { opacity: 0, y: 30 });
+      gsap.set([eyebrow, heading, paragraph], { opacity: 0, y: 20 });
+
+      gsap
+        .timeline({ defaults: { ease: "power3.out" } })
+        .to(image, { scale: 1.03, duration: 1.5, ease: "power2.out" })
+        .to(overlay, { opacity: 1, duration: 0.8 }, 0.1)
+        .to(inner, { opacity: 1, y: 0, duration: 0.7 }, 0.2)
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.35")
+        .to(heading, { opacity: 1, y: 0, duration: 0.8 }, "-=0.25")
+        .to(paragraph, { opacity: 1, y: 0, duration: 0.65 }, "-=0.25");
+    }, hero);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = contactInfoRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const intro = section.querySelector(".contact-info__intro");
+    const details = section.querySelectorAll(".contact-detail");
+
+    const ctx = gsap.context(() => {
+      gsap.set(intro, { opacity: 0, x: -40 });
+      gsap.set(details, { opacity: 0, x: 40 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(intro, { opacity: 1, x: 0, duration: 0.8 })
+        .to(
+          details,
+          { opacity: 1, x: 0, duration: 0.65, stagger: 0.1 },
+          "-=0.5",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = contactFormRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const heading = section.querySelector(".contact-form__heading");
+    const form = section.querySelector(".contact-form");
+    const product = section.querySelector(".contact-form__product");
+    const investment = section.querySelector(".contact-form__investment");
+    const fields = section.querySelectorAll(".contact-field");
+    const button = section.querySelector(".contact-form > .button");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { opacity: 0, x: -40 });
+      gsap.set(form, { opacity: 0, x: 40 });
+
+      const contextual = [product, investment].filter(Boolean);
+      if (contextual.length) {
+        gsap.set(contextual, { opacity: 0, y: 20 });
+      }
+
+      gsap.set(fields, { opacity: 0, y: 20 });
+      gsap.set(button, { opacity: 0, y: 20 });
+
+      const timeline = gsap.timeline({
+        scrollTrigger: { trigger: section, start: "top 75%", once: true },
+        defaults: { ease: "power3.out" },
+      });
+
+      timeline
+        .to(heading, { opacity: 1, x: 0, duration: 0.8 })
+        .to(form, { opacity: 1, x: 0, duration: 0.7 }, "-=0.55");
+
+      if (contextual.length) {
+        timeline.to(
+          contextual,
+          { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 },
+          "-=0.35",
+        );
+      }
+
+      timeline
+        .to(fields, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 }, "-=0.3")
+        .to(button, { opacity: 1, y: 0, duration: 0.55 }, "-=0.2");
+    }, section);
+
+    return () => ctx.revert();
+  }, [product, selectedInvestment, stay]);
+
+  useEffect(() => {
+    const section = contactLocationRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const heading = section.querySelector(".contact-location__heading");
+    const map = section.querySelector(".contact-location__map");
+
+    const ctx = gsap.context(() => {
+      gsap.set(heading, { opacity: 0, y: 25 });
+      gsap.set(map, { opacity: 0, y: 35, scale: 0.98 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 75%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+        .to(map, { opacity: 1, y: 0, scale: 1, duration: 0.9 }, "-=0.3");
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    const section = contactCtaRef.current;
+    if (
+      !section ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+
+    const image = section.querySelector(".contact-cta__image img");
+    const overlay = section.querySelector(".contact-cta__overlay");
+    const content = section.querySelector(".container");
+    const eyebrow = content.querySelector(":scope > span");
+    const heading = content.querySelector("h2");
+    const buttons = content.querySelectorAll(".contact-cta__buttons .button");
+
+    const ctx = gsap.context(() => {
+      gsap.set(image, { scale: 1.08 });
+      gsap.set(overlay, { opacity: 0 });
+      gsap.set(content, { opacity: 0, y: 30 });
+      gsap.set([eyebrow, heading], { opacity: 0, y: 20 });
+      gsap.set(buttons, { opacity: 0, y: 20 });
+
+      gsap
+        .timeline({
+          scrollTrigger: { trigger: section, start: "top 80%", once: true },
+          defaults: { ease: "power3.out" },
+        })
+        .to(image, { scale: 1.03, duration: 1.4, ease: "power2.out" })
+        .to(overlay, { opacity: 1, duration: 0.8 }, 0.1)
+        .to(content, { opacity: 1, y: 0, duration: 0.7 }, 0.2)
+        .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.35")
+        .to(heading, { opacity: 1, y: 0, duration: 0.7 }, "-=0.25")
+        .to(
+          buttons,
+          { opacity: 1, y: 0, duration: 0.55, stagger: 0.1 },
+          "-=0.2",
+        );
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
     <main className="contact-page">
       <PageMeta
@@ -95,7 +287,7 @@ function Contact() {
           HERO
       ======================================== */}
 
-      <section className="contact-hero">
+      <section ref={contactHeroRef} className="contact-hero">
         <div className="contact-hero__image">
           <img
             src={contactHero}
@@ -129,7 +321,7 @@ function Contact() {
           CONTACT INFORMATION
       ======================================== */}
 
-      <section className="contact-info section">
+      <section ref={contactInfoRef} className="contact-info section">
         <div className="container">
           <div className="contact-info__grid">
             <div className="contact-info__intro">
@@ -184,7 +376,7 @@ function Contact() {
           FORM
       ======================================== */}
 
-      <section className="contact-form-section section">
+      <section ref={contactFormRef} className="contact-form-section section">
         <div className="container">
           <div className="contact-form__grid">
             <div className="contact-form__heading">
@@ -408,7 +600,7 @@ function Contact() {
           MAP
       ======================================== */}
 
-      <section className="contact-location">
+      <section ref={contactLocationRef} className="contact-location">
         <div className="container">
           <div className="contact-location__heading">
             <span className="contact-eyebrow">F I N D &nbsp; U S</span>
@@ -436,7 +628,7 @@ function Contact() {
           CTA
       ======================================== */}
 
-      <section className="contact-cta">
+      <section ref={contactCtaRef} className="contact-cta">
         <div className="contact-cta__image">
           <img
             src={contactCta}

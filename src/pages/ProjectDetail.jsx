@@ -1,4 +1,7 @@
 import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import projects from "../data/projects";
 import PageMeta from "../components/PageMeta";
 import "./ProjectDetail.css";
@@ -7,6 +10,239 @@ function ProjectDetail() {
   const { slug } = useParams();
 
   const project = projects.find((item) => item.slug === slug);
+
+  const mainRef = useRef(null);
+  const heroRef = useRef(null);
+  const informationRef = useRef(null);
+  const storyRef = useRef(null);
+  const approachRef = useRef(null);
+  const farmRef = useRef(null);
+  const relatedRef = useRef(null);
+  const ctaRef = useRef(null);
+
+  useEffect(() => {
+    if (!project || !mainRef.current) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const ctx = gsap.context(() => {
+      // Project opening
+      const hero = heroRef.current;
+      if (hero) {
+        const back = hero.querySelector(".project-detail__back");
+        const image = hero.querySelector(".project-detail__image");
+        const content = hero.querySelector(".project-detail__content");
+        const category = hero.querySelector(".project-detail__category");
+        const heading = hero.querySelector("h1");
+        const description = hero.querySelector(".project-detail__description");
+        const status = hero.querySelector(".project-detail__status");
+        const intro = hero.querySelector(".project-detail__intro");
+
+        gsap.set(back, { opacity: 0, y: 18 });
+        gsap.set(image, { opacity: 0, x: -45, scale: 1.04 });
+        gsap.set(content, { opacity: 0, x: 45 });
+        gsap.set([category, heading, description, status, intro], {
+          opacity: 0,
+          y: 20,
+        });
+
+        gsap
+          .timeline({ defaults: { ease: "power3.out" } })
+          .to(back, { opacity: 1, y: 0, duration: 0.5 })
+          .to(image, { opacity: 1, x: 0, scale: 1, duration: 1 }, "-=0.25")
+          .to(content, { opacity: 1, x: 0, duration: 0.8 }, "-=0.7")
+          .to(category, { opacity: 1, y: 0, duration: 0.4 }, "-=0.4")
+          .to(heading, { opacity: 1, y: 0, duration: 0.75 }, "-=0.2")
+          .to(description, { opacity: 1, y: 0, duration: 0.55 }, "-=0.2")
+          .to(status, { opacity: 1, y: 0, duration: 0.4 }, "-=0.15")
+          .to(intro, { opacity: 1, y: 0, duration: 0.6 }, "-=0.15");
+      }
+
+      // Project facts
+      const information = informationRef.current;
+      if (information) {
+        const header = information.querySelector(
+          ".project-detail__information-header",
+        );
+        const facts = information.querySelectorAll(
+          ".project-detail__facts > div",
+        );
+
+        gsap.set(header, { opacity: 0, y: 25 });
+        gsap.set(facts, { opacity: 0, y: 30 });
+
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: information,
+              start: "top 75%",
+              once: true,
+            },
+            defaults: { ease: "power3.out" },
+          })
+          .to(header, { opacity: 1, y: 0, duration: 0.7 })
+          .to(
+            facts,
+            { opacity: 1, y: 0, duration: 0.55, stagger: 0.07 },
+            "-=0.25",
+          );
+      }
+
+      // Project story
+      const story = storyRef.current;
+      if (story) {
+        const label = story.querySelector(".project-detail__story-label");
+        const content = story.querySelector(".project-detail__story-content");
+        const paragraphs = story.querySelectorAll(
+          ".project-detail__story-content p",
+        );
+
+        gsap.set(label, { opacity: 0, x: -40 });
+        gsap.set(content, { opacity: 0, x: 40 });
+        gsap.set(paragraphs, { opacity: 0, y: 20 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: story, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(label, { opacity: 1, x: 0, duration: 0.7 })
+          .to(content, { opacity: 1, x: 0, duration: 0.75 }, "-=0.5")
+          .to(
+            paragraphs,
+            { opacity: 1, y: 0, duration: 0.55, stagger: 0.12 },
+            "-=0.3",
+          );
+      }
+
+      // How we work
+      const approach = approachRef.current;
+      if (approach) {
+        const intro = approach.querySelector(
+          ".project-detail__approach-grid > div:first-child",
+        );
+        const content = approach.querySelector(
+          ".project-detail__approach-content",
+        );
+        const methods = approach.querySelectorAll(
+          ".project-detail__methods > div",
+        );
+        const approachItems = approach.querySelectorAll(
+          ".project-detail__approach-list > div",
+        );
+
+        gsap.set(intro, { opacity: 0, x: -40 });
+        gsap.set(content, { opacity: 0, x: 40 });
+        gsap.set(methods, { opacity: 0, y: 25 });
+        gsap.set(approachItems, { opacity: 0, x: 25 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: approach, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(intro, { opacity: 1, x: 0, duration: 0.75 })
+          .to(content, { opacity: 1, x: 0, duration: 0.75 }, "-=0.55")
+          .to(
+            methods,
+            { opacity: 1, y: 0, duration: 0.5, stagger: 0.09 },
+            "-=0.3",
+          )
+          .to(
+            approachItems,
+            { opacity: 1, x: 0, duration: 0.5, stagger: 0.08 },
+            "-=0.2",
+          );
+      }
+
+      // Farm context
+      const farm = farmRef.current;
+      if (farm) {
+        const intro = farm.querySelector(
+          ".project-detail__farm-grid > div:first-child",
+        );
+        const content = farm.querySelector(".project-detail__farm-content");
+        const paragraphs = farm.querySelectorAll(
+          ".project-detail__farm-content p",
+        );
+
+        gsap.set(intro, { opacity: 0, x: -40 });
+        gsap.set(content, { opacity: 0, x: 40 });
+        gsap.set(paragraphs, { opacity: 0, y: 20 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: farm, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(intro, { opacity: 1, x: 0, duration: 0.75 })
+          .to(content, { opacity: 1, x: 0, duration: 0.75 }, "-=0.55")
+          .to(
+            paragraphs,
+            { opacity: 1, y: 0, duration: 0.55, stagger: 0.12 },
+            "-=0.3",
+          );
+      }
+
+      // Related projects
+      const related = relatedRef.current;
+      if (related) {
+        const header = related.querySelector(".project-detail__related-header");
+        const cards = related.querySelectorAll(".project-detail__related-card");
+
+        gsap.set(header, { opacity: 0, y: 25 });
+        gsap.set(cards, { opacity: 0, y: 40 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: related, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(header, { opacity: 1, y: 0, duration: 0.7 })
+          .to(
+            cards,
+            { opacity: 1, y: 0, duration: 0.65, stagger: 0.12 },
+            "-=0.25",
+          );
+      }
+
+      // Final CTA
+      const cta = ctaRef.current;
+      if (cta) {
+        const image = cta.querySelector(".project-detail__cta-image img");
+        const overlay = cta.querySelector(".project-detail__cta-overlay");
+        const content = cta.querySelector(".project-detail__cta-content");
+        const eyebrow = content?.querySelector(":scope > span");
+        const heading = content?.querySelector("h2");
+        const button = content?.querySelector(".button");
+
+        if (image && overlay && content && eyebrow && heading && button) {
+          gsap.set(image, { scale: 1.08 });
+          gsap.set(overlay, { opacity: 0 });
+          gsap.set(content, { opacity: 0, y: 30 });
+          gsap.set([eyebrow, heading, button], { opacity: 0, y: 20 });
+
+          gsap
+            .timeline({
+              scrollTrigger: { trigger: cta, start: "top 80%", once: true },
+              defaults: { ease: "power3.out" },
+            })
+            .to(image, { scale: 1.03, duration: 1.4, ease: "power2.out" })
+            .to(overlay, { opacity: 1, duration: 0.8 }, 0.1)
+            .to(content, { opacity: 1, y: 0, duration: 0.7 }, 0.2)
+            .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.35")
+            .to(heading, { opacity: 1, y: 0, duration: 0.75 }, "-=0.2")
+            .to(button, { opacity: 1, y: 0, duration: 0.55 }, "-=0.15");
+        }
+      }
+    }, mainRef);
+
+    return () => ctx.revert();
+  }, [project]);
 
   if (!project) {
     return (
@@ -61,14 +297,14 @@ function ProjectDetail() {
   ].filter((item) => item.value);
 
   return (
-    <main className="project-detail">
+    <main ref={mainRef} className="project-detail">
       <PageMeta title={project.title} description={project.description} />
-      
+
       {/* ========================================
           PROJECT INTRO
       ======================================== */}
 
-      <section className="project-detail__main section">
+      <section ref={heroRef} className="project-detail__main section">
         <div className="container">
           <Link to="/farm" className="project-detail__back">
             ← Back to Farm
@@ -106,7 +342,10 @@ function ProjectDetail() {
           PROJECT DETAILS
       ======================================== */}
 
-      <section className="project-detail__information section">
+      <section
+        ref={informationRef}
+        className="project-detail__information section"
+      >
         <div className="container">
           <div className="project-detail__information-header">
             <span> P R O J E C T &nbsp; D E T A I L S </span>
@@ -140,7 +379,7 @@ function ProjectDetail() {
           ABOUT THE PROJECT
       ======================================== */}
 
-      <section className="project-detail__story section">
+      <section ref={storyRef} className="project-detail__story section">
         <div className="container project-detail__story-grid">
           <div className="project-detail__story-label">
             <span>T H E &nbsp; P R O J E C T</span>
@@ -166,7 +405,7 @@ function ProjectDetail() {
       ======================================== */}
 
       {(methods.length > 0 || project.approach?.length > 0) && (
-        <section className="project-detail__approach section">
+        <section ref={approachRef} className="project-detail__approach section">
           <div className="container">
             <div className="project-detail__approach-grid">
               <div>
@@ -213,7 +452,7 @@ function ProjectDetail() {
           FARM CONTEXT
       ======================================== */}
 
-      <section className="project-detail__farm section">
+      <section ref={farmRef} className="project-detail__farm section">
         <div className="container project-detail__farm-grid">
           <div>
             <span className="project-detail__eyebrow">
@@ -245,7 +484,7 @@ function ProjectDetail() {
           RELATED PROJECTS
       ======================================== */}
 
-      <section className="project-detail__related section">
+      <section ref={relatedRef} className="project-detail__related section">
         <div className="container">
           <div className="project-detail__related-header">
             <div>
@@ -297,7 +536,7 @@ function ProjectDetail() {
           CTA
       ======================================== */}
 
-      <section className="project-detail__cta">
+      <section ref={ctaRef} className="project-detail__cta">
         <div className="project-detail__cta-image">
           <img
             src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=2000&q=85"

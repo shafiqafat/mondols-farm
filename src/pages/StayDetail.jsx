@@ -1,4 +1,7 @@
 import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import PageMeta from "../components/PageMeta";
 import stays from "../data/stays";
 
@@ -8,6 +11,249 @@ function StayDetail() {
   const { slug } = useParams();
 
   const stay = stays.find((item) => item.slug === slug);
+
+  const mainRef = useRef(null);
+  const heroRef = useRef(null);
+  const factsRef = useRef(null);
+  const aboutRef = useRef(null);
+  const servicesRef = useRef(null);
+  const practicalRef = useRef(null);
+  const highlightsRef = useRef(null);
+  const galleryRef = useRef(null);
+  const otherRef = useRef(null);
+  const ctaRef = useRef(null);
+
+  useEffect(() => {
+    if (!stay || !mainRef.current) return;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const ctx = gsap.context(() => {
+      // Opening: accommodation introduction
+      const hero = heroRef.current;
+      if (hero) {
+        const back = hero.querySelector(".stay-detail__back");
+        const image = hero.querySelector(".stay-detail__image");
+        const content = hero.querySelector(".stay-detail__content");
+        const category = hero.querySelector(".stay-detail__category");
+        const heading = hero.querySelector("h1");
+        const price = hero.querySelector(".stay-detail__price");
+        const description = hero.querySelector(".stay-detail__description");
+        const actions = hero.querySelector(".stay-detail__actions");
+
+        gsap.set(back, { opacity: 0, y: 18 });
+        gsap.set(image, { opacity: 0, x: -45, scale: 1.04 });
+        gsap.set(content, { opacity: 0, x: 45 });
+        gsap.set([category, heading, price, description, actions], {
+          opacity: 0,
+          y: 20,
+        });
+
+        gsap
+          .timeline({ defaults: { ease: "power3.out" } })
+          .to(back, { opacity: 1, y: 0, duration: 0.5 })
+          .to(image, { opacity: 1, x: 0, scale: 1, duration: 1 }, "-=0.25")
+          .to(content, { opacity: 1, x: 0, duration: 0.8 }, "-=0.7")
+          .to(category, { opacity: 1, y: 0, duration: 0.4 }, "-=0.4")
+          .to(heading, { opacity: 1, y: 0, duration: 0.75 }, "-=0.2")
+          .to(price, { opacity: 1, y: 0, duration: 0.45 }, "-=0.25")
+          .to(description, { opacity: 1, y: 0, duration: 0.55 }, "-=0.15")
+          .to(actions, { opacity: 1, y: 0, duration: 0.5 }, "-=0.15");
+      }
+
+      // House details / practical information
+      const factsSections = [factsRef.current, practicalRef.current];
+      factsSections.forEach((section) => {
+        if (!section) return;
+
+        const heading = section.querySelector(".stay-detail__section-heading");
+        const facts = section.querySelectorAll(".stay-detail__fact");
+
+        gsap.set(heading, { opacity: 0, y: 25 });
+        gsap.set(facts, { opacity: 0, y: 30 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: section, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+          .to(
+            facts,
+            { opacity: 1, y: 0, duration: 0.55, stagger: 0.08 },
+            "-=0.25",
+          );
+      });
+
+      // About the house
+      const about = aboutRef.current;
+      if (about) {
+        const label = about.querySelector(".stay-detail__about-label");
+        const content = about.querySelector(".stay-detail__about-content");
+        const paragraphs = about.querySelectorAll(
+          ".stay-detail__about-content p",
+        );
+
+        gsap.set(label, { opacity: 0, x: -40 });
+        gsap.set(content, { opacity: 0, x: 40 });
+        gsap.set(paragraphs, { opacity: 0, y: 20 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: about, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(label, { opacity: 1, x: 0, duration: 0.7 })
+          .to(content, { opacity: 1, x: 0, duration: 0.75 }, "-=0.5")
+          .to(
+            paragraphs,
+            { opacity: 1, y: 0, duration: 0.55, stagger: 0.12 },
+            "-=0.3",
+          );
+      }
+
+      // Services
+      const services = servicesRef.current;
+      if (services) {
+        const heading = services.querySelector(
+          ".stay-detail__services-heading",
+        );
+        const groups = services.querySelectorAll(".stay-detail__service-group");
+        const items = services.querySelectorAll(
+          ".stay-detail__service-group li",
+        );
+
+        gsap.set(heading, { opacity: 0, y: 25 });
+        gsap.set(groups, { opacity: 0, y: 35 });
+        gsap.set(items, { opacity: 0, x: 20 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: services, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+          .to(
+            groups,
+            { opacity: 1, y: 0, duration: 0.6, stagger: 0.12 },
+            "-=0.3",
+          )
+          .to(
+            items,
+            { opacity: 1, x: 0, duration: 0.4, stagger: 0.045 },
+            "-=0.25",
+          );
+      }
+
+      // Highlights
+      const highlights = highlightsRef.current;
+      if (highlights) {
+        const heading = highlights.querySelector(
+          ".stay-detail__highlights-heading",
+        );
+        const items = highlights.querySelectorAll(".stay-detail__highlight");
+
+        gsap.set(heading, { opacity: 0, y: 25 });
+        gsap.set(items, { opacity: 0, x: 35 });
+
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: highlights,
+              start: "top 75%",
+              once: true,
+            },
+            defaults: { ease: "power3.out" },
+          })
+          .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+          .to(
+            items,
+            { opacity: 1, x: 0, duration: 0.55, stagger: 0.1 },
+            "-=0.3",
+          );
+      }
+
+      // Gallery
+      const gallery = galleryRef.current;
+      if (gallery) {
+        const heading = gallery.querySelector(".stay-detail__gallery-heading");
+        const items = gallery.querySelectorAll(".stay-detail__gallery-item");
+
+        gsap.set(heading, { opacity: 0, y: 25 });
+        gsap.set(items, { opacity: 0, y: 35, scale: 0.97 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: gallery, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+          .to(
+            items,
+            { opacity: 1, y: 0, scale: 1, duration: 0.65, stagger: 0.09 },
+            "-=0.25",
+          );
+      }
+
+      // Other stays
+      const other = otherRef.current;
+      if (other) {
+        const heading = other.querySelector(".stay-detail__other-heading");
+        const cards = other.querySelectorAll(".stay-detail__other-card");
+
+        gsap.set(heading, { opacity: 0, y: 25 });
+        gsap.set(cards, { opacity: 0, y: 40 });
+
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: other, start: "top 75%", once: true },
+            defaults: { ease: "power3.out" },
+          })
+          .to(heading, { opacity: 1, y: 0, duration: 0.7 })
+          .to(
+            cards,
+            { opacity: 1, y: 0, duration: 0.65, stagger: 0.12 },
+            "-=0.25",
+          );
+      }
+
+      // Final CTA
+      const cta = ctaRef.current;
+      if (cta) {
+        const image = cta.querySelector(".stay-detail__cta-image");
+        const overlay = cta.querySelector(".stay-detail__cta-overlay");
+        const content = cta.querySelector(".stay-detail__cta-content");
+        const eyebrow = content?.querySelector(":scope > span");
+        const heading = content?.querySelector("h2");
+        const button = content?.querySelector(".button");
+
+        if (image && overlay && content && eyebrow && heading && button) {
+          gsap.set(image, { scale: 1.08 });
+          gsap.set(overlay, { opacity: 0 });
+          gsap.set(content, { opacity: 0, y: 30 });
+          gsap.set([eyebrow, heading, button], { opacity: 0, y: 20 });
+
+          gsap
+            .timeline({
+              scrollTrigger: { trigger: cta, start: "top 80%", once: true },
+              defaults: { ease: "power3.out" },
+            })
+            .to(image, { scale: 1.03, duration: 1.4, ease: "power2.out" })
+            .to(overlay, { opacity: 1, duration: 0.8 }, 0.1)
+            .to(content, { opacity: 1, y: 0, duration: 0.7 }, 0.2)
+            .to(eyebrow, { opacity: 1, y: 0, duration: 0.5 }, "-=0.35")
+            .to(heading, { opacity: 1, y: 0, duration: 0.75 }, "-=0.2")
+            .to(button, { opacity: 1, y: 0, duration: 0.55 }, "-=0.15");
+        }
+      }
+    }, mainRef);
+
+    return () => ctx.revert();
+  }, [stay]);
 
   if (!stay) {
     return (
@@ -30,14 +276,14 @@ function StayDetail() {
   }
 
   return (
-    <main className="stay-detail">
+    <main ref={mainRef} className="stay-detail">
       <PageMeta title={stay.name} description={stay.description} />
-      
+
       {/* ========================================
           HOUSE INTRO
           ======================================== */}
 
-      <section className="stay-detail__main section">
+      <section ref={heroRef} className="stay-detail__main section">
         <div className="container">
           <Link to="/stay" className="stay-detail__back">
             ← Back to Stay
@@ -84,7 +330,7 @@ function StayDetail() {
           HOUSE DETAILS
           ======================================== */}
 
-      <section className="stay-detail__facts section">
+      <section ref={factsRef} className="stay-detail__facts section">
         <div className="container">
           <div className="stay-detail__section-heading">
             <span>H O U S E &nbsp; D E T A I L S</span>
@@ -117,7 +363,7 @@ function StayDetail() {
           ABOUT THE HOUSE
           ======================================== */}
 
-      <section className="stay-detail__about section">
+      <section ref={aboutRef} className="stay-detail__about section">
         <div className="container stay-detail__about-grid">
           <div className="stay-detail__about-label">
             <span>A B O U T &nbsp; T H E &nbsp; H O U S E</span>
@@ -141,7 +387,7 @@ function StayDetail() {
           SERVICES
           ======================================== */}
 
-      <section className="stay-detail__services section">
+      <section ref={servicesRef} className="stay-detail__services section">
         <div className="container">
           <div className="stay-detail__services-heading">
             <div>
@@ -196,7 +442,7 @@ function StayDetail() {
           PRACTICAL INFO
           ======================================== */}
 
-      <section className="stay-detail__practical section">
+      <section ref={practicalRef} className="stay-detail__practical section">
         <div className="container">
           <div className="stay-detail__section-heading">
             <span>P R A C T I C A L &nbsp; I N F O</span>
@@ -230,7 +476,7 @@ function StayDetail() {
           HIGHLIGHTS
           ======================================== */}
 
-      <section className="stay-detail__highlights section">
+      <section ref={highlightsRef} className="stay-detail__highlights section">
         <div className="container">
           <div className="stay-detail__highlights-heading">
             <span>
@@ -260,7 +506,7 @@ function StayDetail() {
           HOUSE GALLERY
           ======================================== */}
 
-      <section className="stay-detail__gallery section">
+      <section ref={galleryRef} className="stay-detail__gallery section">
         <div className="container">
           <div className="stay-detail__gallery-heading">
             <span>G A L L E R Y</span>
@@ -290,7 +536,7 @@ function StayDetail() {
           OTHER STAY
           ======================================== */}
 
-      <section className="stay-detail__other section">
+      <section ref={otherRef} className="stay-detail__other section">
         <div className="container">
           <div className="stay-detail__other-heading">
             <span>A N O T H E R &nbsp; W A Y &nbsp; T O &nbsp; S T A Y</span>
@@ -345,7 +591,7 @@ function StayDetail() {
           CTA
           ======================================== */}
 
-      <section className="stay-detail__cta">
+      <section ref={ctaRef} className="stay-detail__cta">
         <div
           className="stay-detail__cta-image"
           style={{ backgroundImage: `url(${stay.image})` }}

@@ -35,6 +35,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import EntityIntelligence from "../components/entity/EntityIntelligence";
 
 const todayISO = localDateISO;
 
@@ -389,6 +390,8 @@ function EntityDetail() {
         </div>
       </div>
 
+      <EntityIntelligence entity={entity} events={events} />
+      
       {harvestOutlook && (
         <Card className="border-border/70 bg-secondary/50 shadow-sm">
           <CardContent className="p-4">

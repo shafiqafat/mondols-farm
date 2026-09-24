@@ -32,6 +32,9 @@ const FarmOSLogin = lazy(() => import("./farm-os/pages/Login"));
 const FarmOSOverview = lazy(() => import("./farm-os/pages/Overview"));
 const FarmOSSpecies = lazy(() => import("./farm-os/pages/Species"));
 const FarmOSEntityDetail = lazy(() => import("./farm-os/pages/EntityDetail"));
+const FarmOSNewSpecies = lazy(() => import("./farm-os/pages/NewSpecies"));
+const FarmOSNewEntity = lazy(() => import("./farm-os/pages/NewEntity"));
+const FarmOSNewRotationRule = lazy(() => import("./farm-os/pages/NewRotationRule"),);
 const FarmOSFinance = lazy(() => import("./farm-os/pages/Finance"));
 const FarmOSCapacity = lazy(() => import("./farm-os/pages/Capacity"));
 const FarmOSScenario = lazy(() => import("./farm-os/pages/Scenario"));
@@ -103,6 +106,9 @@ function App() {
           >
             <Route index element={<FarmOSOverview />} />
             <Route path="species" element={<FarmOSSpecies />} />
+            <Route path="species/new" element={<FarmOSNewSpecies />} />
+            <Route path="species/rotation/new" element={<FarmOSNewRotationRule />} />
+            <Route path="entities/new" element={<FarmOSNewEntity />} />
             <Route path="entities/:id" element={<FarmOSEntityDetail />} />
             <Route path="finance" element={<FarmOSFinance />} />
             <Route path="capacity" element={<FarmOSCapacity />} />

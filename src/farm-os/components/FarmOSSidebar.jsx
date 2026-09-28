@@ -10,6 +10,7 @@ import {
   Boxes,
   Wallet,
   ShoppingCart,
+  FolderKanban,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -36,6 +37,11 @@ const NAV_GROUPS = [
         label: "Overview",
         icon: LayoutDashboard,
         end: true,
+      },
+      {
+        to: "/farm-os/projects",
+        label: "Projects",
+        icon: FolderKanban,
       },
       {
         to: "/farm-os/species",

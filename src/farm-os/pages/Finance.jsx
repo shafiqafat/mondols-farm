@@ -3,13 +3,10 @@ import gsap from "gsap";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
 import {
-  computeTotals,
-  computeCostPerUnit,
-  splitByPercent,
+  splitByPercent
 } from "../engines/financeEngine";
 import {
   CircleDollarSign,
-  FolderKanban,
   Receipt,
   Split,
   Plus,
@@ -45,9 +42,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 
 const todayISO = localDateISO;
@@ -56,29 +50,15 @@ function Finance() {
   const [projects, setProjects] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [entities, setEntities] = useState([]);
-  const [harvestEvents, setHarvestEvents] = useState([]);
-  const [inventoryConsumptions, setInventoryConsumptions] = useState([]);
   const [projectEntityHistory, setProjectEntityHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
-  const [projectsVisible, setProjectsVisible] = useState(false);
-  const [newProjectId, setNewProjectId] = useState(null);
   const [transactionsVisible, setTransactionsVisible] = useState(false);
 
-  const projectsSectionRef = useRef(null);
   const transactionsSectionRef = useRef(null);
   const editDialogRef = useRef(null);
   const transactionsListRef = useRef(null);
-
-  const [newProject, setNewProject] = useState({
-    name: "",
-    projectType: "",
-    purpose: "",
-    startedAt: todayISO(),
-    targetEndAt: "",
-  });
-  const [savingProject, setSavingProject] = useState(false);
 
   const [txn, setTxn] = useState({
     type: "expense",
@@ -94,9 +74,6 @@ function Finance() {
   const [deletingTxnId, setDeletingTxnId] = useState(null);
   const [txnActionError, setTxnActionError] = useState("");
 
-  const [assignSelection, setAssignSelection] = useState({});
-  const [completingProjectId, setCompletingProjectId] = useState(null);
-
   const [split, setSplit] = useState({
     amount: "",
     category: "",
@@ -109,45 +86,30 @@ function Finance() {
     setLoading(true);
     setLoadError("");
 
-    const [
-      projectsRes,
-      txnRes,
-      entitiesRes,
-      harvestRes,
-      inventoryConsumptionsRes,
-      projectEntityHistoryRes,
-    ] = await Promise.all([
-      supabase.from("farm_projects").select("*").order("name"),
+    const [projectsRes, txnRes, entitiesRes, projectEntityHistoryRes] =
+      await Promise.all([
+        supabase.from("farm_projects").select("*").order("name"),
 
-      supabase
-        .from("finance_transactions")
-        .select("*")
-        .order("occurred_at", { ascending: false }),
+        supabase
+          .from("finance_transactions")
+          .select("*")
+          .order("occurred_at", { ascending: false }),
 
-      supabase
-        .from("farm_entities")
-        .select("id, label, project_id, species_config:species_config_id(name)")
-        .order("label"),
+        supabase
+          .from("farm_entities")
+          .select(
+            "id, label, project_id, species_config:species_config_id(name)",
+          )
+          .order("label"),
 
-      supabase
-        .from("entity_events")
-        .select("entity_id, occurred_at, payload")
-        .eq("type", "harvest"),
-
-      supabase
-        .from("inventory_consumptions")
-        .select(`id, entity_events!inner (entity_id, occurred_at), total_cost`),
-
-      supabase
-        .from("farm_project_entities")
-        .select("project_id, entity_id, started_at, ended_at"),
-    ]);
+        supabase
+          .from("farm_project_entities")
+          .select("project_id, entity_id, started_at, ended_at"),
+      ]);
     const loadErrorResult =
       projectsRes.error ||
       txnRes.error ||
       entitiesRes.error ||
-      harvestRes.error ||
-      inventoryConsumptionsRes.error ||
       projectEntityHistoryRes.error;
 
     if (loadErrorResult) {
@@ -159,8 +121,6 @@ function Finance() {
     setProjects(projectsRes.data ?? []);
     setTransactions(txnRes.data ?? []);
     setEntities(entitiesRes.data ?? []);
-    setInventoryConsumptions(inventoryConsumptionsRes.data ?? []);
-    setHarvestEvents(harvestRes.data ?? []);
     setProjectEntityHistory(projectEntityHistoryRes.data ?? []);
 
     setLoading(false);
@@ -169,28 +129,6 @@ function Finance() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAll();
-  }, []);
-
-  useEffect(() => {
-    const element = projectsSectionRef.current;
-
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setProjectsVisible(true);
-          observer.disconnect();
-        }
-      },
-      {
-        threshold: 0.15,
-      },
-    );
-
-    observer.observe(element);
-
-    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -304,46 +242,6 @@ function Finance() {
     loadAll();
   }
 
-  async function handleAddProject(e) {
-    e.preventDefault();
-    if (!newProject.name.trim()) return;
-    setSavingProject(true);
-    setPageError("");
-
-    const { data: createdProject, error } = await supabase
-      .from("farm_projects")
-      .insert({
-        name: newProject.name.trim(),
-        project_type: newProject.projectType.trim() || null,
-        purpose: newProject.purpose.trim() || null,
-        started_at: newProject.startedAt || null,
-        target_end_at: newProject.targetEndAt || null,
-        status: "active",
-      })
-      .select("id")
-      .single();
-
-    setSavingProject(false);
-    if (error) {
-      setPageError(error.message);
-      return;
-    }
-
-    setNewProjectId(createdProject.id);
-    setNewProject({
-      name: "",
-      projectType: "",
-      purpose: "",
-      startedAt: todayISO(),
-      targetEndAt: "",
-    });
-    loadAll();
-
-    setTimeout(() => {
-      setNewProjectId(null);
-    }, 500);
-  }
-
   async function handleAddTransaction(e) {
     e.preventDefault();
 
@@ -415,49 +313,6 @@ function Finance() {
 
     if (error) {
       setTxnActionError(error.message);
-      return;
-    }
-
-    loadAll();
-  }
-
-  async function handleAssignEntity(projectId) {
-    const entityId = assignSelection[projectId];
-    if (!entityId) return;
-
-    const { error } = await supabase.rpc("assign_entity_to_project", {
-      p_entity_id: entityId,
-      p_project_id: projectId,
-      p_role: "primary",
-    });
-
-    if (error) {
-      setPageError(error.message);
-      return;
-    }
-
-    setAssignSelection((prev) => ({ ...prev, [projectId]: "" }));
-    loadAll();
-  }
-
-  async function handleCompleteProject(projectId) {
-    const confirmed = window.confirm(
-      "Complete this project? Active entity assignments will be ended, but all project history will be preserved.",
-    );
-
-    if (!confirmed) return;
-
-    setCompletingProjectId(projectId);
-    setPageError("");
-
-    const { error } = await supabase.rpc("complete_project", {
-      p_project_id: projectId,
-    });
-
-    setCompletingProjectId(null);
-
-    if (error) {
-      setPageError(error.message);
       return;
     }
 
@@ -576,14 +431,10 @@ function Finance() {
       </Card>
     );
   }
-
   const activeProjects = projects.filter(
     (project) => project.status === "active",
   );
 
-  const completedProjects = projects.filter(
-    (project) => project.status === "completed",
-  );
   const transactionEntities = txn.projectId
     ? entities.filter((entity) => entity.project_id === txn.projectId)
     : [];
@@ -688,320 +539,6 @@ function Finance() {
   const unassignedNetCash =
     unassignedIncome - unassignedExpenses - unassignedAssets;
 
-  const renderProjectCard = (project) => {
-    const projectTxns = transactions.filter((t) => t.project_id === project.id);
-
-    const totals = computeTotals(projectTxns);
-
-    const projectConsumedInventoryCost = inventoryConsumptions
-      .filter((consumption) => {
-        const entityId = consumption.entity_events?.entity_id;
-        const occurredAt = consumption.entity_events?.occurred_at;
-
-        if (!entityId || !occurredAt) {
-          return false;
-        }
-
-        return getProjectIdAtDate(entityId, occurredAt) === project.id;
-      })
-      .reduce(
-        (sum, consumption) => sum + Number(consumption.total_cost || 0),
-        0,
-      );
-
-    const projectOperatingCost = totals.expense + projectConsumedInventoryCost;
-
-    const projectRevenue = totals.income;
-    const operatingMargin = projectRevenue - projectOperatingCost;
-    const hasFinancialActivity =
-      projectTxns.length > 0 || projectConsumedInventoryCost > 0;
-
-    const projectEntities = entities.filter((e) => e.project_id === project.id);
-    const availableEntities = entities.filter((e) => !e.project_id);
-
-    const totalYield = harvestEvents.reduce((sum, event) => {
-      const qtyKg = Number(event.payload?.qty_kg ?? 0);
-
-      if (
-        !Number.isFinite(qtyKg) ||
-        qtyKg <= 0 ||
-        !event.entity_id ||
-        !event.occurred_at
-      ) {
-        return sum;
-      }
-
-      return getProjectIdAtDate(event.entity_id, event.occurred_at) ===
-        project.id
-        ? sum + qtyKg
-        : sum;
-    }, 0);
-
-    const costPerUnit = computeCostPerUnit(projectOperatingCost, totalYield);
-
-    return (
-      <Card className="border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <CardTitle className="text-lg">{project.name}</CardTitle>
-
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Badge
-                  variant={
-                    project.status === "completed" ? "secondary" : "default"
-                  }
-                >
-                  {project.status === "completed" ? "Completed" : "Active"}
-                </Badge>
-
-                <CardDescription>
-                  {project.started_at
-                    ? `Started ${project.started_at}`
-                    : "No start date recorded"}
-                </CardDescription>
-              </div>
-
-              {project.completed_at && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Completed {project.completed_at}
-                </p>
-              )}
-            </div>
-
-            <div className="shrink-0 text-right">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Net cash flow
-              </p>
-              <p className="mt-0.5 text-lg font-semibold tracking-[-0.02em]">
-                ৳{totals.net.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
-              <p className="text-xs text-muted-foreground">Income</p>
-              <p className="mt-1 text-sm font-semibold">
-                ৳{totals.income.toFixed(2)}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
-              <p className="text-xs text-muted-foreground">
-                Operating expenses
-              </p>
-              <p className="mt-1 text-sm font-semibold">
-                ৳{totals.expense.toFixed(2)}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
-              <p className="text-xs text-muted-foreground">Assets</p>
-              <p className="mt-1 text-sm font-semibold">
-                ৳{totals.asset.toFixed(2)}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
-              <p className="text-xs text-muted-foreground">
-                Consumed inventory
-              </p>
-              <p className="mt-1 text-sm font-semibold">
-                ৳{projectConsumedInventoryCost.toFixed(2)}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-border/60 bg-muted/30 px-3 py-3">
-              <p className="text-xs text-muted-foreground">Operating cost</p>
-              <p className="mt-1 text-sm font-semibold">
-                ৳{projectOperatingCost.toFixed(2)}
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-border/60 bg-background/70 px-4 py-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Project economics
-            </p>
-
-            <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  Recorded revenue
-                </p>
-                <p className="mt-1 text-sm font-semibold">
-                  ৳{projectRevenue.toFixed(2)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-muted-foreground">Operating cost</p>
-                <p className="mt-1 text-sm font-semibold">
-                  ৳{projectOperatingCost.toFixed(2)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  Operating margin
-                </p>
-                <p
-                  className={`mt-1 text-base font-semibold ${
-                    operatingMargin >= 0 ? "text-primary" : "text-destructive"
-                  }`}
-                >
-                  {operatingMargin >= 0 ? "+" : "-"}৳
-                  {Math.abs(operatingMargin).toFixed(2)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs text-muted-foreground">Cost / unit</p>
-                <p className="mt-1 text-sm font-semibold">
-                  {costPerUnit != null ? `৳${costPerUnit.toFixed(2)}` : "—"}
-                </p>
-              </div>
-            </div>
-
-            <p className="mt-2 text-xs text-muted-foreground">
-              Operating cost includes consumed inventory.
-            </p>
-            {!hasFinancialActivity && (
-              <div className="mt-4 rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-3">
-                <p className="text-sm font-medium">No financial activity yet</p>
-
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Record a transaction against this project to start tracking
-                  its financial performance.
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Assigned entities
-            </p>
-
-            {projectEntities.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-3">
-                <p className="text-sm font-medium">No entities assigned</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Assign animals or other farm entities to connect production
-                  activity with this project.
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {projectEntities.map((entity) => (
-                  <Badge
-                    key={entity.id}
-                    variant="secondary"
-                    className="font-normal"
-                  >
-                    {entity.label}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {project.status === "active" && (
-            <div className="border-t border-border/60 pt-4">
-              {availableEntities.length > 0 ? (
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <select
-                    value={assignSelection[project.id] ?? ""}
-                    onChange={(e) =>
-                      setAssignSelection((prev) => ({
-                        ...prev,
-                        [project.id]: e.target.value,
-                      }))
-                    }
-                    className="h-10 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    <option value="">Assign entity…</option>
-                    {availableEntities.map((entity) => (
-                      <option key={entity.id} value={entity.id}>
-                        {entity.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-10 rounded-lg"
-                    disabled={!assignSelection[project.id]}
-                    onClick={() => handleAssignEntity(project.id)}
-                  >
-                    Assign
-                  </Button>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 py-3">
-                  <p className="text-sm font-medium">No unassigned entities</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    All current farm entities are already assigned to a project.
-                    Complete a project before assigning those entities
-                    elsewhere.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-
-        {project.status === "active" && (
-          <div className="flex flex-col gap-3 border-t border-border/60 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs leading-5 text-muted-foreground">
-              Completing this project ends its active entity assignments while
-              preserving all project and financial history.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={completingProjectId === project.id}
-              onClick={(e) => {
-                const button = e.currentTarget;
-
-                if (
-                  !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ) {
-                  gsap.fromTo(
-                    button,
-                    {
-                      scale: 1,
-                    },
-                    {
-                      scale: 0.94,
-                      duration: 0.12,
-                      ease: "power2.out",
-                      yoyo: true,
-                      repeat: 1,
-                      onComplete: () => handleCompleteProject(project.id),
-                    },
-                  );
-
-                  return;
-                }
-
-                handleCompleteProject(project.id);
-              }}
-            >
-              {completingProjectId === project.id
-                ? "Completing…"
-                : "Complete project"}
-            </Button>
-          </div>
-        )}
-      </Card>
-    );
-  };
-
   return (
     <div className="space-y-12">
       <section className="border-b border-border/60 pb-7">
@@ -1036,18 +573,6 @@ function Finance() {
             >
               <Plus className="size-4" />
               Transaction
-            </Button>
-
-            <Button
-              type="button"
-              onClick={() =>
-                document
-                  .getElementById("finance-project-form")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <FolderKanban className="size-4" />
-              Project
             </Button>
           </div>
         </div>
@@ -1188,193 +713,6 @@ function Finance() {
           </CardContent>
         </Card>
       )}
-
-      <section
-        ref={projectsSectionRef}
-        className={`space-y-5 ${
-          projectsVisible ? "finance-section-visible" : "finance-section-hidden"
-        }`}
-      >
-        <div className="flex items-start gap-3">
-          <FolderKanban className="mt-1 size-5 shrink-0 text-primary" />
-          <div>
-            <h2 className="text-xl font-semibold tracking-[-0.02em]">
-              Projects
-            </h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Financial performance and production economics by farm project.
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          {activeProjects.length > 0 && (
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Active projects
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Projects currently in production or operation.
-                </p>
-              </div>
-
-              {activeProjects.map((project, index) => (
-                <div
-                  key={project.id}
-                  className={`finance-project-card ${
-                    projectsVisible || newProjectId === project.id
-                      ? "finance-project-card-visible"
-                      : ""
-                  }`}
-                  style={{
-                    "--delay": `${newProjectId === project.id ? 0 : index * 80}ms`,
-                  }}
-                >
-                  {renderProjectCard(project)}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {completedProjects.length > 0 && (
-            <div className="space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Completed projects
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Historical projects and their preserved production records.
-                </p>
-              </div>
-
-              {completedProjects.map((project) => (
-                <div key={project.id}>{renderProjectCard(project)}</div>
-              ))}
-            </div>
-          )}
-        </div>
-        <form
-          id="finance-project-form"
-          onSubmit={handleAddProject}
-          className="rounded-2xl border border-border bg-card shadow-sm"
-        >
-          <div className="border-b border-border/60 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <Plus className="size-4 text-primary" />
-
-              <h3 className="text-base font-semibold tracking-[-0.01em]">
-                New project
-              </h3>
-            </div>
-
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Create the project first, then record its expenses, income, and
-              asset purchases through transactions linked to this project.
-            </p>
-          </div>
-
-          <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="sm:col-span-2">
-              <label className="text-sm font-medium">Project Name</label>
-              <Input
-                type="text"
-                placeholder="Project name, e.g. Mustard Project #001"
-                value={newProject.name}
-                onChange={(e) =>
-                  setNewProject((p) => ({
-                    ...p,
-                    name: e.target.value,
-                  }))
-                }
-                required
-                className="mt-2 w-full"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Project type
-              </label>
-              <Input
-                type="text"
-                value={newProject.projectType}
-                onChange={(e) =>
-                  setNewProject((prev) => ({
-                    ...prev,
-                    projectType: e.target.value,
-                  }))
-                }
-                placeholder="e.g. Livestock production"
-                className="mt-2 w-full"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Start date
-              </label>
-              <Input
-                type="date"
-                value={newProject.startedAt}
-                onChange={(e) =>
-                  setNewProject((p) => ({
-                    ...p,
-                    startedAt: e.target.value,
-                  }))
-                }
-                className="mt-2 w-full"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Target end date
-              </label>
-              <Input
-                type="date"
-                value={newProject.targetEndAt}
-                onChange={(e) =>
-                  setNewProject((prev) => ({
-                    ...prev,
-                    targetEndAt: e.target.value,
-                  }))
-                }
-                className="mt-2 w-full"
-              />
-            </div>
-
-            <div className="sm:col-span-2 lg:col-span-3">
-              <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Purpose
-              </label>
-              <textarea
-                value={newProject.purpose}
-                onChange={(e) =>
-                  setNewProject((prev) => ({
-                    ...prev,
-                    purpose: e.target.value,
-                  }))
-                }
-                placeholder="What is this project intended to produce or achieve?"
-                rows={2}
-                className="mt-1 min-h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              />
-            </div>
-
-            <div className="flex items-end lg:col-span-1">
-              <Button
-                type="submit"
-                disabled={savingProject}
-                className="h-10 w-full"
-              >
-                {savingProject ? "Adding…" : "Add project"}
-              </Button>
-            </div>
-          </div>
-        </form>
-      </section>
 
       <section ref={transactionsSectionRef} className="space-y-5">
         <div className="flex items-start gap-3">

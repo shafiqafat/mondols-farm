@@ -31,11 +31,15 @@ import FarmOSLayout from "./farm-os/components/FarmOSLayout";
 const FarmOSLogin = lazy(() => import("./farm-os/pages/Login"));
 const FarmOSOverview = lazy(() => import("./farm-os/pages/Overview"));
 const FarmOSSpecies = lazy(() => import("./farm-os/pages/Species"));
+const FarmOSProjects = lazy(() => import("./farm-os/pages/Projects"));
+const FarmOSNewProject = lazy(() => import("./farm-os/pages/NewProject"));
+const FarmOSEditProject = lazy(() => import("./farm-os/pages/EditProject"));
+const FarmOSProjectDetail = lazy(() => import("./farm-os/pages/ProjectDetail"));
 const FarmOSEntityDetail = lazy(() => import("./farm-os/pages/EntityDetail"));
+const FarmOSFinance = lazy(() => import("./farm-os/pages/Finance"));
 const FarmOSNewSpecies = lazy(() => import("./farm-os/pages/NewSpecies"));
 const FarmOSNewEntity = lazy(() => import("./farm-os/pages/NewEntity"));
 const FarmOSNewRotationRule = lazy(() => import("./farm-os/pages/NewRotationRule"),);
-const FarmOSFinance = lazy(() => import("./farm-os/pages/Finance"));
 const FarmOSCapacity = lazy(() => import("./farm-os/pages/Capacity"));
 const FarmOSScenario = lazy(() => import("./farm-os/pages/Scenario"));
 const FarmOSContentJournal = lazy(() => import("./farm-os/pages/ContentJournal"));
@@ -105,9 +109,16 @@ function App() {
             }
           >
             <Route index element={<FarmOSOverview />} />
+            <Route path="projects" element={<FarmOSProjects />} />
+            <Route path="projects/new" element={<FarmOSNewProject />} />
+            <Route path="projects/:id" element={<FarmOSProjectDetail />} />
             <Route path="species" element={<FarmOSSpecies />} />
             <Route path="species/new" element={<FarmOSNewSpecies />} />
-            <Route path="species/rotation/new" element={<FarmOSNewRotationRule />} />
+            <Route
+              path="species/rotation/new"
+              element={<FarmOSNewRotationRule />}
+            />
+            <Route path="projects/:id/edit" element={<FarmOSEditProject />} />
             <Route path="entities/new" element={<FarmOSNewEntity />} />
             <Route path="entities/:id" element={<FarmOSEntityDetail />} />
             <Route path="finance" element={<FarmOSFinance />} />

@@ -200,16 +200,13 @@ function Finance() {
         return;
       }
 
-      const projectAtDate = getProjectIdAtDate(
+      const isAssignedAtDate = isEntityAssignedToProject(
         editingTxn.entityId,
+        editingTxn.projectId,
         editingTxn.date,
       );
 
-      const isCurrentAssignment = entity.project_id === editingTxn.projectId;
-
-      const isHistoricalAssignment = projectAtDate === editingTxn.projectId;
-
-      if (!isCurrentAssignment && !isHistoricalAssignment) {
+      if (!isAssignedAtDate) {
         setTxnActionError(
           "The selected entity was not assigned to this project on the transaction date.",
         );
@@ -259,12 +256,11 @@ function Finance() {
     if (
       txn.entityId &&
       txn.projectId &&
-      !entities.some(
-        (entity) =>
-          entity.id === txn.entityId && entity.project_id === txn.projectId,
-      )
+      !isEntityAssignedToProject(txn.entityId, txn.projectId, txn.date)
     ) {
-      setPageError("The selected entity is not assigned to this project.");
+      setPageError(
+        "The selected entity is not assigned to this project on the selected date.",
+      );
       return;
     }
     setSavingTxn(true);
@@ -400,15 +396,15 @@ function Finance() {
     });
     loadAll();
   }
-  function getProjectIdAtDate(entityId, date) {
-    const relationship = projectEntityHistory.find(
+
+  function isEntityAssignedToProject(entityId, projectId, date = null) {
+    return projectEntityHistory.some(
       (item) =>
         item.entity_id === entityId &&
-        item.started_at <= date &&
-        (item.ended_at === null || date < item.ended_at),
+        item.project_id === projectId &&
+        item.started_at <= (date ?? todayISO()) &&
+        (item.ended_at === null || (date ?? todayISO()) < item.ended_at),
     );
-
-    return relationship?.project_id ?? null;
   }
 
   if (loading) {
@@ -436,14 +432,19 @@ function Finance() {
   );
 
   const transactionEntities = txn.projectId
-    ? entities.filter((entity) => entity.project_id === txn.projectId)
+    ? entities.filter((entity) =>
+        isEntityAssignedToProject(entity.id, txn.projectId),
+      )
     : [];
 
   const editingTransactionEntities = editingTxn?.projectId
     ? entities.filter(
         (entity) =>
-          entity.project_id === editingTxn.projectId ||
-          entity.id === editingTxn.entityId,
+          isEntityAssignedToProject(
+            entity.id,
+            editingTxn.projectId,
+            editingTxn.date,
+          ) || entity.id === editingTxn.entityId,
       )
     : [];
 

@@ -112,7 +112,7 @@ const [statusFilter, setStatusFilter] = useState("all");
         </div>
 
         <Button
-          className="rounded-xl"
+          className="rounded-xl px-4"
           onClick={() => navigate("/farm-os/projects/new")}
         >
           <Plus className="mr-2 size-4" />

@@ -84,6 +84,7 @@ function FarmOSLayout() {
     "/farm-os/tasks": "Tasks",
     "/farm-os/content": "Content",
     "/farm-os/settings": "Settings",
+    "/farm-os/projects": "Projects",
   };
 
   const currentPage =

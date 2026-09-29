@@ -113,7 +113,7 @@ function NewProject() {
                 value={form.name}
                 onChange={(event) => handleChange("name", event.target.value)}
                 placeholder="e.g. Quail Egg Production — Batch 01"
-                className="h-11 rounded-xl"
+                className="h-11 rounded-xl mt-1"
                 autoFocus
               />
             </div>
@@ -134,7 +134,7 @@ function NewProject() {
                   handleChange("projectType", event.target.value)
                 }
                 placeholder="e.g. Livestock, Poultry, Crop"
-                className="h-11 rounded-xl"
+                className="h-11 rounded-xl mt-1"
               />
 
               <p className="text-xs leading-5 text-muted-foreground">
@@ -159,7 +159,7 @@ function NewProject() {
                   handleChange("purpose", event.target.value)
                 }
                 placeholder="Describe what this project is intended to produce or achieve."
-                className="min-h-28 resize-y rounded-xl"
+                className="min-h-28 resize-y rounded-xl mt-1"
               />
             </div>
 
@@ -180,7 +180,7 @@ function NewProject() {
                   onChange={(event) =>
                     handleChange("startedAt", event.target.value)
                   }
-                  className="h-11 rounded-xl"
+                  className="h-11 rounded-xl mt-1"
                 />
               </div>
 
@@ -199,7 +199,7 @@ function NewProject() {
                   onChange={(event) =>
                     handleChange("targetEndAt", event.target.value)
                   }
-                  className="h-11 rounded-xl"
+                  className="h-11 rounded-xl mt-1"
                 />
 
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -227,8 +227,8 @@ function NewProject() {
                 Cancel
               </Button>
 
-              <Button type="submit" className="rounded-xl" disabled={saving}>
-                <Save className="mr-2 size-4" />
+              <Button type="submit" className="rounded-xl px-4" disabled={saving}>
+                <Save className="mr-1 size-4" />
                 {saving ? "Creating..." : "Create project"}
               </Button>
             </div>

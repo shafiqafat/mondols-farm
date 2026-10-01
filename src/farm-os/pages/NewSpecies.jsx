@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Leaf, Plus } from "lucide-react";
 
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 
 import {
   Card,
@@ -39,6 +41,7 @@ function emptyCapabilitySet() {
 
 function NewSpecies() {
   const navigate = useNavigate();
+  const { role, loading: authLoading } = useAuth();
 
   const [newSpecies, setNewSpecies] = useState({
     name: "",
@@ -50,6 +53,12 @@ function NewSpecies() {
 
   const [savingSpecies, setSavingSpecies] = useState(false);
   const [pageError, setPageError] = useState("");
+
+  useEffect(() => {
+    if (!authLoading && !canWrite(role)) {
+      navigate("/farm-os/species", { replace: true });
+    }
+  }, [authLoading, role, navigate]);
 
   function toggleCapability(key) {
     setNewSpecies((prev) => ({
@@ -99,6 +108,10 @@ function NewSpecies() {
     }
 
     navigate("/farm-os/species");
+  }
+
+  if (authLoading || !canWrite(role)) {
+    return null;
   }
 
   return (

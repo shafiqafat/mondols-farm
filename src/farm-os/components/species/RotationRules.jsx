@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-function RotationRules({ rules }) {
+function RotationRules({ rules, canWrite }) {
   const sectionRef = useRef(null);
   useEffect(() => {
     const element = sectionRef.current;
@@ -38,10 +38,7 @@ function RotationRules({ rules }) {
   }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      className="species-rotation-section space-y-4"
-    >
+    <section ref={sectionRef} className="species-rotation-section space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold tracking-tight">
@@ -49,24 +46,26 @@ function RotationRules({ rules }) {
           </h2>
 
           <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Define which crop can reasonably follow another and why. These
-            rules can later be used as suggestions after a crop is harvested.
+            Define which crop can reasonably follow another and why. These rules
+            can later be used as suggestions after a crop is harvested.
           </p>
         </div>
 
-        <Button
-          asChild
-          size="sm"
-          className="!inline-flex !w-fit !flex-row !items-center !justify-center gap-2 rounded-[12px] whitespace-nowrap px-3.5"
-        >
-          <Link
-            to="/farm-os/species/rotation/new"
-            className="!inline-flex !w-fit !flex-row !items-center gap-2 whitespace-nowrap"
+        {canWrite && (
+          <Button
+            asChild
+            size="sm"
+            className="!inline-flex !w-fit !flex-row !items-center !justify-center gap-2 rounded-[12px] whitespace-nowrap px-3.5"
           >
-            <Plus className="size-4 shrink-0" />
-            <span className="whitespace-nowrap">Add New Rule</span>
-          </Link>
-        </Button>
+            <Link
+              to="/farm-os/species/rotation/new"
+              className="!inline-flex !w-fit !flex-row items-center gap-2 whitespace-nowrap"
+            >
+              <Plus className="size-4 shrink-0" />
+              <span className="whitespace-nowrap">Add New Rule</span>
+            </Link>
+          </Button>
+        )}
       </div>
 
       <Card className="border-border/70 shadow-sm">

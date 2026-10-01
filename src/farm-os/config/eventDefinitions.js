@@ -1,7 +1,7 @@
 export const EVENT_TYPE_OPTIONS = [
-  { value: "weight", label: "Weight" },
-  { value: "feed", label: "Feed" },
-  { value: "egg_production", label: "Egg production" },
+  { value: "weight_check", label: "Weight" },
+  { value: "feed_given", label: "Feed" },
+  { value: "egg_count", label: "Egg production" },
   { value: "harvest", label: "Harvest" },
   { value: "treatment", label: "Treatment" },
   { value: "mortality", label: "Mortality" },
@@ -21,10 +21,10 @@ export const EVENT_TYPE_OPTIONS = [
 ];
 
 export const EVENT_SCHEMAS = {
-  weight: {
+  weight_check: {
     fields: [
       {
-        key: "weightKg",
+        key: "kg",
         label: "Weight",
         type: "number",
         unit: "kg",
@@ -34,48 +34,24 @@ export const EVENT_SCHEMAS = {
     ],
   },
 
-  feed: {
+  feed_given: {
     fields: [
       {
-        key: "feedType",
-        label: "Feed type",
-        type: "text",
-      },
-      {
-        key: "quantity",
-        label: "Quantity",
+        key: "qty_kg",
+        label: "Feed quantity",
         type: "number",
+        unit: "kg",
         min: 0,
         step: "0.01",
-      },
-      {
-        key: "unit",
-        label: "Unit",
-        type: "text",
-        placeholder: "kg",
       },
     ],
   },
 
-  egg_production: {
+  egg_count: {
     fields: [
       {
-        key: "eggs",
+        key: "count",
         label: "Eggs produced",
-        type: "number",
-        min: 0,
-        step: "1",
-      },
-      {
-        key: "broken",
-        label: "Broken",
-        type: "number",
-        min: 0,
-        step: "1",
-      },
-      {
-        key: "saleable",
-        label: "Saleable",
         type: "number",
         min: 0,
         step: "1",
@@ -291,13 +267,18 @@ export const EVENT_SCHEMAS = {
   },
 };
 export const EVENT_CAPABILITY_MAP = {
-  weight: "weight",
-  feed: "feed",
-  egg_production: "egg",
+  weight_check: "weight",
+  feed_given: "feed",
+  egg_count: "egg",
   breeding: "breeding",
   treatment: "health",
   health_note: "health",
   harvest: "harvest",
+
+  // Legacy event types kept readable for historical records.
+  weight: "weight",
+  feed: "feed",
+  egg_production: "egg",
 };
 export const EVENT_CATEGORY_MAP = {
   planting: ["crop", "fodder"],
@@ -309,6 +290,9 @@ export const EVENT_CATEGORY_MAP = {
 };
 
 export const LEGACY_EVENT_LABELS = {
+  weight: "Weight",
+  feed: "Feed",
+  egg_production: "Egg production",
   Feed_given: "Feed given",
   Egg_count: "Egg production",
 };

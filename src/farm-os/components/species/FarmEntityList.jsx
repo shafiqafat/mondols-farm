@@ -45,6 +45,7 @@ function FarmEntityList({
   updatingStatusId,
   actionId,
   updatedEntityId,
+  canWrite,
 }) {
   const [entityFilter, setEntityFilter] = useState("all");
   const [entitySearch, setEntitySearch] = useState("");
@@ -103,7 +104,9 @@ function FarmEntityList({
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight">Farm entities</h2>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Farm entities
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Register the actual animals, groups, plots, and operating units on
             your farm.
@@ -116,19 +119,21 @@ function FarmEntityList({
             {activeEntities.length} active
           </div>
 
-          <Button
-            asChild
-            size="sm"
-            className="!inline-flex !w-fit !flex-row !items-center !justify-center gap-2 rounded-[12px] whitespace-nowrap px-3.5"
-          >
-            <Link
-              to="/farm-os/entities/new"
-              className="!inline-flex !w-fit !flex-row !items-center gap-2 whitespace-nowrap"
+          {canWrite && (
+            <Button
+              asChild
+              size="sm"
+              className="!inline-flex !w-fit !flex-row !items-center !justify-center gap-2 rounded-[12px] whitespace-nowrap px-3.5"
             >
-              <Plus className="size-4 shrink-0" />
-              <span className="whitespace-nowrap">Register New Entity</span>
-            </Link>
-          </Button>
+              <Link
+                to="/farm-os/entities/new"
+                className="!inline-flex !w-fit !flex-row !items-center gap-2 whitespace-nowrap"
+              >
+                <Plus className="size-4 shrink-0" />
+                <span className="whitespace-nowrap">Register New Entity</span>
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -219,33 +224,39 @@ function FarmEntityList({
                           Archived
                         </Badge>
 
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5"
-                          disabled={actionId === entity.id}
-                          onClick={() => onRestore(entity.id)}
-                        >
-                          <RotateCcw className="size-3.5" />
-                          {actionId === entity.id ? "Restoring…" : "Restore"}
-                        </Button>
+                        {canWrite && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="gap-1.5"
+                              disabled={actionId === entity.id}
+                              onClick={() => onRestore(entity.id)}
+                            >
+                              <RotateCcw className="size-3.5" />
+                              {actionId === entity.id
+                                ? "Restoring…"
+                                : "Restore"}
+                            </Button>
 
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          disabled={actionId === entity.id}
-                          onClick={() => onDelete(entity.id)}
-                        >
-                          <Trash2 className="size-3.5" />
-                          Delete
-                        </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              disabled={actionId === entity.id}
+                              onClick={() => onDelete(entity.id)}
+                            >
+                              <Trash2 className="size-3.5" />
+                              Delete
+                            </Button>
+                          </>
+                        )}
                       </>
                     ) : (
                       <>
-                        {entity.status === "active" ? (
+                        {canWrite ? (
                           <select
                             value={entity.status}
                             onChange={(event) =>
@@ -294,17 +305,19 @@ function FarmEntityList({
                           </Badge>
                         )}
 
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1.5"
-                          disabled={actionId === entity.id}
-                          onClick={() => onArchive(entity.id)}
-                        >
-                          <Archive className="size-3.5" />
-                          {actionId === entity.id ? "Archiving…" : "Archive"}
-                        </Button>
+                        {canWrite && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5"
+                            disabled={actionId === entity.id}
+                            onClick={() => onArchive(entity.id)}
+                          >
+                            <Archive className="size-3.5" />
+                            {actionId === entity.id ? "Archiving…" : "Archive"}
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>

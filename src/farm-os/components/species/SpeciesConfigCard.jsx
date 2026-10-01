@@ -37,6 +37,7 @@ function SpeciesConfigCard({
   onArchive,
   onRestore,
   onDelete,
+  canWrite,
 }) {
   const [editing, setEditing] = useState(false);
   const [editingCapabilities, setEditingCapabilities] = useState(() =>
@@ -95,77 +96,79 @@ function SpeciesConfigCard({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <Badge variant="secondary" className="capitalize">
-              {species.category}
-            </Badge>
+          {canWrite && (
+            <div className="flex shrink-0 items-center gap-2">
+              <Badge variant="secondary" className="capitalize">
+                {species.category}
+              </Badge>
 
-            {species.archived_at ? (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5"
-                  disabled={actionLoading}
-                  onClick={() => onRestore(species)}
-                >
-                  <RotateCcw className="size-3.5" />
-                  <span>{actionLoading ? "Restoring…" : "Restore"}</span>
-                </Button>
+              {species.archived_at ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2.5"
+                    disabled={actionLoading}
+                    onClick={() => onRestore(species)}
+                  >
+                    <RotateCcw className="size-3.5" />
+                    <span>{actionLoading ? "Restoring…" : "Restore"}</span>
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  disabled={actionLoading}
-                  onClick={() => onDelete(species)}
-                >
-                  <Trash2 className="size-3.5" />
-                  <span>Delete</span>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5"
-                  onClick={startEditing}
-                  disabled={saving}
-                >
-                  <Pencil className="size-3.5" />
-                  <span>Edit</span>
-                </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={actionLoading}
+                    onClick={() => onDelete(species)}
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Delete</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2.5"
+                    onClick={startEditing}
+                    disabled={saving}
+                  >
+                    <Pencil className="size-3.5" />
+                    <span>Edit</span>
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5"
-                  disabled={actionLoading}
-                  onClick={() => onArchive(species)}
-                >
-                  <Archive className="size-3.5" />
-                  <span>{actionLoading ? "Archiving…" : "Archive"}</span>
-                </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2.5"
+                    disabled={actionLoading}
+                    onClick={() => onArchive(species)}
+                  >
+                    <Archive className="size-3.5" />
+                    <span>{actionLoading ? "Archiving…" : "Archive"}</span>
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  disabled={actionLoading}
-                  onClick={() => onDelete(species)}
-                >
-                  <Trash2 className="size-3.5" />
-                  <span>Delete</span>
-                </Button>
-              </>
-            )}
-          </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={actionLoading}
+                    onClick={() => onDelete(species)}
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Delete</span>
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </CardHeader>
 

@@ -16,6 +16,8 @@ import {
 import ConfirmDialog from "../components/ConfirmDialog";
 import ArchiveDialog from "../components/ArchiveDialog";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 import SpeciesConfigCard from "../components/species/SpeciesConfigCard";
 import FarmEntityList from "../components/species/FarmEntityList";
 import RotationRules from "../components/species/RotationRules";
@@ -88,6 +90,9 @@ function AnimatedNumber({ value }) {
 }
 
 function Species() {
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
+
   const [speciesList, setSpeciesList] = useState([]);
   const [entities, setEntities] = useState([]);
   const [rotationRules, setRotationRules] = useState([]);
@@ -177,8 +182,6 @@ function Species() {
 
     return () => observer.disconnect();
   }, []);
-
-
 
   async function saveSpeciesCapabilities(species, selectedCapabilities) {
     setPageError("");
@@ -502,7 +505,6 @@ function Species() {
     setEntityDeleteTarget(null);
   }
 
-
   if (loading) {
     return (
       <div className="flex min-h-[240px] items-center justify-center">
@@ -520,7 +522,6 @@ function Species() {
     (sum, entity) => sum + (Number(entity.quantity) || 0),
     0,
   );
-
 
   if (loadError) {
     return (
@@ -675,19 +676,23 @@ function Species() {
               </button>
             </div>
 
-            <Button
-              asChild
-              size="sm"
-              className="inline-flex w-auto flex-row items-center justify-center gap-2 rounded-[12px] whitespace-nowrap px-4"
-            >
-              <Link
-                to="/farm-os/species/new"
-                className="inline-flex flex-row items-center gap-2 whitespace-nowrap"
+            {canEdit && (
+              <Button
+                asChild
+                size="sm"
+                className="inline-flex w-auto flex-row items-center justify-center gap-2 rounded-[12px] whitespace-nowrap px-4"
               >
-                <Plus className="size-4 shrink-0" />
-                <span className="whitespace-nowrap">Add New Species/Crop</span>
-              </Link>
-            </Button>
+                <Link
+                  to="/farm-os/species/new"
+                  className="inline-flex flex-row items-center gap-2 whitespace-nowrap"
+                >
+                  <Plus className="size-4 shrink-0" />
+                  <span className="whitespace-nowrap">
+                    Add New Species/Crop
+                  </span>
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 
@@ -704,6 +709,7 @@ function Species() {
               onArchive={handleArchiveSpecies}
               onRestore={handleRestoreSpecies}
               onDelete={handleDeleteSpecies}
+              canWrite={canEdit}
             />
           ))}
         </div>
@@ -719,10 +725,11 @@ function Species() {
         onArchive={handleArchiveEntity}
         onRestore={handleRestoreEntity}
         onDelete={handleDeleteEntity}
+        canWrite={canEdit}
       />
 
       {/* --- Crop rotation rules --- */}
-      <RotationRules rules={rotationRules} />
+      <RotationRules rules={rotationRules} canWrite={canEdit} />
       <ConfirmDialog
         open={Boolean(speciesDeleteTarget)}
         onOpenChange={(open) => {

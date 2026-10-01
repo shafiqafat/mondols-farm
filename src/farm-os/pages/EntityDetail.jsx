@@ -42,13 +42,16 @@ const todayISO = localDateISO;
 
 function eventIcon(type) {
   switch (type) {
+    case "feed_given":
     case "feed":
     case "Feed_given":
       return Wheat;
 
+    case "weight_check":
     case "weight":
       return Scale;
 
+    case "egg_count":
     case "egg_production":
     case "Egg_count":
       return Egg;

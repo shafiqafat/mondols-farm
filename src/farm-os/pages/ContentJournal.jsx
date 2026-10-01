@@ -6,6 +6,8 @@ import { Flip } from "gsap/Flip";
 
 gsap.registerPlugin(Flip);
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 import {
   STAGES,
   STAGE_LABEL,
@@ -17,6 +19,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 function ContentJournal() {
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
+
   const [items, setItems] = useState([]);
   const [entities, setEntities] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -141,7 +146,6 @@ function ContentJournal() {
       setPageError(error.message);
       return;
     }
-    
 
     await loadAll();
 
@@ -261,7 +265,7 @@ function ContentJournal() {
                             </p>
                           )}
 
-                          {next && (
+                          {next && canEdit && (
                             <Button
                               type="button"
                               variant="outline"
@@ -289,124 +293,131 @@ function ContentJournal() {
         ))}
       </div>
 
-      <form
-        className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
-        onSubmit={handleAdd}
-      >
-        <div className="mb-5">
-          <div className="flex items-center gap-2">
-            <ClipboardPenLine className="size-5 shrink-0 text-primary" />
-            <h2 className="text-base font-semibold">New content idea</h2>
+      {canEdit && (
+        <form
+          className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
+          onSubmit={handleAdd}
+        >
+          <div className="mb-5">
+            <div className="flex items-center gap-2">
+              <ClipboardPenLine className="size-5 shrink-0 text-primary" />
+              <h2 className="text-base font-semibold">New content idea</h2>
+            </div>
+
+            <p className="mt-1 ml-7 text-sm text-muted-foreground">
+              Capture an idea and optionally link it to a farm entity or
+              project.
+            </p>
           </div>
 
-          <p className="mt-1 ml-7 text-sm text-muted-foreground">
-            Capture an idea and optionally link it to a farm entity or project.
-          </p>
-        </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="space-y-2 lg:col-span-2">
+              <label htmlFor="content-title" className="text-sm font-medium">
+                Title
+              </label>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
-          <div className="space-y-2 lg:col-span-2">
-            <label htmlFor="content-title" className="text-sm font-medium">
-              Title
+              <Input
+                id="content-title"
+                type="text"
+                placeholder="e.g. Goat kidding day"
+                value={form.title}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, title: e.target.value }))
+                }
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="content-type" className="text-sm font-medium">
+                Type
+              </label>
+
+              <select
+                id="content-type"
+                value={form.type}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, type: e.target.value }))
+                }
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="mixed">Mixed</option>
+                <option value="photo">Photo</option>
+                <option value="video">Video</option>
+                <option value="note">Note</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="content-entity" className="text-sm font-medium">
+                Entity
+              </label>
+
+              <select
+                id="content-entity"
+                value={form.entityId}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, entityId: e.target.value }))
+                }
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">No entity</option>
+
+                {entities.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="content-project" className="text-sm font-medium">
+                Project
+              </label>
+
+              <select
+                id="content-project"
+                value={form.projectId}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, projectId: e.target.value }))
+                }
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">No project</option>
+
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-2">
+            <label htmlFor="content-notes" className="text-sm font-medium">
+              Notes
             </label>
 
-            <Input
-              id="content-title"
-              type="text"
-              placeholder="e.g. Goat kidding day"
-              value={form.title}
+            <Textarea
+              id="content-notes"
+              placeholder="Optional notes"
+              value={form.notes}
               onChange={(e) =>
-                setForm((p) => ({ ...p, title: e.target.value }))
+                setForm((p) => ({ ...p, notes: e.target.value }))
               }
-              required
+              rows={3}
             />
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="content-type" className="text-sm font-medium">
-              Type
-            </label>
-
-            <select
-              id="content-type"
-              value={form.type}
-              onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="mixed">Mixed</option>
-              <option value="photo">Photo</option>
-              <option value="video">Video</option>
-              <option value="note">Note</option>
-            </select>
+          <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
+            <Button type="submit" disabled={saving}>
+              {saving ? "Adding…" : "Add idea"}
+            </Button>
           </div>
-
-          <div className="space-y-2">
-            <label htmlFor="content-entity" className="text-sm font-medium">
-              Entity
-            </label>
-
-            <select
-              id="content-entity"
-              value={form.entityId}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, entityId: e.target.value }))
-              }
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="">No entity</option>
-
-              {entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="content-project" className="text-sm font-medium">
-              Project
-            </label>
-
-            <select
-              id="content-project"
-              value={form.projectId}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, projectId: e.target.value }))
-              }
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="">No project</option>
-
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-2">
-          <label htmlFor="content-notes" className="text-sm font-medium">
-            Notes
-          </label>
-
-          <Textarea
-            id="content-notes"
-            placeholder="Optional notes"
-            value={form.notes}
-            onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-            rows={3}
-          />
-        </div>
-
-        <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Adding…" : "Add idea"}
-          </Button>
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   );
 }

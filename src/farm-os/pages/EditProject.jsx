@@ -9,10 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 
 function EditProject() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { role, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -22,9 +25,15 @@ function EditProject() {
     targetEndAt: "",
   });
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+      if (!authLoading && !canWrite(role)) {
+        navigate(`/farm-os/projects/${id}`, { replace: true });
+      }
+    }, [authLoading, role, navigate, id]);
 
   useEffect(() => {
     async function loadProject() {
@@ -104,15 +113,19 @@ function EditProject() {
     navigate(`/farm-os/projects/${id}`);
   }
 
-  if (loading) {
-    return (
-      <div className="mx-auto w-full max-w-3xl">
-        <div className="rounded-2xl border border-border/70 bg-card p-6">
-          <p className="text-sm text-muted-foreground">Loading project…</p>
+    if (authLoading || !canWrite(role)) {
+      return null;
+    }
+
+    if (loading) {
+      return (
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="rounded-2xl border border-border/70 bg-card p-6">
+            <p className="text-sm text-muted-foreground">Loading project…</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8">
@@ -277,7 +290,11 @@ function EditProject() {
                 Cancel
               </Button>
 
-              <Button type="submit" className="rounded-xl px-4" disabled={saving}>
+              <Button
+                type="submit"
+                className="rounded-xl px-4"
+                disabled={saving}
+              >
                 <Save className="mr-1 size-4" />
                 {saving ? "Saving..." : "Save changes"}
               </Button>

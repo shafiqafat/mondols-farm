@@ -9,6 +9,8 @@ import {
 } from "../engines/dailyLogEngine";
 import { enqueue } from "../lib/offlineQueue";
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 import { CalendarDays, ClipboardList } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 function DailyLog() {
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
+
   const [entities, setEntities] = useState([]);
   const [inventoryItems, setInventoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -337,7 +342,7 @@ function DailyLog() {
             </p>
           </CardContent>
         </Card>
-      ) : (
+      ) : canEdit ? (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div ref={entitiesSectionRef} className="space-y-4">
             {entities.map((entity, index) => {
@@ -588,7 +593,7 @@ function DailyLog() {
             {submitting ? "Saving…" : "Save today's log"}
           </Button>
         </form>
-      )}
+      ) : null}
     </div>
   );
 }

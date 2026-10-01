@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/farm-os/lib/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 import {
   Building2,
   Boxes,
@@ -22,6 +24,8 @@ import {
 
 function Settings() {
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
 
   const [profile, setProfile] = useState({
     name: "",
@@ -217,7 +221,7 @@ function Settings() {
                     <p className="text-sm text-muted-foreground">
                       Loading farm profile…
                     </p>
-                  ) : (
+                  ) : canEdit ? (
                     <form onSubmit={handleSaveProfile} className="space-y-5">
                       <div className="grid gap-5 md:grid-cols-2">
                         <div className="space-y-2">
@@ -329,6 +333,10 @@ function Settings() {
                         {savingProfile ? "Saving…" : "Save changes"}
                       </Button>
                     </form>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      You have view-only access to farm settings.
+                    </p>
                   )}
                 </CardContent>
               </Card>

@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 
 function buildProductionMetrics(events) {
   const summary = {
@@ -85,6 +87,8 @@ function buildProductionMetrics(events) {
 function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
 
   const [project, setProject] = useState(null);
   const [assignedEntities, setAssignedEntities] = useState([]);
@@ -189,7 +193,7 @@ function ProjectDetail() {
       const transactions = transactionsResult.data ?? [];
       const inventoryConsumptionRows = inventoryConsumptionsResult.data ?? [];
       const projectEntityHistoryRows = projectEntityHistoryResult.data ?? [];
-      
+
       setAllEntities(entities);
       const activeAssignments = assignments.filter(
         (assignment) => assignment.ended_at === null,
@@ -344,8 +348,8 @@ function ProjectDetail() {
     if (!entityId || !project?.id) return;
 
     const entity =
-      assignedEntities.find((item) => item.id === event.entity_id) ||
-      availableEntities.find((item) => item.id === event.entity_id);
+      assignedEntities.find((item) => item.id === entityId) ||
+      availableEntities.find((item) => item.id === entityId);
 
     if (!entity) return;
 
@@ -589,7 +593,7 @@ function ProjectDetail() {
               </div>
             </div>
 
-            {isActive && (
+            {isActive && canEdit && (
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
@@ -739,7 +743,7 @@ function ProjectDetail() {
                       </div>
                     </div>
 
-                    {isActive && (
+                    {isActive && canEdit && (
                       <Button
                         type="button"
                         variant="ghost"
@@ -764,7 +768,7 @@ function ProjectDetail() {
               </div>
             )}
 
-            {isActive && availableEntities.length > 0 && (
+            {isActive && canEdit && availableEntities.length > 0 && (
               <div className="border-t border-border/60 pt-4">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Assign an entity
@@ -803,7 +807,7 @@ function ProjectDetail() {
               </div>
             )}
 
-            {isActive && availableEntities.length === 0 && (
+            {isActive && canEdit && availableEntities.length === 0 && (
               <div className="border-t border-border/60 pt-4">
                 <p className="text-xs leading-5 text-muted-foreground">
                   There are no other unassigned active entities available right

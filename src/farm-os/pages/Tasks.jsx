@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 import { classifyTask, computeNextDueDate } from "../engines/taskEngine";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +34,9 @@ const RECURRENCE_OPTIONS = [
 ];
 
 function Tasks() {
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
+
   const [tasks, setTasks] = useState([]);
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -275,19 +280,23 @@ function Tasks() {
                       </p>
                     )}
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleComplete(task)}
-                    disabled={completingId === task.id}
-                    className={
-                      completingId === task.id ? "tasks-completing-button" : ""
-                    }
-                  >
-                    <CheckCircle2 className="size-4" />
-                    {completingId === task.id ? "Completing…" : "Done"}
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleComplete(task)}
+                      disabled={completingId === task.id}
+                      className={
+                        completingId === task.id
+                          ? "tasks-completing-button"
+                          : ""
+                      }
+                    >
+                      <CheckCircle2 className="size-4" />
+                      {completingId === task.id ? "Completing…" : "Done"}
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -306,134 +315,138 @@ function Tasks() {
         </Card>
       )}
 
-      <form
-        className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
-        onSubmit={handleAdd}
-      >
-        <div className="mb-5">
-          <div className="flex items-center gap-2">
-            <ClipboardList className="size-5 shrink-0 text-primary" />
-            <h2 className="text-base font-semibold">Add a task</h2>
+      {canEdit && (
+        <form
+          className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
+          onSubmit={handleAdd}
+        >
+          <div className="mb-5">
+            <div className="flex items-center gap-2">
+              <ClipboardList className="size-5 shrink-0 text-primary" />
+              <h2 className="text-base font-semibold">Add a task</h2>
+            </div>
+
+            <p className="mt-1 ml-7 text-sm text-muted-foreground">
+              Create a one-time or recurring task for the farm.
+            </p>
           </div>
 
-          <p className="mt-1 ml-7 text-sm text-muted-foreground">
-            Create a one-time or recurring task for the farm.
-          </p>
-        </div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-6">
+            <div className="space-y-2 sm:col-span-2 lg:col-span-2">
+              <label htmlFor="task-title" className="text-sm font-medium">
+                Task
+              </label>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-6">
-          <div className="space-y-2 sm:col-span-2 lg:col-span-2">
-            <label htmlFor="task-title" className="text-sm font-medium">
-              Task
+              <Input
+                id="task-title"
+                type="text"
+                placeholder="e.g. Quail cage cleaning"
+                value={form.title}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, title: e.target.value }))
+                }
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="task-entity" className="text-sm font-medium">
+                Entity
+              </label>
+
+              <select
+                id="task-entity"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                value={form.entityId}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, entityId: e.target.value }))
+                }
+              >
+                <option value="">No entity</option>
+
+                {entities.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="task-due-date" className="text-sm font-medium">
+                Due date
+              </label>
+
+              <Input
+                id="task-due-date"
+                type="date"
+                value={form.dueAt}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, dueAt: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="task-recurrence" className="text-sm font-medium">
+                Repeat
+              </label>
+
+              <select
+                id="task-recurrence"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                value={form.recurrence}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, recurrence: e.target.value }))
+                }
+              >
+                {RECURRENCE_OPTIONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="task-priority" className="text-sm font-medium">
+                Priority
+              </label>
+
+              <select
+                id="task-priority"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm capitalize shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                value={form.priority}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, priority: e.target.value }))
+                }
+              >
+                {PRIORITY_OPTIONS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="mt-5 space-y-2">
+            <label htmlFor="task-notes" className="text-sm font-medium">
+              Notes
             </label>
 
-            <Input
-              id="task-title"
-              type="text"
-              placeholder="e.g. Quail cage cleaning"
-              value={form.title}
+            <Textarea
+              id="task-notes"
+              placeholder="Optional notes"
+              value={form.notes}
               onChange={(e) =>
-                setForm((p) => ({ ...p, title: e.target.value }))
+                setForm((p) => ({ ...p, notes: e.target.value }))
               }
-              required
+              rows={3}
             />
           </div>
-          <div className="space-y-2">
-            <label htmlFor="task-entity" className="text-sm font-medium">
-              Entity
-            </label>
-
-            <select
-              id="task-entity"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-              value={form.entityId}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, entityId: e.target.value }))
-              }
-            >
-              <option value="">No entity</option>
-
-              {entities.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.label}
-                </option>
-              ))}
-            </select>
+          <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
+            <Button type="submit" disabled={saving}>
+              {saving ? "Adding…" : "Add task"}
+            </Button>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="task-due-date" className="text-sm font-medium">
-              Due date
-            </label>
-
-            <Input
-              id="task-due-date"
-              type="date"
-              value={form.dueAt}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, dueAt: e.target.value }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="task-recurrence" className="text-sm font-medium">
-              Repeat
-            </label>
-
-            <select
-              id="task-recurrence"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-              value={form.recurrence}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, recurrence: e.target.value }))
-              }
-            >
-              {RECURRENCE_OPTIONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="task-priority" className="text-sm font-medium">
-              Priority
-            </label>
-
-            <select
-              id="task-priority"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm capitalize shadow-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-              value={form.priority}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, priority: e.target.value }))
-              }
-            >
-              {PRIORITY_OPTIONS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className="mt-5 space-y-2">
-          <label htmlFor="task-notes" className="text-sm font-medium">
-            Notes
-          </label>
-
-          <Textarea
-            id="task-notes"
-            placeholder="Optional notes"
-            value={form.notes}
-            onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-            rows={3}
-          />
-        </div>
-        <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
-          <Button type="submit" disabled={saving}>
-            {saving ? "Adding…" : "Add task"}
-          </Button>
-        </div>
-      </form>
+        </form>
+      )}
 
       {completed.length > 0 && (
         <section className="space-y-3">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -9,9 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 
 function NewProject() {
   const navigate = useNavigate();
+  const { role, loading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
     name: "",
@@ -21,8 +24,14 @@ function NewProject() {
     targetEndAt: "",
   });
 
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+      if (!authLoading && !canWrite(role)) {
+        navigate("/farm-os/projects", { replace: true });
+      }
+    }, [authLoading, role, navigate]);
 
   function handleChange(field, value) {
     setForm((prev) => ({
@@ -64,179 +73,188 @@ function NewProject() {
     navigate(`/farm-os/projects/${data.id}`);
   }
 
-  return (
-    <div className="mx-auto w-full max-w-3xl space-y-8">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="mt-0.5 shrink-0 rounded-xl"
-          onClick={() => navigate("/farm-os/projects")}
-        >
-          <ArrowLeft className="size-4" />
-        </Button>
+    if (authLoading || !canWrite(role)) {
+      return null;
+    }
 
-        <div>
-          <p className="text-sm font-medium text-primary">Farm projects</p>
+    return (
+      <div className="mx-auto w-full max-w-3xl space-y-8">
+        {/* Header */}
+        <div className="flex items-start gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="mt-0.5 shrink-0 rounded-xl"
+            onClick={() => navigate("/farm-os/projects")}
+          >
+            <ArrowLeft className="size-4" />
+          </Button>
 
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            New project
-          </h1>
+          <div>
+            <p className="text-sm font-medium text-primary">Farm projects</p>
 
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Create a production project and define its basic operating context.
-          </p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+              New project
+            </h1>
+
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Create a production project and define its basic operating
+              context.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Form */}
-      <Card className="rounded-2xl border-border/70">
-        <CardHeader>
-          <CardTitle className="text-lg">Project details</CardTitle>
-        </CardHeader>
+        {/* Form */}
+        <Card className="rounded-2xl border-border/70">
+          <CardHeader>
+            <CardTitle className="text-lg">Project details</CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Project name */}
-            <div className="space-y-2">
-              <label
-                htmlFor="project-name"
-                className="text-sm font-medium leading-none"
-              >
-                Project name
-              </label>
-
-              <Input
-                id="project-name"
-                value={form.name}
-                onChange={(event) => handleChange("name", event.target.value)}
-                placeholder="e.g. Quail Egg Production — Batch 01"
-                className="h-11 rounded-xl mt-1"
-                autoFocus
-              />
-            </div>
-
-            {/* Project type */}
-            <div className="space-y-2">
-              <label
-                htmlFor="project-type"
-                className="text-sm font-medium leading-none"
-              >
-                Project type
-              </label>
-
-              <Input
-                id="project-type"
-                value={form.projectType}
-                onChange={(event) =>
-                  handleChange("projectType", event.target.value)
-                }
-                placeholder="e.g. Livestock, Poultry, Crop"
-                className="h-11 rounded-xl mt-1"
-              />
-
-              <p className="text-xs leading-5 text-muted-foreground">
-                Use a broad production category. This should not be tied to a
-                hard-coded species.
-              </p>
-            </div>
-
-            {/* Purpose */}
-            <div className="space-y-2">
-              <label
-                htmlFor="project-purpose"
-                className="text-sm font-medium leading-none"
-              >
-                Purpose
-              </label>
-
-              <Textarea
-                id="project-purpose"
-                value={form.purpose}
-                onChange={(event) =>
-                  handleChange("purpose", event.target.value)
-                }
-                placeholder="Describe what this project is intended to produce or achieve."
-                className="min-h-28 resize-y rounded-xl mt-1"
-              />
-            </div>
-
-            {/* Dates */}
-            <div className="grid gap-5 sm:grid-cols-2">
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Project name */}
               <div className="space-y-2">
                 <label
-                  htmlFor="project-start"
+                  htmlFor="project-name"
                   className="text-sm font-medium leading-none"
                 >
-                  Start date
+                  Project name
                 </label>
 
                 <Input
-                  id="project-start"
-                  type="date"
-                  value={form.startedAt}
-                  onChange={(event) =>
-                    handleChange("startedAt", event.target.value)
-                  }
+                  id="project-name"
+                  value={form.name}
+                  onChange={(event) => handleChange("name", event.target.value)}
+                  placeholder="e.g. Quail Egg Production — Batch 01"
                   className="h-11 rounded-xl mt-1"
+                  autoFocus
                 />
               </div>
 
+              {/* Project type */}
               <div className="space-y-2">
                 <label
-                  htmlFor="project-target-end"
+                  htmlFor="project-type"
                   className="text-sm font-medium leading-none"
                 >
-                  Target end date
+                  Project type
                 </label>
 
                 <Input
-                  id="project-target-end"
-                  type="date"
-                  value={form.targetEndAt}
+                  id="project-type"
+                  value={form.projectType}
                   onChange={(event) =>
-                    handleChange("targetEndAt", event.target.value)
+                    handleChange("projectType", event.target.value)
                   }
+                  placeholder="e.g. Livestock, Poultry, Crop"
                   className="h-11 rounded-xl mt-1"
                 />
 
                 <p className="text-xs leading-5 text-muted-foreground">
-                  Optional. You can complete the project manually later.
+                  Use a broad production category. This should not be tied to a
+                  hard-coded species.
                 </p>
               </div>
-            </div>
 
-            {/* Error */}
-            {error && (
-              <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
-                <p className="text-sm text-destructive">{error}</p>
+              {/* Purpose */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="project-purpose"
+                  className="text-sm font-medium leading-none"
+                >
+                  Purpose
+                </label>
+
+                <Textarea
+                  id="project-purpose"
+                  value={form.purpose}
+                  onChange={(event) =>
+                    handleChange("purpose", event.target.value)
+                  }
+                  placeholder="Describe what this project is intended to produce or achieve."
+                  className="min-h-28 resize-y rounded-xl mt-1"
+                />
               </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-6 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => navigate("/farm-os/projects")}
-                disabled={saving}
-              >
-                Cancel
-              </Button>
+              {/* Dates */}
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="project-start"
+                    className="text-sm font-medium leading-none"
+                  >
+                    Start date
+                  </label>
 
-              <Button type="submit" className="rounded-xl px-4" disabled={saving}>
-                <Save className="mr-1 size-4" />
-                {saving ? "Creating..." : "Create project"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
+                  <Input
+                    id="project-start"
+                    type="date"
+                    value={form.startedAt}
+                    onChange={(event) =>
+                      handleChange("startedAt", event.target.value)
+                    }
+                    className="h-11 rounded-xl mt-1"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="project-target-end"
+                    className="text-sm font-medium leading-none"
+                  >
+                    Target end date
+                  </label>
+
+                  <Input
+                    id="project-target-end"
+                    type="date"
+                    value={form.targetEndAt}
+                    onChange={(event) =>
+                      handleChange("targetEndAt", event.target.value)
+                    }
+                    className="h-11 rounded-xl mt-1"
+                  />
+
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Optional. You can complete the project manually later.
+                  </p>
+                </div>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-6 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => navigate("/farm-os/projects")}
+                  disabled={saving}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  className="rounded-xl px-4"
+                  disabled={saving}
+                >
+                  <Save className="mr-1 size-4" />
+                  {saving ? "Creating..." : "Create project"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
 }
 
 export default NewProject;

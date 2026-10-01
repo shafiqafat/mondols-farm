@@ -31,6 +31,8 @@ import {
 } from "../lib/eventUtils";
 import { recommendationsFor } from "../engines/cropRotationEngine";
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -38,7 +40,144 @@ import { Button } from "@/components/ui/button";
 import EntityIntelligence from "../components/entity/EntityIntelligence";
 
 const todayISO = localDateISO;
+function calculateCurrentAge(
+  birthDate,
+  ageAtAcquisitionDays = null,
+  acquiredAt = null,
+) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
+  // Preferred source: known birth date
+  if (birthDate) {
+    const birth = new Date(`${birthDate}T00:00:00`);
+
+    if (!Number.isNaN(birth.getTime()) && birth <= today) {
+      return Math.floor(
+        (today.getTime() - birth.getTime()) / (1000 * 60 * 60 * 24),
+      );
+    }
+  }
+
+  // Fallback: age at acquisition + time since acquisition
+  if (
+    ageAtAcquisitionDays !== null &&
+    Number.isFinite(Number(ageAtAcquisitionDays)) &&
+    Number(ageAtAcquisitionDays) >= 0 &&
+    acquiredAt
+  ) {
+    const acquiredDate = new Date(`${acquiredAt}T00:00:00`);
+
+    if (!Number.isNaN(acquiredDate.getTime()) && acquiredDate <= today) {
+      const daysSinceAcquisition = Math.floor(
+        (today.getTime() - acquiredDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      return Number(ageAtAcquisitionDays) + daysSinceAcquisition;
+    }
+  }
+
+  return null;
+}
+
+function formatAge(ageInDays) {
+  if (ageInDays === null || ageInDays === undefined) {
+    return "Unknown";
+  }
+
+  if (ageInDays < 30) {
+    return `${ageInDays} day${ageInDays === 1 ? "" : "s"}`;
+  }
+
+  if (ageInDays < 365) {
+    const months = Math.floor(ageInDays / 30.4375);
+    const days = Math.round(ageInDays % 30.4375);
+
+    if (days === 0) {
+      return `${months} month${months === 1 ? "" : "s"}`;
+    }
+
+    return `${months} month${months === 1 ? "" : "s"} ${days} day${days === 1 ? "" : "s"}`;
+  }
+
+  const years = Math.floor(ageInDays / 365.25);
+  const remainingDays = Math.round(ageInDays % 365.25);
+  const months = Math.floor(remainingDays / 30.4375);
+
+  if (months === 0) {
+    return `${years} year${years === 1 ? "" : "s"}`;
+  }
+
+  return `${years} year${years === 1 ? "" : "s"} ${months} month${months === 1 ? "" : "s"}`;
+}
+function formatLifecycleDate(dateValue) {
+  if (!dateValue) {
+    return "Unknown";
+  }
+
+  const date = new Date(`${dateValue}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function getBirthDateDisplay(lifecycle) {
+  if (!lifecycle?.birth_date) {
+    return "Unknown";
+  }
+
+  return formatLifecycleDate(lifecycle.birth_date);
+}
+
+function getParentDisplay(parent) {
+  if (!parent) {
+    return {
+      title: "Not recorded",
+      description: "No parent information was recorded.",
+    };
+  }
+
+  switch (parent.parent_type) {
+    case "farm_entity":
+      return {
+        title: parent.parent_entity?.label || "Farm entity",
+        description: parent.parent_entity?.species_config?.name
+          ? `Farm entity · ${parent.parent_entity.species_config.name}`
+          : "Farm entity",
+      };
+
+    case "external":
+      return {
+        title: parent.external_reference || "External parent",
+        description: "External parent reference",
+      };
+
+    case "unknown":
+      return {
+        title: "Unknown",
+        description: "The parent is unknown.",
+      };
+
+    case "not_recorded":
+      return {
+        title: "Not recorded",
+        description: "Parent information was not recorded.",
+      };
+
+    default:
+      return {
+        title: "Unknown",
+        description: "Parent information is unavailable.",
+      };
+  }
+}
 
 function eventIcon(type) {
   switch (type) {
@@ -117,16 +256,19 @@ function buildPayloadFromSchema(type, values) {
 
     payload[field.key] = raw;
   }
-
   return payload;
 }
 
 function EntityDetail() {
   const { id } = useParams();
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
   const [entity, setEntity] = useState(null);
   const [events, setEvents] = useState([]);
   const [speciesList, setSpeciesList] = useState([]);
   const [rotationRules, setRotationRules] = useState([]);
+  const [lifecycle, setLifecycle] = useState(null);
+  const [parentage, setParentage] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
@@ -142,25 +284,40 @@ function EntityDetail() {
     setLoading(true);
     setLoadError("");
 
-    const [entityRes, eventsRes, speciesRes] = await Promise.all([
-      supabase
-        .from("farm_entities")
-        .select(
-          "*, species_config:species_config_id(id, name, category, capabilities)",
-        )
-        .eq("id", id)
-        .single(),
-      supabase
-        .from("entity_events")
-        .select("*")
-        .eq("entity_id", id)
-        .order("occurred_at", { ascending: false }),
+    const [entityRes, eventsRes, speciesRes, lifecycleRes, parentageRes] =
+      await Promise.all([
+        supabase
+          .from("farm_entities")
+          .select(
+            "*, species_config:species_config_id(id, name, category, capabilities)",
+          )
+          .eq("id", id)
+          .single(),
+        supabase
+          .from("entity_events")
+          .select("*")
+          .eq("entity_id", id)
+          .order("occurred_at", { ascending: false }),
 
-      supabase
-        .from("species_config")
-        .select("id, name, category, capabilities")
-        .order("name"),
-    ]);
+        supabase
+          .from("species_config")
+          .select("id, name, category, capabilities")
+          .order("name"),
+
+        supabase
+          .from("entity_lifecycle")
+          .select("*")
+          .eq("entity_id", id)
+          .maybeSingle(),
+
+        supabase
+          .from("entity_parentage")
+          .select(
+            `*, parent_entity:parent_entity_id ( id, label, species_config:species_config_id (name))`,
+          )
+          .eq("child_entity_id", id)
+          .order("parent_role"),
+      ]);
 
     if (entityRes.error) {
       setLoadError(entityRes.error.message);
@@ -168,9 +325,28 @@ function EntityDetail() {
       return;
     }
 
+    if (
+      eventsRes.error ||
+      speciesRes.error ||
+      lifecycleRes.error ||
+      parentageRes.error
+    ) {
+      setLoadError(
+        eventsRes.error?.message ||
+          speciesRes.error?.message ||
+          lifecycleRes.error?.message ||
+          parentageRes.error?.message ||
+          "Unable to load entity details.",
+      );
+      setLoading(false);
+      return;
+    }
+
     setEntity(entityRes.data);
     setEvents(eventsRes.data ?? []);
     setSpeciesList(speciesRes.data ?? []);
+    setLifecycle(lifecycleRes.data ?? null);
+    setParentage(parentageRes.data ?? []);
 
     const speciesId = entityRes.data?.species_config_id;
     if (speciesId) {
@@ -272,6 +448,23 @@ function EntityDetail() {
   }
 
   const category = entity.species_config?.category;
+  const currentAgeInDays =
+    entity.tracking_mode === "individual"
+      ? calculateCurrentAge(
+          lifecycle?.birth_date,
+          lifecycle?.age_at_acquisition_days,
+          entity.acquired_at,
+        )
+      : null;
+
+  const currentAge = formatAge(currentAgeInDays);
+
+  const mother = parentage.find((parent) => parent.parent_role === "mother");
+
+  const father = parentage.find((parent) => parent.parent_role === "father");
+
+  const motherDisplay = getParentDisplay(mother);
+  const fatherDisplay = getParentDisplay(father);
 
   const availableTypes = getAvailableEventTypes(entity, speciesList);
   const isClosedEntity = ["sold", "deceased", "harvested"].includes(
@@ -393,8 +586,178 @@ function EntityDetail() {
         </div>
       </div>
 
+      {entity.tracking_mode === "individual" && (
+        <Card className="border-border/70 bg-card shadow-sm">
+          <CardContent className="p-5">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold">Lifecycle</h2>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Birth, acquisition, and current age information for this
+                individual.
+              </p>
+            </div>
+
+            {!lifecycle ? (
+              <div className="rounded-lg border border-dashed border-border/70 bg-muted/30 p-4">
+                <p className="text-sm font-medium">
+                  Lifecycle information is not recorded.
+                </p>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Birth date, origin, and age information are unavailable for
+                  this individual.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Tracking mode
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold capitalize">
+                    {entity.tracking_mode}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Origin
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold capitalize">
+                    {lifecycle.origin_type.replaceAll("_", " ")}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Current age
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold">{currentAge}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Birth date
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold">
+                    {getBirthDateDisplay(lifecycle)}
+                  </p>
+
+                  {lifecycle.birth_date_precision === "estimated" && (
+                    <p className="mt-1 text-xs text-amber-600">
+                      Estimated from age at acquisition.
+                    </p>
+                  )}
+
+                  {lifecycle.birth_date_precision === "approximate" && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Approximate date.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Birth date precision
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold capitalize">
+                    {lifecycle.birth_date_precision?.replaceAll("_", " ") ||
+                      "Unknown"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Acquired
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold">
+                    {entity.acquired_at
+                      ? formatLifecycleDate(entity.acquired_at)
+                      : "Not recorded"}
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {entity.tracking_mode === "individual" &&
+        lifecycle?.origin_type === "born_on_farm" && (
+          <Card className="border-border/70 bg-card shadow-sm">
+            <CardContent className="p-5">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold">Parentage</h2>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Recorded parent information for this farm-born individual.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* Mother */}
+                <div className="rounded-lg border border-border/60 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Mother
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold">
+                    {motherDisplay.title}
+                  </p>
+
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {motherDisplay.description}
+                  </p>
+
+                  {mother?.parent_type === "farm_entity" &&
+                    mother.parent_entity?.id && (
+                      <Link
+                        to={`/farm-os/entities/${mother.parent_entity.id}`}
+                        className="mt-3 inline-flex text-xs font-medium text-primary transition-colors hover:text-primary/80"
+                      >
+                        View mother →
+                      </Link>
+                    )}
+                </div>
+
+                {/* Father */}
+                <div className="rounded-lg border border-border/60 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Father
+                  </p>
+
+                  <p className="mt-1 text-sm font-semibold">
+                    {fatherDisplay.title}
+                  </p>
+
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {fatherDisplay.description}
+                  </p>
+
+                  {father?.parent_type === "farm_entity" &&
+                    father.parent_entity?.id && (
+                      <Link
+                        to={`/farm-os/entities/${father.parent_entity.id}`}
+                        className="mt-3 inline-flex text-xs font-medium text-primary transition-colors hover:text-primary/80"
+                      >
+                        View father →
+                      </Link>
+                    )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
       <EntityIntelligence entity={entity} events={events} />
-      
+
       {harvestOutlook && (
         <Card className="border-border/70 bg-secondary/50 shadow-sm">
           <CardContent className="p-4">
@@ -447,164 +810,166 @@ function EntityDetail() {
         </div>
       )}
 
-      <section className="space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <ClipboardPlus className="size-4" />
-          </div>
-
-          <div>
-            <h2 className="text-base font-semibold">Log an event</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Record an event for this farm entity.
-            </p>
-          </div>
-        </div>
-
-        {isClosedEntity && (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
-            This entity is {entity.status}. Operational events can no longer be
-            recorded.
-          </div>
-        )}
-
-        <form
-          onSubmit={handleAddEvent}
-          className={`rounded-xl border border-border/70 bg-card p-5 shadow-sm ${
-            isClosedEntity ? "opacity-70" : ""
-          }`}
-        >
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label
-                htmlFor="entity-event-type"
-                className="text-sm font-medium"
-              >
-                Event type
-              </label>
-
-              <select
-                id="entity-event-type"
-                disabled={isClosedEntity}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-                value={form.type}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    type: e.target.value,
-                    values: {},
-                  }))
-                }
-                required
-              >
-                <option value="">Select an event…</option>
-
-                {availableTypes.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
+      {canEdit && (
+        <section className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <ClipboardPlus className="size-4" />
             </div>
 
-            <div className="space-y-2">
-              <label
-                htmlFor="entity-event-date"
-                className="text-sm font-medium"
-              >
-                Date
-              </label>
-
-              <Input
-                id="entity-event-date"
-                type="date"
-                disabled={isClosedEntity}
-                value={form.date}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    date: e.target.value,
-                  }))
-                }
-              />
+            <div>
+              <h2 className="text-base font-semibold">Log an event</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Record an event for this farm entity.
+              </p>
             </div>
           </div>
 
-          {selectedTypeDef && (
-            <div className="mt-5 border-t border-border/60 pt-5">
-              <div className="mb-4">
-                <p className="text-sm font-medium">Event details</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Add the information available for this event.
-                </p>
-              </div>
-
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {selectedTypeDef.fields.map((field) => {
-                  const isWide =
-                    field.key === "notes" ||
-                    field.key === "reason" ||
-                    field.key === "quality";
-
-                  return (
-                    <div
-                      key={field.key}
-                      className={
-                        isWide
-                          ? "space-y-2 sm:col-span-2 lg:col-span-3"
-                          : "space-y-2"
-                      }
-                    >
-                      <label
-                        htmlFor={`entity-event-${field.key}`}
-                        className="text-sm font-medium"
-                      >
-                        {field.label}
-                      </label>
-
-                      <div className="relative">
-                        <Input
-                          id={`entity-event-${field.key}`}
-                          type={field.type}
-                          min={field.min}
-                          step={field.step}
-                          placeholder={field.placeholder ?? ""}
-                          value={form.values[field.key] ?? ""}
-                          onChange={(e) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              values: {
-                                ...prev.values,
-                                [field.key]: e.target.value,
-                              },
-                            }))
-                          }
-                          className={field.unit ? "pr-12" : ""}
-                        />
-
-                        {field.unit && (
-                          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                            {field.unit}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+          {isClosedEntity && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
+              This entity is {entity.status}. Operational events can no longer
+              be recorded.
             </div>
           )}
 
-          <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
-            <Button
-              type="submit"
-              disabled={!form.type || saving || isClosedEntity}
-            >
-              {saving ? "Saving…" : "Log event"}
-            </Button>
-          </div>
-        </form>
-      </section>
+          <form
+            onSubmit={handleAddEvent}
+            className={`rounded-xl border border-border/70 bg-card p-5 shadow-sm ${
+              isClosedEntity ? "opacity-70" : ""
+            }`}
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label
+                  htmlFor="entity-event-type"
+                  className="text-sm font-medium"
+                >
+                  Event type
+                </label>
+
+                <select
+                  id="entity-event-type"
+                  disabled={isClosedEntity}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+                  value={form.type}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      type: e.target.value,
+                      values: {},
+                    }))
+                  }
+                  required
+                >
+                  <option value="">Select an event…</option>
+
+                  {availableTypes.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="entity-event-date"
+                  className="text-sm font-medium"
+                >
+                  Date
+                </label>
+
+                <Input
+                  id="entity-event-date"
+                  type="date"
+                  disabled={isClosedEntity}
+                  value={form.date}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      date: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            {selectedTypeDef && (
+              <div className="mt-5 border-t border-border/60 pt-5">
+                <div className="mb-4">
+                  <p className="text-sm font-medium">Event details</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Add the information available for this event.
+                  </p>
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {selectedTypeDef.fields.map((field) => {
+                    const isWide =
+                      field.key === "notes" ||
+                      field.key === "reason" ||
+                      field.key === "quality";
+
+                    return (
+                      <div
+                        key={field.key}
+                        className={
+                          isWide
+                            ? "space-y-2 sm:col-span-2 lg:col-span-3"
+                            : "space-y-2"
+                        }
+                      >
+                        <label
+                          htmlFor={`entity-event-${field.key}`}
+                          className="text-sm font-medium"
+                        >
+                          {field.label}
+                        </label>
+
+                        <div className="relative">
+                          <Input
+                            id={`entity-event-${field.key}`}
+                            type={field.type}
+                            min={field.min}
+                            step={field.step}
+                            placeholder={field.placeholder ?? ""}
+                            value={form.values[field.key] ?? ""}
+                            onChange={(e) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                values: {
+                                  ...prev.values,
+                                  [field.key]: e.target.value,
+                                },
+                              }))
+                            }
+                            className={field.unit ? "pr-12" : ""}
+                          />
+
+                          {field.unit && (
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                              {field.unit}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
+              <Button
+                type="submit"
+                disabled={!form.type || saving || isClosedEntity}
+              >
+                {saving ? "Saving…" : "Log event"}
+              </Button>
+            </div>
+          </form>
+        </section>
+      )}
 
       <section className="space-y-4">
         <div className="flex items-start gap-3">

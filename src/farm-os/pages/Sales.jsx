@@ -3,6 +3,8 @@ import { CalendarDays, ShoppingCart } from "lucide-react";
 
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,9 @@ import {
 } from "@/components/ui/dialog";
 
 function Sales() {
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
+
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -349,136 +354,141 @@ function Sales() {
         </div>
       </section>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Sale details</CardTitle>
-          </CardHeader>
+      {canEdit && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Sale details</CardTitle>
+            </CardHeader>
 
-          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-              <span>Farm entity</span>
-              <select
-                value={entityId}
-                onChange={(e) => setEntityId(e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              >
-                <option value="">Select entity…</option>
+            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                <span>Farm entity</span>
+                <select
+                  value={entityId}
+                  onChange={(e) => setEntityId(e.target.value)}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  <option value="">Select entity…</option>
 
-                {entities.map((entity) => (
-                  <option key={entity.id} value={entity.id}>
-                    {entity.label} — {entity.species_config?.name ?? "Unknown"}
-                  </option>
-                ))}
-              </select>
-            </label>
+                  {entities.map((entity) => (
+                    <option key={entity.id} value={entity.id}>
+                      {entity.label} —{" "}
+                      {entity.species_config?.name ?? "Unknown"}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-              <span>Quantity</span>
-              <Input
-                type="number"
-                min="0"
-                step="any"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="0"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-              <span>Unit</span>
-              <Input
-                type="text"
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                placeholder="e.g. egg, kg, bird"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-              <span>Unit price (৳)</span>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={unitPrice}
-                onChange={(e) => setUnitPrice(e.target.value)}
-                placeholder="0.00"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-              <span>Discount (৳)</span>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-                placeholder="0.00"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-              <span>Sale date</span>
-              <div className="relative">
-                <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                <span>Quantity</span>
                 <Input
-                  type="date"
-                  value={soldAt}
-                  onChange={(e) => setSoldAt(e.target.value)}
-                  className="pl-9"
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder="0"
                 />
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                <span>Unit</span>
+                <Input
+                  type="text"
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  placeholder="e.g. egg, kg, bird"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                <span>Unit price (৳)</span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={unitPrice}
+                  onChange={(e) => setUnitPrice(e.target.value)}
+                  placeholder="0.00"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                <span>Discount (৳)</span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                <span>Sale date</span>
+                <div className="relative">
+                  <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="date"
+                    value={soldAt}
+                    onChange={(e) => setSoldAt(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground sm:col-span-2">
+                <span>Customer</span>
+                <Input
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="Optional"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                <span>Notes</span>
+                <Input
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Optional"
+                />
+              </label>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Sale total
+                </p>
+                <p className="mt-1 text-2xl font-semibold">
+                  ৳{total.toFixed(2)}
+                </p>
               </div>
-            </label>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground sm:col-span-2">
-              <span>Customer</span>
-              <Input
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Optional"
-              />
-            </label>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Recording…" : "Record sale"}
+              </Button>
+            </CardContent>
+          </Card>
 
-            <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-              <span>Notes</span>
-              <Input
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Optional"
-              />
-            </label>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Sale total
-              </p>
-              <p className="mt-1 text-2xl font-semibold">৳{total.toFixed(2)}</p>
+          {submitError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {submitError}
             </div>
+          )}
 
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Recording…" : "Record sale"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {submitError && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {submitError}
-          </div>
-        )}
-
-        {submitted && (
-          <div className="rounded-lg border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-forest">
-            Sale recorded successfully.
-          </div>
-        )}
-      </form>
+          {submitted && (
+            <div className="rounded-lg border border-forest/20 bg-forest/5 px-4 py-3 text-sm text-forest">
+              Sale recorded successfully.
+            </div>
+          )}
+        </form>
+      )}
       <div className="sales-summary-grid grid gap-4 sm:grid-cols-3">
         <Card className="sales-summary-card">
           <CardContent className="pt-6">
@@ -670,35 +680,37 @@ function Sales() {
 
                       <td className="px-3 py-3">{sale.customer_name || "—"}</td>
                       <td className="px-3 py-3">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setActionError("");
-                              setEditingSale({
-                                ...sale,
-                                customer_name: sale.customer_name ?? "",
-                                notes: sale.notes ?? "",
-                              });
-                            }}
-                          >
-                            Edit
-                          </Button>
+                        {canEdit && (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setActionError("");
+                                setEditingSale({
+                                  ...sale,
+                                  customer_name: sale.customer_name ?? "",
+                                  notes: sale.notes ?? "",
+                                });
+                              }}
+                            >
+                              Edit
+                            </Button>
 
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            disabled={deletingSaleId === sale.id}
-                            onClick={() => handleDeleteSale(sale.id)}
-                          >
-                            {deletingSaleId === sale.id
-                              ? "Deleting…"
-                              : "Delete"}
-                          </Button>
-                        </div>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              disabled={deletingSaleId === sale.id}
+                              onClick={() => handleDeleteSale(sale.id)}
+                            >
+                              {deletingSaleId === sale.id
+                                ? "Deleting…"
+                                : "Delete"}
+                            </Button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -708,149 +720,151 @@ function Sales() {
           )}
         </CardContent>
       </Card>
-      <Dialog
-        open={Boolean(editingSale)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditingSale(null);
-            setActionError("");
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Sale</DialogTitle>
-          </DialogHeader>
+      {canEdit && (
+        <Dialog
+          open={Boolean(editingSale)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingSale(null);
+              setActionError("");
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Sale</DialogTitle>
+            </DialogHeader>
 
-          {editingSale && (
-            <div className="sales-edit-form space-y-4">
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                <span>Quantity</span>
-                <Input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={editingSale.quantity}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      quantity: e.target.value,
-                    })
-                  }
-                />
-              </label>
+            {editingSale && (
+              <div className="sales-edit-form space-y-4">
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  <span>Quantity</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={editingSale.quantity}
+                    onChange={(e) =>
+                      setEditingSale({
+                        ...editingSale,
+                        quantity: e.target.value,
+                      })
+                    }
+                  />
+                </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                <span>Unit</span>
-                <Input
-                  value={editingSale.unit}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      unit: e.target.value,
-                    })
-                  }
-                />
-              </label>
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  <span>Unit</span>
+                  <Input
+                    value={editingSale.unit}
+                    onChange={(e) =>
+                      setEditingSale({
+                        ...editingSale,
+                        unit: e.target.value,
+                      })
+                    }
+                  />
+                </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                <span>Unit price (৳)</span>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editingSale.unit_price}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      unit_price: e.target.value,
-                    })
-                  }
-                />
-              </label>
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  <span>Unit price (৳)</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editingSale.unit_price}
+                    onChange={(e) =>
+                      setEditingSale({
+                        ...editingSale,
+                        unit_price: e.target.value,
+                      })
+                    }
+                  />
+                </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                <span>Discount (৳)</span>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editingSale.discount}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      discount: e.target.value,
-                    })
-                  }
-                />
-              </label>
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  <span>Discount (৳)</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editingSale.discount}
+                    onChange={(e) =>
+                      setEditingSale({
+                        ...editingSale,
+                        discount: e.target.value,
+                      })
+                    }
+                  />
+                </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                <span>Customer</span>
-                <Input
-                  value={editingSale.customer_name}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      customer_name: e.target.value,
-                    })
-                  }
-                />
-              </label>
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  <span>Customer</span>
+                  <Input
+                    value={editingSale.customer_name}
+                    onChange={(e) =>
+                      setEditingSale({
+                        ...editingSale,
+                        customer_name: e.target.value,
+                      })
+                    }
+                  />
+                </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                <span>Sale date</span>
-                <Input
-                  type="date"
-                  value={editingSale.sold_at}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      sold_at: e.target.value,
-                    })
-                  }
-                />
-              </label>
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  <span>Sale date</span>
+                  <Input
+                    type="date"
+                    value={editingSale.sold_at}
+                    onChange={(e) =>
+                      setEditingSale({
+                        ...editingSale,
+                        sold_at: e.target.value,
+                      })
+                    }
+                  />
+                </label>
 
-              <label className="flex flex-col gap-1.5 text-sm font-medium">
-                <span>Notes</span>
-                <Input
-                  value={editingSale.notes}
-                  onChange={(e) =>
-                    setEditingSale({
-                      ...editingSale,
-                      notes: e.target.value,
-                    })
-                  }
-                />
-              </label>
+                <label className="flex flex-col gap-1.5 text-sm font-medium">
+                  <span>Notes</span>
+                  <Input
+                    value={editingSale.notes}
+                    onChange={(e) =>
+                      setEditingSale({
+                        ...editingSale,
+                        notes: e.target.value,
+                      })
+                    }
+                  />
+                </label>
 
-              {actionError && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {actionError}
+                {actionError && (
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {actionError}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingSale(null);
+                      setActionError("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button type="button" onClick={handleUpdateSale}>
+                    Save changes
+                  </Button>
                 </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setEditingSale(null);
-                    setActionError("");
-                  }}
-                >
-                  Cancel
-                </Button>
-
-                <Button type="button" onClick={handleUpdateSale}>
-                  Save changes
-                </Button>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

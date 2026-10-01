@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 import {
   splitByPercent
 } from "../engines/financeEngine";
@@ -47,6 +49,9 @@ import {
 const todayISO = localDateISO;
 
 function Finance() {
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
+
   const [projects, setProjects] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [entities, setEntities] = useState([]);
@@ -562,20 +567,22 @@ function Finance() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                document
-                  .getElementById("finance-transaction-form")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <Plus className="size-4" />
-              Transaction
-            </Button>
-          </div>
+          {canEdit && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  document
+                    .getElementById("finance-transaction-form")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
+                <Plus className="size-4" />
+                Transaction
+              </Button>
+            </div>
+          )}
         </div>
       </section>
       <section className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
@@ -715,306 +722,311 @@ function Finance() {
         </Card>
       )}
 
-      <section ref={transactionsSectionRef} className="space-y-5">
-        <div className="flex items-start gap-3">
-          <Receipt className="mt-1 size-5 shrink-0 text-primary" />
+      {canEdit && (
+        <section ref={transactionsSectionRef} className="space-y-5">
+          <div className="flex items-start gap-3">
+            <Receipt className="mt-1 size-5 shrink-0 text-primary" />
 
-          <div>
-            <h2 className="text-xl font-semibold tracking-[-0.02em]">
-              Add a transaction
-            </h2>
+            <div>
+              <h2 className="text-xl font-semibold tracking-[-0.02em]">
+                Add a transaction
+              </h2>
 
-            <p className="mt-1 text-sm text-muted-foreground">
-              Record income, expenses, or asset purchases against your farm.
-            </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Record income, expenses, or asset purchases against your farm.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <form
-          id="finance-transaction-form"
-          onSubmit={handleAddTransaction}
-          className="rounded-xl border border-dashed border-border bg-card shadow-sm"
-        >
-          <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
-            <select
-              value={txn.type}
-              onChange={(e) =>
-                setTxn((p) => ({
-                  ...p,
-                  type: e.target.value,
-                }))
-              }
-              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-              <option value="asset">Asset purchase</option>
-            </select>
+          <form
+            id="finance-transaction-form"
+            onSubmit={handleAddTransaction}
+            className="rounded-xl border border-dashed border-border bg-card shadow-sm"
+          >
+            <div className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-3">
+              <select
+                value={txn.type}
+                onChange={(e) =>
+                  setTxn((p) => ({
+                    ...p,
+                    type: e.target.value,
+                  }))
+                }
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm font-medium shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+                <option value="asset">Asset purchase</option>
+              </select>
 
-            <Input
-              type="number"
-              step="any"
-              placeholder="Amount (৳)"
-              value={txn.amount}
-              onChange={(e) =>
-                setTxn((p) => ({
-                  ...p,
-                  amount: e.target.value,
-                }))
-              }
-              required
-              className="h-10 text-base font-semibold"
-            />
-
-            <Input
-              type="text"
-              placeholder="Category"
-              value={txn.category}
-              onChange={(e) =>
-                setTxn((p) => ({
-                  ...p,
-                  category: e.target.value,
-                }))
-              }
-            />
-
-            <select
-              value={txn.projectId}
-              onChange={(e) =>
-                setTxn((prev) => ({
-                  ...prev,
-                  projectId: e.target.value,
-                  entityId: "",
-                }))
-              }
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="">No project (general)</option>
-
-              {activeProjects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={txn.entityId}
-              onChange={(e) =>
-                setTxn((prev) => ({
-                  ...prev,
-                  entityId: e.target.value,
-                }))
-              }
-              disabled={!txn.projectId}
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <option value="">
-                {txn.projectId
-                  ? "Select entity (optional)"
-                  : "Select a project first"}
-              </option>
-
-              {transactionEntities.map((entity) => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.label}
-                </option>
-              ))}
-            </select>
-
-            <Input
-              type="date"
-              value={txn.date}
-              onChange={(e) =>
-                setTxn((p) => ({
-                  ...p,
-                  date: e.target.value,
-                }))
-              }
-            />
-
-            <Input
-              type="text"
-              placeholder="Notes (optional)"
-              value={txn.notes}
-              onChange={(e) =>
-                setTxn((p) => ({
-                  ...p,
-                  notes: e.target.value,
-                }))
-              }
-              className="sm:col-span-2 lg:col-span-3"
-            />
-          </div>
-          <div className="flex items-center justify-between border-t border-border/60 px-5 py-4">
-            <p className="text-xs text-muted-foreground">
-              Transactions update the farm's financial totals immediately.
-            </p>
-
-            <Button type="submit" disabled={savingTxn} className="h-10">
-              {savingTxn ? "Saving…" : "Add transaction"}
-            </Button>
-          </div>
-        </form>
-      </section>
-
-      <section className="space-y-5">
-        <div className="flex items-start gap-3">
-          <Split className="mt-1 size-5 shrink-0 text-primary" />
-
-          <div>
-            <h2 className="text-xl font-semibold tracking-[-0.02em]">
-              Shared expense
-            </h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Split a shared cost across multiple projects by percentage.
-            </p>
-          </div>
-        </div>
-
-        <form
-          onSubmit={handleSaveSplit}
-          className="rounded-2xl border border-border bg-card shadow-sm"
-        >
-          <div className="space-y-6 p-5">
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               <Input
                 type="number"
                 step="any"
-                placeholder="Total amount (৳)"
-                value={split.amount}
+                placeholder="Amount (৳)"
+                value={txn.amount}
                 onChange={(e) =>
-                  setSplit((s) => ({
-                    ...s,
+                  setTxn((p) => ({
+                    ...p,
                     amount: e.target.value,
+                  }))
+                }
+                required
+                className="h-10 text-base font-semibold"
+              />
+
+              <Input
+                type="text"
+                placeholder="Category"
+                value={txn.category}
+                onChange={(e) =>
+                  setTxn((p) => ({
+                    ...p,
+                    category: e.target.value,
+                  }))
+                }
+              />
+
+              <select
+                value={txn.projectId}
+                onChange={(e) =>
+                  setTxn((prev) => ({
+                    ...prev,
+                    projectId: e.target.value,
+                    entityId: "",
+                  }))
+                }
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="">No project (general)</option>
+
+                {activeProjects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={txn.entityId}
+                onChange={(e) =>
+                  setTxn((prev) => ({
+                    ...prev,
+                    entityId: e.target.value,
+                  }))
+                }
+                disabled={!txn.projectId}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <option value="">
+                  {txn.projectId
+                    ? "Select entity (optional)"
+                    : "Select a project first"}
+                </option>
+
+                {transactionEntities.map((entity) => (
+                  <option key={entity.id} value={entity.id}>
+                    {entity.label}
+                  </option>
+                ))}
+              </select>
+
+              <Input
+                type="date"
+                value={txn.date}
+                onChange={(e) =>
+                  setTxn((p) => ({
+                    ...p,
+                    date: e.target.value,
                   }))
                 }
               />
 
               <Input
                 type="text"
-                placeholder="Category, e.g. labour"
-                value={split.category}
+                placeholder="Notes (optional)"
+                value={txn.notes}
                 onChange={(e) =>
-                  setSplit((s) => ({
-                    ...s,
-                    category: e.target.value,
+                  setTxn((p) => ({
+                    ...p,
+                    notes: e.target.value,
                   }))
                 }
-              />
-
-              <Input
-                type="date"
-                value={split.date}
-                onChange={(e) =>
-                  setSplit((s) => ({
-                    ...s,
-                    date: e.target.value,
-                  }))
-                }
+                className="sm:col-span-2 lg:col-span-3"
               />
             </div>
+            <div className="flex items-center justify-between border-t border-border/60 px-5 py-4">
+              <p className="text-xs text-muted-foreground">
+                Transactions update the farm's financial totals immediately.
+              </p>
 
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-semibold">Project allocations</p>
-                <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-                  Assign the shared cost across projects. The allocation
-                  percentages must add up to 100%.
-                </p>
-              </div>
+              <Button type="submit" disabled={savingTxn} className="h-10">
+                {savingTxn ? "Saving…" : "Add transaction"}
+              </Button>
+            </div>
+          </form>
+        </section>
+      )}
 
-              <div className="space-y-2">
-                {split.allocations.map((allocation, index) => (
-                  <div
-                    key={index}
-                    className="finance-allocation-row grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
-                    style={{ "--delay": `${index * 70}ms` }}
-                  >
-                    <select
-                      value={allocation.projectId}
-                      onChange={(e) =>
-                        updateAllocation(index, "projectId", e.target.value)
-                      }
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                    >
-                      <option value="">Select project</option>
+      {canEdit && (
+        <section className="space-y-5">
+          <div className="flex items-start gap-3">
+            <Split className="mt-1 size-5 shrink-0 text-primary" />
 
-                      {activeProjects
-                        .filter(
-                          (project) =>
-                            project.id === allocation.projectId ||
-                            !split.allocations.some(
-                              (item, itemIndex) =>
-                                itemIndex !== index &&
-                                item.projectId === project.id,
-                            ),
-                        )
-                        .map((project) => (
-                          <option key={project.id} value={project.id}>
-                            {project.name}
-                          </option>
-                        ))}
-                    </select>
+            <div>
+              <h2 className="text-xl font-semibold tracking-[-0.02em]">
+                Shared expense
+              </h2>
 
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="any"
-                      placeholder="%"
-                      value={allocation.percent}
-                      onChange={(e) =>
-                        updateAllocation(index, "percent", e.target.value)
-                      }
-                    />
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={split.allocations.length === 1}
-                      onClick={() => removeAllocationRow(index)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/40 px-4 py-3">
-                <span className="text-sm text-muted-foreground">
-                  Total allocation
-                </span>
-
-                <span className="text-sm font-semibold">
-                  {split.allocations.reduce(
-                    (sum, allocation) => sum + Number(allocation.percent || 0),
-                    0,
-                  )}
-                  %
-                </span>
-              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Split a shared cost across multiple projects by percentage.
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addAllocationRow}
-              className="h-10"
-            >
-              + Add project
-            </Button>
+          <form
+            onSubmit={handleSaveSplit}
+            className="rounded-2xl border border-border bg-card shadow-sm"
+          >
+            <div className="space-y-6 p-5">
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <Input
+                  type="number"
+                  step="any"
+                  placeholder="Total amount (৳)"
+                  value={split.amount}
+                  onChange={(e) =>
+                    setSplit((s) => ({
+                      ...s,
+                      amount: e.target.value,
+                    }))
+                  }
+                />
 
-            <Button type="submit" disabled={savingSplit} className="h-10">
-              {savingSplit ? "Saving…" : "Save Split Expense"}
-            </Button>
-          </div>
-        </form>
-      </section>
+                <Input
+                  type="text"
+                  placeholder="Category, e.g. labour"
+                  value={split.category}
+                  onChange={(e) =>
+                    setSplit((s) => ({
+                      ...s,
+                      category: e.target.value,
+                    }))
+                  }
+                />
+
+                <Input
+                  type="date"
+                  value={split.date}
+                  onChange={(e) =>
+                    setSplit((s) => ({
+                      ...s,
+                      date: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold">Project allocations</p>
+                  <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+                    Assign the shared cost across projects. The allocation
+                    percentages must add up to 100%.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {split.allocations.map((allocation, index) => (
+                    <div
+                      key={index}
+                      className="finance-allocation-row grid gap-3 rounded-xl border border-border/60 bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
+                      style={{ "--delay": `${index * 70}ms` }}
+                    >
+                      <select
+                        value={allocation.projectId}
+                        onChange={(e) =>
+                          updateAllocation(index, "projectId", e.target.value)
+                        }
+                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                      >
+                        <option value="">Select project</option>
+
+                        {activeProjects
+                          .filter(
+                            (project) =>
+                              project.id === allocation.projectId ||
+                              !split.allocations.some(
+                                (item, itemIndex) =>
+                                  itemIndex !== index &&
+                                  item.projectId === project.id,
+                              ),
+                          )
+                          .map((project) => (
+                            <option key={project.id} value={project.id}>
+                              {project.name}
+                            </option>
+                          ))}
+                      </select>
+
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="any"
+                        placeholder="%"
+                        value={allocation.percent}
+                        onChange={(e) =>
+                          updateAllocation(index, "percent", e.target.value)
+                        }
+                      />
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={split.allocations.length === 1}
+                        onClick={() => removeAllocationRow(index)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-muted/40 px-4 py-3">
+                  <span className="text-sm text-muted-foreground">
+                    Total allocation
+                  </span>
+
+                  <span className="text-sm font-semibold">
+                    {split.allocations.reduce(
+                      (sum, allocation) =>
+                        sum + Number(allocation.percent || 0),
+                      0,
+                    )}
+                    %
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addAllocationRow}
+                className="h-10"
+              >
+                + Add project
+              </Button>
+
+              <Button type="submit" disabled={savingSplit} className="h-10">
+                {savingSplit ? "Saving…" : "Save Split Expense"}
+              </Button>
+            </div>
+          </form>
+        </section>
+      )}
 
       <section className="space-y-5">
         <div className="flex items-start gap-3">
@@ -1123,7 +1135,7 @@ function Finance() {
                         <Badge variant="secondary" className="font-normal">
                           From sale
                         </Badge>
-                      ) : (
+                      ) : canEdit ? (
                         <div className="flex items-center gap-1">
                           <Button
                             type="button"
@@ -1156,7 +1168,7 @@ function Finance() {
                             {deletingTxnId === t.id ? "Deleting…" : "Delete"}
                           </Button>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -1165,7 +1177,7 @@ function Finance() {
           </CardContent>
         </Card>
       </section>
-      {editingTxn && (
+      {canEdit && editingTxn && (
         <Dialog
           open={Boolean(editingTxn)}
           onOpenChange={(open) => {

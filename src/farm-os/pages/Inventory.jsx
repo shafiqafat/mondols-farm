@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { computeStock } from "../engines/inventoryEngine";
 import { localDateISO } from "../lib/localDate";
+import { useAuth } from "../hooks/useAuth";
+import { canWrite } from "../lib/permissions";
 import {
   AlertTriangle,
   ArrowDownToLine,
@@ -26,6 +28,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 function Inventory() {
+  const { role } = useAuth();
+  const canEdit = canWrite(role);
+
   const [items, setItems] = useState([]);
   const [lotsByItem, setLotsByItem] = useState({});
   const [loading, setLoading] = useState(true);
@@ -299,19 +304,21 @@ function Inventory() {
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() =>
-              document
-                .getElementById("add-inventory-item")
-                ?.scrollIntoView({ behavior: "smooth" })
-            }
-            className="w-full sm:w-auto"
-          >
-            <Plus className="size-4" />
-            Add inventory item
-          </Button>
+          {canEdit && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                document
+                  .getElementById("add-inventory-item")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="w-full sm:w-auto"
+            >
+              <Plus className="size-4" />
+              Add inventory item
+            </Button>
+          )}
         </div>
       </section>
 
@@ -614,70 +621,72 @@ function Inventory() {
                 )}
 
                 {/* Purchase */}
-                <div className="rounded-lg border border-border/50 bg-muted/[0.12] p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <ShoppingCart className="size-4 text-primary" />
+                {canEdit && (
+                  <div className="rounded-lg border border-border/50 bg-muted/[0.12] p-4">
+                    <div className="mb-3 flex items-center gap-2">
+                      <ShoppingCart className="size-4 text-primary" />
 
-                    <div>
-                      <p className="text-sm font-medium">Record purchase</p>
-                      <p className="text-xs text-muted-foreground">
-                        Add a new stock lot for {item.name}.
-                      </p>
+                      <div>
+                        <p className="text-sm font-medium">Record purchase</p>
+                        <p className="text-xs text-muted-foreground">
+                          Add a new stock lot for {item.name}.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder={`Quantity (${item.unit})`}
+                        value={form.qty}
+                        onChange={(e) =>
+                          updatePurchaseForm(item.id, "qty", e.target.value)
+                        }
+                      />
+
+                      <Input
+                        type="number"
+                        step="any"
+                        min="0"
+                        placeholder="Cost / unit (৳)"
+                        value={form.costPerUnit}
+                        onChange={(e) =>
+                          updatePurchaseForm(
+                            item.id,
+                            "costPerUnit",
+                            e.target.value,
+                          )
+                        }
+                      />
+
+                      <Input
+                        type="date"
+                        value={form.purchasedAt}
+                        onChange={(e) =>
+                          updatePurchaseForm(
+                            item.id,
+                            "purchasedAt",
+                            e.target.value,
+                          )
+                        }
+                      />
+
+                      <Button
+                        type="button"
+                        onClick={() => handleRecordPurchase(item)}
+                        disabled={savingPurchase === item.id}
+                        className="w-full"
+                      >
+                        <Plus className="size-4" />
+                        {savingPurchase === item.id
+                          ? "Saving…"
+                          : "Record purchase"}
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
-                    <Input
-                      type="number"
-                      step="any"
-                      min="0"
-                      placeholder={`Quantity (${item.unit})`}
-                      value={form.qty}
-                      onChange={(e) =>
-                        updatePurchaseForm(item.id, "qty", e.target.value)
-                      }
-                    />
-
-                    <Input
-                      type="number"
-                      step="any"
-                      min="0"
-                      placeholder="Cost / unit (৳)"
-                      value={form.costPerUnit}
-                      onChange={(e) =>
-                        updatePurchaseForm(
-                          item.id,
-                          "costPerUnit",
-                          e.target.value,
-                        )
-                      }
-                    />
-
-                    <Input
-                      type="date"
-                      value={form.purchasedAt}
-                      onChange={(e) =>
-                        updatePurchaseForm(
-                          item.id,
-                          "purchasedAt",
-                          e.target.value,
-                        )
-                      }
-                    />
-
-                    <Button
-                      type="button"
-                      onClick={() => handleRecordPurchase(item)}
-                      disabled={savingPurchase === item.id}
-                      className="w-full"
-                    >
-                      <Plus className="size-4" />
-                      {savingPurchase === item.id
-                        ? "Saving…"
-                        : "Record purchase"}
-                    </Button>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           );
@@ -685,88 +694,90 @@ function Inventory() {
       </section>
 
       {/* Add item */}
-      <section id="add-inventory-item">
-        <form
-          onSubmit={handleAddItem}
-          className="overflow-hidden rounded-2xl border border-dashed border-border bg-card shadow-sm"
-        >
-          <div className="border-b border-border/60 bg-muted/[0.18] px-5 py-5">
-            <div className="flex items-start gap-3">
-              <div className="rounded-lg bg-primary/10 p-2.5">
-                <Plus className="size-4 text-primary" />
-              </div>
+      {canEdit && (
+        <section id="add-inventory-item">
+          <form
+            onSubmit={handleAddItem}
+            className="overflow-hidden rounded-2xl border border-dashed border-border bg-card shadow-sm"
+          >
+            <div className="border-b border-border/60 bg-muted/[0.18] px-5 py-5">
+              <div className="flex items-start gap-3">
+                <div className="rounded-lg bg-primary/10 p-2.5">
+                  <Plus className="size-4 text-primary" />
+                </div>
 
-              <div>
-                <h2 className="text-base font-semibold tracking-tight">
-                  Add inventory item
-                </h2>
+                <div>
+                  <h2 className="text-base font-semibold tracking-tight">
+                    Add inventory item
+                  </h2>
 
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Create a reusable inventory item for feed, medicine,
-                  materials, or other farm supplies.
-                </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Create a reusable inventory item for feed, medicine,
+                    materials, or other farm supplies.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-5">
-            <Input
-              type="text"
-              placeholder="Name, e.g. Quail Layer Feed"
-              value={newItem.name}
-              onChange={(e) =>
-                setNewItem((p) => ({ ...p, name: e.target.value }))
-              }
-              required
-            />
+            <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-5">
+              <Input
+                type="text"
+                placeholder="Name, e.g. Quail Layer Feed"
+                value={newItem.name}
+                onChange={(e) =>
+                  setNewItem((p) => ({ ...p, name: e.target.value }))
+                }
+                required
+              />
 
-            <select
-              value={newItem.unit}
-              onChange={(e) =>
-                setNewItem((p) => ({ ...p, unit: e.target.value }))
-              }
-              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="kg">kg</option>
-              <option value="liter">liter</option>
-              <option value="bag">bag</option>
-              <option value="unit">unit</option>
-            </select>
+              <select
+                value={newItem.unit}
+                onChange={(e) =>
+                  setNewItem((p) => ({ ...p, unit: e.target.value }))
+                }
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <option value="kg">kg</option>
+                <option value="liter">liter</option>
+                <option value="bag">bag</option>
+                <option value="unit">unit</option>
+              </select>
 
-            <Input
-              type="number"
-              min="0"
-              placeholder="Reorder lead time (days)"
-              value={newItem.reorderLeadTimeDays}
-              onChange={(e) =>
-                setNewItem((p) => ({
-                  ...p,
-                  reorderLeadTimeDays: e.target.value,
-                }))
-              }
-            />
+              <Input
+                type="number"
+                min="0"
+                placeholder="Reorder lead time (days)"
+                value={newItem.reorderLeadTimeDays}
+                onChange={(e) =>
+                  setNewItem((p) => ({
+                    ...p,
+                    reorderLeadTimeDays: e.target.value,
+                  }))
+                }
+              />
 
-            <Input
-              type="number"
-              min="0"
-              step="any"
-              placeholder="Safety stock"
-              value={newItem.safetyStock}
-              onChange={(e) =>
-                setNewItem((p) => ({
-                  ...p,
-                  safetyStock: e.target.value,
-                }))
-              }
-            />
+              <Input
+                type="number"
+                min="0"
+                step="any"
+                placeholder="Safety stock"
+                value={newItem.safetyStock}
+                onChange={(e) =>
+                  setNewItem((p) => ({
+                    ...p,
+                    safetyStock: e.target.value,
+                  }))
+                }
+              />
 
-            <Button type="submit" disabled={addingItem} className="w-full">
-              <Plus className="size-4" />
-              {addingItem ? "Adding…" : "Add item"}
-            </Button>
-          </div>
-        </form>
-      </section>
+              <Button type="submit" disabled={addingItem} className="w-full">
+                <Plus className="size-4" />
+                {addingItem ? "Adding…" : "Add item"}
+              </Button>
+            </div>
+          </form>
+        </section>
+      )}
     </div>
   );
 }

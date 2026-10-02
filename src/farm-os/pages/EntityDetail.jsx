@@ -4,6 +4,7 @@ import {
   Activity,
   ArrowLeft,
   BadgeDollarSign,
+  CircleDot,
   CalendarDays,
   ClipboardPlus,
   Dna,
@@ -26,6 +27,9 @@ import {
   formatEventDate,
   getAvailableEventTypes,
   getEventDisplayLabel,
+  getEventImpact,
+  getEventSemantics,
+  getEventStatusImpact,
   getEventSummary,
   validateEventPayload,
 } from "../lib/eventUtils";
@@ -223,6 +227,9 @@ function eventIcon(type) {
     case "sale":
       return BadgeDollarSign;
 
+    case "status_changed":
+      return CircleDot;
+
     default:
       return Activity;
   }
@@ -257,6 +264,48 @@ function buildPayloadFromSchema(type, values) {
     payload[field.key] = raw;
   }
   return payload;
+}
+
+function validateEventDate(eventDate, entity, lifecycle) {
+  if (!eventDate) {
+    return "Event date is required.";
+  }
+
+  const selectedDate = new Date(`${eventDate}T00:00:00`);
+
+  if (Number.isNaN(selectedDate.getTime())) {
+    return "Event date is invalid.";
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (selectedDate > today) {
+    return "Event date cannot be in the future.";
+  }
+
+  if (entity?.tracking_mode === "individual") {
+    if (lifecycle?.birth_date) {
+      const birthDate = new Date(`${lifecycle.birth_date}T00:00:00`);
+
+      if (!Number.isNaN(birthDate.getTime()) && selectedDate < birthDate) {
+        return "Event date cannot be before the entity's birth date.";
+      }
+    }
+
+    if (entity?.acquired_at) {
+      const acquiredDate = new Date(`${entity.acquired_at}T00:00:00`);
+
+      if (
+        !Number.isNaN(acquiredDate.getTime()) &&
+        selectedDate < acquiredDate
+      ) {
+        return "Event date cannot be before the entity's acquisition date.";
+      }
+    }
+  }
+
+  return "";
 }
 
 function EntityDetail() {
@@ -297,7 +346,8 @@ function EntityDetail() {
           .from("entity_events")
           .select("*")
           .eq("entity_id", id)
-          .order("occurred_at", { ascending: false }),
+          .order("occurred_at", { ascending: false })
+          .order("created_at", { ascending: false }),
 
         supabase
           .from("species_config")
@@ -390,22 +440,41 @@ function EntityDetail() {
       return;
     }
 
+    const dateError = validateEventDate(form.date, entity, lifecycle);
+
+    if (dateError) {
+      setSaving(false);
+      setPageError(dateError);
+      return;
+    }
+
     const payload = buildPayloadFromSchema(form.type, form.values);
 
-    const { error } = await supabase.from("entity_events").insert({
-      entity_id: id,
-      type: form.type,
-      payload,
-      occurred_at: form.date,
+    const { data, error } = await supabase.rpc("record_entity_event", {
+      p_entity_id: id,
+      p_event_type: form.type,
+      p_payload: payload,
+      p_occurred_at: form.date,
     });
 
     setSaving(false);
+
     if (error) {
       setPageError(error.message);
       return;
     }
 
-    setForm({ type: "", date: todayISO(), values: {} });
+    if (!data?.event_id) {
+      setPageError("Event could not be recorded.");
+      return;
+    }
+
+    setForm({
+      type: "",
+      date: todayISO(),
+      values: {},
+    });
+
     loadAll();
   }
 
@@ -531,6 +600,38 @@ function EntityDetail() {
             </div>
           </div>
         </div>
+
+        <Card className="border-border/70 bg-card shadow-sm">
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${
+                  isClosedEntity
+                    ? "bg-amber-500/10 text-amber-600"
+                    : "bg-primary/10 text-primary"
+                }`}
+              >
+                <Activity className="size-4" />
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Lifecycle status
+                </p>
+
+                <p className="mt-0.5 text-sm font-semibold capitalize">
+                  {entity.status}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground sm:max-w-md sm:text-right">
+              {isClosedEntity
+                ? `This entity is ${entity.status}. Operational events can no longer be recorded.`
+                : "This entity is currently active and operational events can be recorded."}
+            </p>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-3 sm:grid-cols-3">
           <Card className="border-border/70 bg-card shadow-sm">
@@ -904,57 +1005,63 @@ function EntityDetail() {
                 </div>
 
                 <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {selectedTypeDef.fields.map((field) => {
-                    const isWide =
-                      field.key === "notes" ||
-                      field.key === "reason" ||
-                      field.key === "quality";
+                  {selectedTypeDef.fields
+                    .filter(
+                      (field) =>
+                        !field.trackingModes ||
+                        field.trackingModes.includes(entity.tracking_mode),
+                    )
+                    .map((field) => {
+                      const isWide =
+                        field.key === "notes" ||
+                        field.key === "reason" ||
+                        field.key === "quality";
 
-                    return (
-                      <div
-                        key={field.key}
-                        className={
-                          isWide
-                            ? "space-y-2 sm:col-span-2 lg:col-span-3"
-                            : "space-y-2"
-                        }
-                      >
-                        <label
-                          htmlFor={`entity-event-${field.key}`}
-                          className="text-sm font-medium"
+                      return (
+                        <div
+                          key={field.key}
+                          className={
+                            isWide
+                              ? "space-y-2 sm:col-span-2 lg:col-span-3"
+                              : "space-y-2"
+                          }
                         >
-                          {field.label}
-                        </label>
+                          <label
+                            htmlFor={`entity-event-${field.key}`}
+                            className="text-sm font-medium"
+                          >
+                            {field.label}
+                          </label>
 
-                        <div className="relative">
-                          <Input
-                            id={`entity-event-${field.key}`}
-                            type={field.type}
-                            min={field.min}
-                            step={field.step}
-                            placeholder={field.placeholder ?? ""}
-                            value={form.values[field.key] ?? ""}
-                            onChange={(e) =>
-                              setForm((prev) => ({
-                                ...prev,
-                                values: {
-                                  ...prev.values,
-                                  [field.key]: e.target.value,
-                                },
-                              }))
-                            }
-                            className={field.unit ? "pr-12" : ""}
-                          />
+                          <div className="relative">
+                            <Input
+                              id={`entity-event-${field.key}`}
+                              type={field.type}
+                              min={field.min}
+                              step={field.step}
+                              placeholder={field.placeholder ?? ""}
+                              value={form.values[field.key] ?? ""}
+                              onChange={(e) =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  values: {
+                                    ...prev.values,
+                                    [field.key]: e.target.value,
+                                  },
+                                }))
+                              }
+                              className={field.unit ? "pr-12" : ""}
+                            />
 
-                          {field.unit && (
-                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
-                              {field.unit}
-                            </span>
-                          )}
+                            {field.unit && (
+                              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                                {field.unit}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -1013,9 +1120,34 @@ function EntityDetail() {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
-                          <h3 className="text-sm font-semibold text-foreground">
-                            {getEventDisplayLabel(event.type)}
-                          </h3>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-sm font-semibold text-foreground">
+                              {getEventDisplayLabel(event.type)}
+                            </h3>
+
+                            {getEventSemantics(event, entity).terminal && (
+                              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                Lifecycle transition
+                              </span>
+                            )}
+
+                            {!getEventSemantics(event, entity).terminal &&
+                              getEventSemantics(event, entity)
+                                .statusChanged && (
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  Status change
+                                </span>
+                              )}
+
+                            {!getEventSemantics(event, entity).terminal &&
+                              !getEventSemantics(event, entity).statusChanged &&
+                              getEventSemantics(event, entity)
+                                .quantityChanged && (
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                  Quantity movement
+                                </span>
+                              )}
+                          </div>
 
                           <time className="shrink-0 text-xs text-muted-foreground">
                             {formatEventDate(event.occurred_at)}
@@ -1025,6 +1157,17 @@ function EntityDetail() {
                         {getEventSummary(event) && (
                           <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
                             {getEventSummary(event)}
+                          </p>
+                        )}
+
+                        {getEventImpact(event, entity) && (
+                          <p className="mt-1 text-xs font-medium text-primary">
+                            {getEventImpact(event, entity)}
+                          </p>
+                        )}
+                        {getEventStatusImpact(event, entity) && (
+                          <p className="mt-1 text-xs font-medium text-muted-foreground">
+                            {getEventStatusImpact(event, entity)}
                           </p>
                         )}
                       </div>
@@ -1039,5 +1182,4 @@ function EntityDetail() {
     </div>
   );
 }
-
 export default EntityDetail;

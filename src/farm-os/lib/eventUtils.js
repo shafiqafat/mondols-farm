@@ -3,6 +3,7 @@ import {
   EVENT_CATEGORY_MAP,
   EVENT_TYPE_OPTIONS,
   LEGACY_EVENT_LABELS,
+  validateEventPayload as validateSchemaEventPayload,
 } from "../config/eventDefinitions";
 
 const EVENT_DISPLAY_LABELS = {
@@ -17,6 +18,9 @@ export function getEventCapability(eventType) {
 }
 
 export function canEntityUseEvent(entity, speciesList, eventType) {
+  if (!canEntityUseEventByTrackingMode(entity, eventType)) {
+    return false;
+  }
   const requiredCapability = getEventCapability(eventType);
   const allowedCategories = EVENT_CATEGORY_MAP[eventType];
 
@@ -39,6 +43,35 @@ export function canEntityUseEvent(entity, speciesList, eventType) {
   const capabilities = species.capabilities ?? {};
 
   return Object.prototype.hasOwnProperty.call(capabilities, requiredCapability);
+}
+
+const EVENT_TRACKING_MODE_RULES = {
+  weight_check: ["individual", "group"],
+  feed_given: ["individual", "group"],
+  egg_count: ["individual", "group"],
+  harvest: ["group", "area"],
+  treatment: ["individual", "group"],
+  mortality: ["individual", "group"],
+  breeding: ["individual", "group"],
+  purchase: ["individual", "group"],
+  sale: ["individual", "group"],
+  planting: ["area"],
+  fertilizer_applied: ["area"],
+  irrigation: ["area"],
+  pest_observation: ["area"],
+  growth_stage: ["area"],
+  processing: ["group", "area"],
+  health_note: ["individual", "group", "area"],
+  other: ["individual", "group", "area"],
+};
+function canEntityUseEventByTrackingMode(entity, eventType) {
+  const allowedModes = EVENT_TRACKING_MODE_RULES[eventType];
+
+  if (!allowedModes) {
+    return true;
+  }
+
+  return allowedModes.includes(entity?.tracking_mode);
 }
 
 export function getAvailableEventTypes(entity, speciesList) {
@@ -236,92 +269,26 @@ export function getEventSummary(event) {
 }
 
 export function validateEventPayload(type, payload, entity) {
-  const value = payload ?? {};
+  const schemaValidation = validateSchemaEventPayload(type, payload);
 
-  if (type === "weight") {
-    const weight = Number(value.weightKg);
-
-    if (!Number.isFinite(weight) || weight <= 0) {
-      return "Weight must be greater than 0 kg.";
-    }
+  if (!schemaValidation.valid) {
+    return schemaValidation.message;
   }
 
-  if (type === "feed") {
-    const quantity = Number(value.quantity);
-
-    if (!value.feedType?.trim()) {
-      return "Feed type is required.";
-    }
-
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      return "Feed quantity must be greater than 0.";
-    }
-
-    if (!value.unit?.trim()) {
-      return "Feed unit is required.";
-    }
-  }
-
-  if (type === "egg_production") {
-    const eggs = Number(value.eggs);
-    const broken = Number(value.broken);
-    const saleable = Number(value.saleable);
+  if (type === "egg_count") {
+    const eggs = Number(payload.count);
 
     if (!Number.isInteger(eggs) || eggs < 0) {
       return "Eggs produced must be a whole number of 0 or more.";
     }
-
-    if (!Number.isInteger(broken) || broken < 0) {
-      return "Broken eggs must be a whole number of 0 or more.";
-    }
-
-    if (!Number.isInteger(saleable) || saleable < 0) {
-      return "Saleable eggs must be a whole number of 0 or more.";
-    }
-
-    if (broken > eggs) {
-      return "Broken eggs cannot exceed eggs produced.";
-    }
-
-    if (saleable > eggs) {
-      return "Saleable eggs cannot exceed eggs produced.";
-    }
-
-    if (broken + saleable > eggs) {
-      return "Broken and saleable eggs cannot exceed eggs produced.";
-    }
-  }
-
-  if (type === "harvest") {
-    const quantity = Number(value.quantity);
-
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      return "Harvest quantity must be greater than 0.";
-    }
-
-    if (!value.unit?.trim()) {
-      return "Harvest unit is required.";
-    }
-  }
-
-  if (type === "treatment") {
-    const dose = Number(value.dose);
-
-    if (!value.medicine?.trim()) {
-      return "Medicine / treatment is required.";
-    }
-
-    if (!Number.isFinite(dose) || dose <= 0) {
-      return "Treatment dose must be greater than 0.";
-    }
-
-    if (!value.unit?.trim()) {
-      return "Dose unit is required.";
-    }
   }
 
   if (type === "mortality") {
-    const quantity = Number(value.quantity);
+    if (entity?.tracking_mode === "individual") {
+      return "";
+    }
+
+    const quantity = Number(payload.quantity);
 
     if (!Number.isInteger(quantity) || quantity < 1) {
       return "Mortality quantity must be at least 1.";
@@ -333,15 +300,36 @@ export function validateEventPayload(type, payload, entity) {
   }
 
   if (type === "breeding") {
-    const quantity = Number(value.quantity);
+    const quantity = Number(payload.quantity);
 
     if (!Number.isInteger(quantity) || quantity < 1) {
       return "Breeding quantity must be at least 1.";
     }
   }
 
+  if (type === "treatment") {
+    if (!payload.medicine?.trim()) {
+      return "Medicine / treatment is required.";
+    }
+
+    if (
+      payload.unit !== undefined &&
+      payload.unit !== null &&
+      payload.dose !== undefined &&
+      payload.dose !== null
+    ) {
+      if (!String(payload.unit).trim()) {
+        return "Dose unit is required when a dose is provided.";
+      }
+    }
+  }
+
   if (type === "purchase" || type === "sale") {
-    const quantity = Number(value.quantity);
+    if (entity?.tracking_mode === "individual") {
+      return "";
+    }
+
+    const quantity = Number(payload.quantity);
 
     if (!Number.isFinite(quantity) || quantity <= 0) {
       return `${
@@ -349,10 +337,137 @@ export function validateEventPayload(type, payload, entity) {
       } quantity must be greater than 0.`;
     }
 
-    if (!value.unit?.trim()) {
+    if (!payload.unit?.trim()) {
       return "Unit is required.";
+    }
+
+    if (
+      type === "sale" &&
+      entity?.quantity != null &&
+      quantity > Number(entity.quantity)
+    ) {
+      return "Sale quantity cannot exceed the current entity quantity.";
+    }
+  }
+
+  if (type === "harvest") {
+    if (!payload.unit?.trim()) {
+      return "Harvest unit is required.";
     }
   }
 
   return "";
+}
+export function getEventImpact(event, entity) {
+  if (!event) {
+    return "";
+  }
+
+  const payload = event.payload || {};
+
+  if (event.type === "purchase") {
+    if (entity?.tracking_mode === "individual") {
+      return "Entity acquired";
+    }
+
+    const quantity = Number(payload.quantity);
+
+    if (Number.isFinite(quantity) && quantity > 0) {
+      return `+${quantity} ${payload.unit || "units"}`;
+    }
+  }
+
+  if (event.type === "sale") {
+    if (entity?.tracking_mode === "individual") {
+      return "Entity sold · quantity became 0";
+    }
+
+    const quantity = Number(payload.quantity);
+
+    if (Number.isFinite(quantity) && quantity > 0) {
+      return `-${quantity} ${payload.unit || "units"}`;
+    }
+  }
+
+  if (event.type === "mortality") {
+    if (entity?.tracking_mode === "individual") {
+      return "Entity marked deceased · quantity became 0";
+    }
+
+    const quantity = Number(payload.quantity);
+
+    if (Number.isFinite(quantity) && quantity > 0) {
+      return `-${quantity} ${payload.unit || "units"}`;
+    }
+  }
+
+  return "";
+}
+export function getEventStatusImpact(event, entity) {
+  if (!event || !entity) {
+    return "";
+  }
+
+  if (event.type === "status_changed") {
+    const status = event.payload?.to;
+
+    if (!status) {
+      return "";
+    }
+
+    const statusLabels = {
+      active: "Active",
+      sold: "Sold",
+      deceased: "Deceased",
+      harvested: "Harvested",
+    };
+
+    return `Status changed to ${statusLabels[status] || status}`;
+  }
+
+  if (entity.tracking_mode !== "individual") {
+    return "";
+  }
+
+  if (event.type === "sale") {
+    return "Status changed to Sold";
+  }
+
+  if (event.type === "mortality") {
+    return "Status changed to Deceased";
+  }
+
+  return "";
+}
+export function getEventSemantics(event, entity) {
+  if (!event) {
+    return {
+      activity: false,
+      quantityChanged: false,
+      statusChanged: false,
+      terminal: false,
+    };
+  }
+
+  const type = event.type;
+
+  const quantityChanged =
+    (type === "purchase" || type === "sale" || type === "mortality") &&
+    ["individual", "group"].includes(entity?.tracking_mode);
+
+  const statusChanged =
+    type === "status_changed" ||
+    (entity?.tracking_mode === "individual" &&
+      (type === "sale" || type === "mortality"));
+
+  const terminal =
+    entity?.tracking_mode === "individual" &&
+    (type === "sale" || type === "mortality");
+
+  return {
+    activity: true,
+    quantityChanged,
+    statusChanged,
+    terminal,
+  };
 }

@@ -16,6 +16,7 @@ function ConfirmDialog({
   onOpenChange,
   title = "Are you sure?",
   description,
+  children,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   onConfirm,
@@ -54,7 +55,7 @@ function ConfirmDialog({
             </div>
           </div>
         </DialogHeader>
-
+        {children && <div className="px-6 pb-6 sm:px-6">{children}</div>}
         <DialogFooter className="m-0 flex-row justify-end gap-2 border-t border-border/60 bg-muted/[0.12] px-8 py-4">
           <Button
             type="button"

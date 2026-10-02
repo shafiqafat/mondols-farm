@@ -107,6 +107,8 @@ function Species() {
 
   const [updatingStatusId, setUpdatingStatusId] = useState(null);
   const [updatedEntityId, setUpdatedEntityId] = useState(null);
+  const [statusChangeTarget, setStatusChangeTarget] = useState(null);
+  const [statusChangeReason, setStatusChangeReason] = useState("");
   const [entityActionId, setEntityActionId] = useState(null);
 
   const [speciesDeleteTarget, setSpeciesDeleteTarget] = useState(null);
@@ -348,12 +350,27 @@ function Species() {
     );
   }
 
-  async function handleStatusChange(entityId, status) {
+  function handleStatusChange(entityId, status) {
     const entity = entities.find((item) => item.id === entityId);
 
     if (!entity || entity.status !== "active") {
       return;
     }
+
+    setStatusChangeTarget({
+      entityId,
+      status,
+      entityLabel: entity.label,
+    });
+    setStatusChangeReason("");
+    setPageError("");
+  }
+  async function confirmStatusChange() {
+    if (!statusChangeTarget) {
+      return;
+    }
+
+    const { entityId, status } = statusChangeTarget;
 
     setUpdatingStatusId(entityId);
     setPageError("");
@@ -361,7 +378,7 @@ function Species() {
     const { data, error } = await supabase.rpc("change_entity_status", {
       p_entity_id: entityId,
       p_status: status,
-      p_reason: null,
+      p_reason: statusChangeReason.trim() || null,
     });
 
     setUpdatingStatusId(null);
@@ -381,6 +398,9 @@ function Species() {
       setUpdatedEntityId(entityId);
       setTimeout(() => setUpdatedEntityId(null), 700);
     }
+
+    setStatusChangeTarget(null);
+    setStatusChangeReason("");
   }
   function handleArchiveEntity(entityId) {
     const entity = entities.find((item) => item.id === entityId);
@@ -828,6 +848,57 @@ function Species() {
         )}
         onConfirm={confirmDeleteEntity}
       />
+      <ConfirmDialog
+        open={Boolean(statusChangeTarget)}
+        onOpenChange={(open) => {
+          if (!open && !updatingStatusId) {
+            setStatusChangeTarget(null);
+            setStatusChangeReason("");
+          }
+        }}
+        title={
+          statusChangeTarget
+            ? `Change "${statusChangeTarget.entityLabel}" status?`
+            : "Change entity status?"
+        }
+        description={
+          statusChangeTarget
+            ? `This will change the entity status to "${statusChangeTarget.status}".`
+            : ""
+        }
+        confirmLabel="Change Status"
+        cancelLabel="Cancel"
+        loading={Boolean(
+          statusChangeTarget &&
+          updatingStatusId === statusChangeTarget.entityId,
+        )}
+        onConfirm={confirmStatusChange}
+      >
+        <div className="space-y-2">
+          <label
+            htmlFor="status-change-reason"
+            className="text-sm font-medium text-foreground"
+          >
+            Reason
+            <span className="ml-1 text-muted-foreground">(optional)</span>
+          </label>
+
+          <textarea
+            id="status-change-reason"
+            value={statusChangeReason}
+            onChange={(event) => setStatusChangeReason(event.target.value)}
+            placeholder="Why is this entity being marked with this status?"
+            rows={3}
+            maxLength={500}
+            disabled={Boolean(updatingStatusId)}
+            className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          />
+
+          <p className="text-xs text-muted-foreground">
+            {statusChangeReason.length}/500 characters
+          </p>
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

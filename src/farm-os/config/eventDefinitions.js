@@ -30,6 +30,9 @@ export const EVENT_SCHEMAS = {
         unit: "kg",
         min: 0,
         step: "0.01",
+        validation: {
+          minExclusive: true,
+        },
       },
     ],
   },
@@ -43,6 +46,9 @@ export const EVENT_SCHEMAS = {
         unit: "kg",
         min: 0,
         step: "0.01",
+        validation: {
+          minExclusive: true,
+        },
       },
     ],
   },
@@ -67,6 +73,9 @@ export const EVENT_SCHEMAS = {
         type: "number",
         min: 0,
         step: "0.01",
+        validation: {
+          minExclusive: true,
+        },
       },
       {
         key: "unit",
@@ -95,6 +104,10 @@ export const EVENT_SCHEMAS = {
         type: "number",
         min: 0,
         step: "0.01",
+        validation: {
+          minExclusive: true,
+          optional: true,
+        },
       },
       {
         key: "unit",
@@ -118,6 +131,7 @@ export const EVENT_SCHEMAS = {
         type: "number",
         min: 1,
         step: "1",
+        trackingModes: ["group"],
       },
       {
         key: "reason",
@@ -131,7 +145,7 @@ export const EVENT_SCHEMAS = {
     fields: [
       {
         key: "quantity",
-        label: "Quantity",
+        label: "Breeding count",
         type: "number",
         min: 1,
         step: "1",
@@ -152,11 +166,13 @@ export const EVENT_SCHEMAS = {
         type: "number",
         min: 0,
         step: "0.01",
+        trackingModes: ["group"],
       },
       {
         key: "unit",
         label: "Unit",
         type: "text",
+        trackingModes: ["group"],
       },
     ],
   },
@@ -169,11 +185,13 @@ export const EVENT_SCHEMAS = {
         type: "number",
         min: 0,
         step: "0.01",
+        trackingModes: ["group"],
       },
       {
         key: "unit",
         label: "Unit",
         type: "text",
+        trackingModes: ["group"],
       },
     ],
   },
@@ -202,6 +220,10 @@ export const EVENT_SCHEMAS = {
         type: "number",
         min: 0,
         step: "0.01",
+        validation: {
+          minExclusive: true,
+          optional: true,
+        },
       },
       {
         key: "unit",
@@ -280,6 +302,9 @@ export const EVENT_CAPABILITY_MAP = {
   feed: "feed",
   egg_production: "egg",
 };
+
+export const LIFECYCLE_EVENT_TYPES = new Set(["harvest", "mortality", "sale"]);
+
 export const EVENT_CATEGORY_MAP = {
   planting: ["crop", "fodder"],
   fertilizer_applied: ["crop", "fodder"],
@@ -296,3 +321,66 @@ export const LEGACY_EVENT_LABELS = {
   Feed_given: "Feed given",
   Egg_count: "Egg production",
 };
+export function validateEventPayload(eventType, payload) {
+  const schema = EVENT_SCHEMAS[eventType];
+
+  if (!schema) {
+    return {
+      valid: false,
+      message: `Unsupported event type: ${eventType}`,
+    };
+  }
+
+  for (const field of schema.fields || []) {
+    const value = payload?.[field.key];
+    const validation = field.validation;
+
+    if (!validation) {
+      continue;
+    }
+
+    const isEmpty = value === undefined || value === null || value === "";
+
+    if (isEmpty) {
+      if (validation.optional) {
+        continue;
+      }
+
+      if (validation.required) {
+        return {
+          valid: false,
+          message: `${field.label} is required.`,
+        };
+      }
+
+      continue;
+    }
+
+    if (validation.minExclusive) {
+      const numericValue = Number(value);
+
+      if (!Number.isFinite(numericValue) || numericValue <= 0) {
+        return {
+          valid: false,
+          message: `${field.label} must be greater than 0.`,
+        };
+      }
+    }
+
+    if (validation.min !== undefined) {
+      const numericValue = Number(value);
+
+      if (!Number.isFinite(numericValue) || numericValue < validation.min) {
+        return {
+          valid: false,
+          message: `${field.label} must be at least ${validation.min}.`,
+        };
+      }
+    }
+  }
+
+  return {
+    valid: true,
+    message: "",
+  };
+}

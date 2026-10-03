@@ -2,6 +2,7 @@ import {
   BarChart3,
   CalendarCheck,
   ClipboardList,
+  CircleDollarSign,
   FileText,
   LayoutDashboard,
   Package,
@@ -42,6 +43,11 @@ const NAV_GROUPS = [
         to: "/farm-os/projects",
         label: "Projects",
         icon: FolderKanban,
+      },
+      {
+        to: "/farm-os/investment",
+        label: "Investment",
+        icon: CircleDollarSign,
       },
       {
         to: "/farm-os/species",

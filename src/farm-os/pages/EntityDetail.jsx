@@ -21,18 +21,27 @@ import {
 import { supabase } from "../lib/supabaseClient";
 import { computeExpectedHarvest } from "../engines/cropForecastEngine";
 
-import { EVENT_SCHEMAS } from "../config/eventDefinitions";
+import {
+  EVENT_SCHEMAS,
+  EVENT_SEMANTICS,
+  ENTITY_STATUS_LABELS,
+  LIFECYCLE_RESTRICTED_STATUSES,
+} from "../config/eventDefinitions";
 
 import {
   formatEventDate,
   getAvailableEventTypes,
   getEventDisplayLabel,
+  getEventEffectState,
   getEventImpact,
-  getEventSemantics,
+  getEventRecordTiming,
+  getEventReversalLabel,
+  getEventSemanticLabel,
   getEventStatusImpact,
   getEventSummary,
   validateEventPayload,
 } from "../lib/eventUtils";
+
 import { recommendationsFor } from "../engines/cropRotationEngine";
 import { localDateISO } from "../lib/localDate";
 import { useAuth } from "../hooks/useAuth";
@@ -321,6 +330,7 @@ function EntityDetail() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [pageError, setPageError] = useState("");
+  const [reversingEventId, setReversingEventId] = useState(null);
 
   const [form, setForm] = useState({
     type: "",
@@ -478,6 +488,48 @@ function EntityDetail() {
     loadAll();
   }
 
+  async function handleReverseEvent(event) {
+    if (!event?.id) {
+      return;
+    }
+
+    const reason = window.prompt("Why are you reversing this event?");
+
+    if (!reason?.trim()) {
+      return;
+    }
+
+    setReversingEventId(event.id);
+    setPageError("");
+
+    const { error } = await supabase.rpc("reverse_entity_event", {
+      p_event_id: event.id,
+      p_reversal_reason: reason.trim(),
+    });
+
+    setReversingEventId(null);
+
+    if (error) {
+      const message = error.message || "";
+
+      if (message.toLowerCase().includes("latest reversible event")) {
+        setPageError(
+          "This event cannot be reversed yet. Reverse the later purchase, sale, or mortality event first.",
+        );
+      } else if (message.toLowerCase().includes("already reversed")) {
+        setPageError("This event has already been reversed.");
+      } else if (message.toLowerCase().includes("reason")) {
+        setPageError("A reversal reason is required.");
+      } else {
+        setPageError("This event could not be reversed. Please try again.");
+      }
+
+      return;
+    }
+
+    await loadAll();
+  }
+
   if (loading) {
     return (
       <Card className="border-border/70 bg-card shadow-sm">
@@ -529,16 +581,17 @@ function EntityDetail() {
   const currentAge = formatAge(currentAgeInDays);
 
   const mother = parentage.find((parent) => parent.parent_role === "mother");
-
   const father = parentage.find((parent) => parent.parent_role === "father");
 
   const motherDisplay = getParentDisplay(mother);
   const fatherDisplay = getParentDisplay(father);
 
   const availableTypes = getAvailableEventTypes(entity, speciesList);
-  const isClosedEntity = ["sold", "deceased", "harvested"].includes(
-    entity.status,
+  const latestReversibleEvent = events.find(
+    (event) =>
+      !event.reversed_at && EVENT_SEMANTICS[event.type]?.reversible === true,
   );
+  const isClosedEntity = LIFECYCLE_RESTRICTED_STATUSES.includes(entity.status);
 
   const selectedTypeDef = EVENT_SCHEMAS[form.type];
   const harvestOutlook =
@@ -573,8 +626,8 @@ function EntityDetail() {
                   {entity.label}
                 </h1>
 
-                <Badge variant="secondary" className="capitalize">
-                  {entity.status}
+                <Badge variant="secondary">
+                  {ENTITY_STATUS_LABELS[entity.status] || entity.status}
                 </Badge>
               </div>
 
@@ -619,16 +672,18 @@ function EntityDetail() {
                   Lifecycle status
                 </p>
 
-                <p className="mt-0.5 text-sm font-semibold capitalize">
-                  {entity.status}
+                <p className="mt-0.5 text-sm font-semibold">
+                  {ENTITY_STATUS_LABELS[entity.status] || entity.status}
                 </p>
               </div>
             </div>
 
             <p className="text-sm text-muted-foreground sm:max-w-md sm:text-right">
               {isClosedEntity
-                ? `This entity is ${entity.status}. Operational events can no longer be recorded.`
-                : "This entity is currently active and operational events can be recorded."}
+                ? `Current effective state: ${
+                    ENTITY_STATUS_LABELS[entity.status] || entity.status
+                  }. Operational events can no longer be recorded.`
+                : `Current effective state: ${ENTITY_STATUS_LABELS.active}. Operational events can be recorded.`}
             </p>
           </CardContent>
         </Card>
@@ -928,8 +983,9 @@ function EntityDetail() {
 
           {isClosedEntity && (
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700">
-              This entity is {entity.status}. Operational events can no longer
-              be recorded.
+              This entity is{" "}
+              {ENTITY_STATUS_LABELS[entity.status] || entity.status}.
+              Operational events can no longer be recorded.
             </div>
           )}
 
@@ -1087,8 +1143,28 @@ function EntityDetail() {
           <div>
             <h2 className="text-base font-semibold">Activity history</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Events recorded for this entity.
+              Historical events recorded for this entity. Reversed events remain
+              here for audit purposes but no longer affect the current effective
+              state.
             </p>
+
+            <p className="mt-1 text-xs text-muted-foreground">
+              Events are shown by occurrence date, newest first. “Recorded
+              later” indicates the event was entered after it occurred.
+            </p>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1.5">
+              <span
+                className={`size-2 rounded-full ${
+                  isClosedEntity ? "bg-amber-500" : "bg-primary"
+                }`}
+              />
+              <span className="text-xs font-medium text-muted-foreground">
+                Current state
+              </span>
+              <span className="text-xs font-semibold text-foreground">
+                {ENTITY_STATUS_LABELS[entity.status] || entity.status}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -1107,11 +1183,16 @@ function EntityDetail() {
             <div className="space-y-3">
               {events.map((event) => {
                 const Icon = eventIcon(event.type);
+                const recordTiming = getEventRecordTiming(event);
+                const reversalLabel = getEventReversalLabel(event);
+                const effectState = getEventEffectState(event);
 
                 return (
                   <Card
                     key={event.id}
-                    className="relative border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                    className={`relative border-border/70 bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                      reversalLabel ? "opacity-70" : ""
+                    }`}
                   >
                     <CardContent className="flex gap-3 p-4 sm:gap-4">
                       <div className="relative z-10 flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-background text-primary">
@@ -1124,34 +1205,51 @@ function EntityDetail() {
                             <h3 className="text-sm font-semibold text-foreground">
                               {getEventDisplayLabel(event.type)}
                             </h3>
-
-                            {getEventSemantics(event, entity).terminal && (
+                            <span className="text-[10px] font-medium text-muted-foreground/70">
+                              Ref {event.id?.slice(0, 8)}
+                            </span>
+                            {reversalLabel && (
                               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                Lifecycle transition
+                                {reversalLabel}
                               </span>
                             )}
 
-                            {!getEventSemantics(event, entity).terminal &&
-                              getEventSemantics(event, entity)
-                                .statusChanged && (
-                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                  Status change
-                                </span>
-                              )}
+                            {effectState?.state === "reversed" && (
+                              <span className="rounded-full border border-border/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                No longer effective
+                              </span>
+                            )}
 
-                            {!getEventSemantics(event, entity).terminal &&
-                              !getEventSemantics(event, entity).statusChanged &&
-                              getEventSemantics(event, entity)
-                                .quantityChanged && (
-                                <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                  Quantity movement
-                                </span>
-                              )}
+                            {getEventSemanticLabel(event, entity) && (
+                              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                {getEventSemanticLabel(event, entity)}
+                              </span>
+                            )}
                           </div>
 
-                          <time className="shrink-0 text-xs text-muted-foreground">
-                            {formatEventDate(event.occurred_at)}
-                          </time>
+                          <div className="shrink-0 text-right">
+                            <time className="block text-xs font-medium text-foreground">
+                              {formatEventDate(event.occurred_at)}
+                            </time>
+
+                            <p className="text-[10px] text-muted-foreground">
+                              Occurred
+                            </p>
+
+                            {recordTiming?.recordedLater && (
+                              <p className="mt-1 text-[10px] text-muted-foreground">
+                                Recorded later ·{" "}
+                                {recordTiming.recordedDate.toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
+                              </p>
+                            )}
+                          </div>
                         </div>
 
                         {getEventSummary(event) && (
@@ -1160,16 +1258,94 @@ function EntityDetail() {
                           </p>
                         )}
 
-                        {getEventImpact(event, entity) && (
-                          <p className="mt-1 text-xs font-medium text-primary">
-                            {getEventImpact(event, entity)}
-                          </p>
+                        {reversalLabel && (
+                          <div className="mt-3 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                Reversal details
+                              </span>
+
+                              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                                No longer effective
+                              </span>
+                            </div>
+
+                            {event.reversed_at && (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Reversed on{" "}
+                                {new Date(event.reversed_at).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  },
+                                )}
+                              </p>
+                            )}
+
+                            {event.reversal_reason && (
+                              <p className="mt-1 text-sm text-foreground">
+                                {event.reversal_reason}
+                              </p>
+                            )}
+                          </div>
                         )}
-                        {getEventStatusImpact(event, entity) && (
-                          <p className="mt-1 text-xs font-medium text-muted-foreground">
-                            {getEventStatusImpact(event, entity)}
-                          </p>
+
+                        {(getEventImpact(event, entity) ||
+                          getEventStatusImpact(event, entity)) && (
+                          <div className="mt-3 rounded-lg border border-border/50 bg-muted/20 px-3 py-2">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              Effect
+                            </p>
+
+                            {getEventImpact(event, entity) && (
+                              <p
+                                className={`mt-1 text-xs font-medium ${
+                                  effectState?.state === "reversed"
+                                    ? "text-muted-foreground"
+                                    : "text-primary"
+                                }`}
+                              >
+                                {getEventImpact(event, entity)}
+                              </p>
+                            )}
+
+                            {getEventStatusImpact(event, entity) && (
+                              <p
+                                className={`mt-1 text-xs font-medium ${
+                                  effectState?.state === "reversed"
+                                    ? "text-muted-foreground"
+                                    : getEventSemanticLabel(event, entity) ===
+                                        "Terminal lifecycle event"
+                                      ? "text-amber-700 dark:text-amber-400"
+                                      : "text-muted-foreground"
+                                }`}
+                              >
+                                {getEventStatusImpact(event, entity)}
+                              </p>
+                            )}
+                          </div>
                         )}
+
+                        {canEdit &&
+                          !event.reversed_at &&
+                          latestReversibleEvent?.id === event.id &&
+                          EVENT_SEMANTICS[event.type]?.reversible === true && (
+                            <div className="mt-3">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={reversingEventId === event.id}
+                                onClick={() => handleReverseEvent(event)}
+                              >
+                                {reversingEventId === event.id
+                                  ? "Reversing…"
+                                  : "Reverse event"}
+                              </Button>
+                            </div>
+                          )}
                       </div>
                     </CardContent>
                   </Card>

@@ -1,17 +1,15 @@
 import {
   EVENT_CAPABILITY_MAP,
   EVENT_CATEGORY_MAP,
+  EVENT_TRACKING_MODE_MAP,
+  EVENT_SEMANTICS,
+  EVENT_SEMANTIC_LABELS,
   EVENT_TYPE_OPTIONS,
-  LEGACY_EVENT_LABELS,
+  EVENT_DISPLAY_LABELS,
+  ENTITY_STATUS_LABELS,
+  LIFECYCLE_RESTRICTED_STATUSES,
   validateEventPayload as validateSchemaEventPayload,
 } from "../config/eventDefinitions";
-
-const EVENT_DISPLAY_LABELS = {
-  ...Object.fromEntries(
-    EVENT_TYPE_OPTIONS.map((option) => [option.value, option.label]),
-  ),
-  ...LEGACY_EVENT_LABELS,
-};
 
 export function getEventCapability(eventType) {
   return EVENT_CAPABILITY_MAP[eventType] || null;
@@ -45,27 +43,8 @@ export function canEntityUseEvent(entity, speciesList, eventType) {
   return Object.prototype.hasOwnProperty.call(capabilities, requiredCapability);
 }
 
-const EVENT_TRACKING_MODE_RULES = {
-  weight_check: ["individual", "group"],
-  feed_given: ["individual", "group"],
-  egg_count: ["individual", "group"],
-  harvest: ["group", "area"],
-  treatment: ["individual", "group"],
-  mortality: ["individual", "group"],
-  breeding: ["individual", "group"],
-  purchase: ["individual", "group"],
-  sale: ["individual", "group"],
-  planting: ["area"],
-  fertilizer_applied: ["area"],
-  irrigation: ["area"],
-  pest_observation: ["area"],
-  growth_stage: ["area"],
-  processing: ["group", "area"],
-  health_note: ["individual", "group", "area"],
-  other: ["individual", "group", "area"],
-};
 function canEntityUseEventByTrackingMode(entity, eventType) {
-  const allowedModes = EVENT_TRACKING_MODE_RULES[eventType];
+  const allowedModes = EVENT_TRACKING_MODE_MAP[eventType];
 
   if (!allowedModes) {
     return true;
@@ -79,13 +58,7 @@ export function getAvailableEventTypes(entity, speciesList) {
     return EVENT_TYPE_OPTIONS;
   }
 
-  const lifecycleRestrictedStatuses = new Set([
-    "sold",
-    "deceased",
-    "harvested",
-  ]);
-
-  if (lifecycleRestrictedStatuses.has(entity.status)) {
+  if (LIFECYCLE_RESTRICTED_STATUSES.includes(entity.status)) {
     return EVENT_TYPE_OPTIONS.filter((option) => option.value === "other");
   }
 
@@ -132,11 +105,7 @@ export function getEventSummary(event) {
 
   if (type === "status_changed") {
     const formatStatus = (value) =>
-      value
-        ? value
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (char) => char.toUpperCase())
-        : null;
+      ENTITY_STATUS_LABELS[value] || value || null;
 
     const from = formatStatus(payload.from);
     const to = formatStatus(payload.to);
@@ -358,46 +327,65 @@ export function validateEventPayload(type, payload, entity) {
 
   return "";
 }
+
 export function getEventImpact(event, entity) {
   if (!event) {
     return "";
   }
 
   const payload = event.payload || {};
+  const semantics = getEventSemantics(event, entity);
+  const isReversed = getEventEffectState(event)?.state === "reversed";
+
+  if (!semantics.quantityChanged && event.type !== "purchase") {
+    if (event.type !== "sale" && event.type !== "mortality") {
+      return "";
+    }
+  }
 
   if (event.type === "purchase") {
     if (entity?.tracking_mode === "individual") {
-      return "Entity acquired";
+      return isReversed ? "Entity acquisition reversed" : "Entity acquired";
     }
 
     const quantity = Number(payload.quantity);
 
     if (Number.isFinite(quantity) && quantity > 0) {
-      return `+${quantity} ${payload.unit || "units"}`;
+      return isReversed
+        ? `Purchase reversed · ${quantity} ${payload.unit || "units"} restored`
+        : `+${quantity} ${payload.unit || "units"}`;
     }
   }
 
   if (event.type === "sale") {
     if (entity?.tracking_mode === "individual") {
-      return "Entity sold · quantity became 0";
+      return isReversed
+        ? `Entity sale reversed · ${ENTITY_STATUS_LABELS.active} restored`
+        : `Entity status: ${ENTITY_STATUS_LABELS.sold}`;
     }
 
     const quantity = Number(payload.quantity);
 
     if (Number.isFinite(quantity) && quantity > 0) {
-      return `-${quantity} ${payload.unit || "units"}`;
+      return isReversed
+        ? `Sale reversed · ${quantity} ${payload.unit || "units"} restored`
+        : `-${quantity} ${payload.unit || "units"}`;
     }
   }
 
   if (event.type === "mortality") {
     if (entity?.tracking_mode === "individual") {
-      return "Entity marked deceased · quantity became 0";
+      return isReversed
+        ? `Mortality event reversed · ${ENTITY_STATUS_LABELS.active} restored`
+        : `Entity status: ${ENTITY_STATUS_LABELS.deceased}`;
     }
 
     const quantity = Number(payload.quantity);
 
     if (Number.isFinite(quantity) && quantity > 0) {
-      return `-${quantity} ${payload.unit || "units"}`;
+      return isReversed
+        ? `Mortality reversed · ${quantity} ${payload.unit || "units"} restored`
+        : `-${quantity} ${payload.unit || "units"}`;
     }
   }
 
@@ -415,30 +403,32 @@ export function getEventStatusImpact(event, entity) {
       return "";
     }
 
-    const statusLabels = {
-      active: "Active",
-      sold: "Sold",
-      deceased: "Deceased",
-      harvested: "Harvested",
-    };
-
-    return `Status changed to ${statusLabels[status] || status}`;
+    return `Status changed to ${ENTITY_STATUS_LABELS[status] || status}`;
   }
 
-  if (entity.tracking_mode !== "individual") {
+  const semantics = getEventSemantics(event, entity);
+
+  if (!semantics.statusChanged) {
     return "";
   }
 
+  const isReversed = getEventEffectState(event)?.state === "reversed";
+
   if (event.type === "sale") {
-    return "Status changed to Sold";
+    return isReversed
+      ? `${ENTITY_STATUS_LABELS.active} restored`
+      : `Status changed to ${ENTITY_STATUS_LABELS.sold}`;
   }
 
   if (event.type === "mortality") {
-    return "Status changed to Deceased";
+    return isReversed
+      ? `${ENTITY_STATUS_LABELS.active} restored`
+      : `Status changed to ${ENTITY_STATUS_LABELS.deceased}`;
   }
 
   return "";
 }
+
 export function getEventSemantics(event, entity) {
   if (!event) {
     return {
@@ -450,24 +440,102 @@ export function getEventSemantics(event, entity) {
   }
 
   const type = event.type;
+  const definition = EVENT_SEMANTICS[type] || {};
 
   const quantityChanged =
-    (type === "purchase" || type === "sale" || type === "mortality") &&
+    definition.quantityMovement === true &&
     ["individual", "group"].includes(entity?.tracking_mode);
 
   const statusChanged =
     type === "status_changed" ||
-    (entity?.tracking_mode === "individual" &&
-      (type === "sale" || type === "mortality"));
+    (definition.statusTransition === true &&
+      entity?.tracking_mode === "individual");
 
   const terminal =
-    entity?.tracking_mode === "individual" &&
-    (type === "sale" || type === "mortality");
+    definition.terminalForIndividual === true &&
+    entity?.tracking_mode === "individual";
 
   return {
-    activity: true,
+    activity: definition.activity === true || type === "status_changed",
     quantityChanged,
     statusChanged,
     terminal,
+  };
+}
+export function getEventSemanticLabel(event, entity) {
+  const semantics = getEventSemantics(event, entity);
+
+  if (semantics.terminal) {
+    return EVENT_SEMANTIC_LABELS.terminal;
+  }
+
+  if (semantics.statusChanged) {
+    return EVENT_SEMANTIC_LABELS.statusChanged;
+  }
+
+  if (semantics.quantityChanged) {
+    return EVENT_SEMANTIC_LABELS.quantityChanged;
+  }
+
+  return null;
+}
+export function getEventRecordTiming(event) {
+  if (!event?.occurred_at || !event?.created_at) {
+    return null;
+  }
+
+  const occurredDate = new Date(`${event.occurred_at}T00:00:00`);
+  const createdDate = new Date(event.created_at);
+
+  if (
+    Number.isNaN(occurredDate.getTime()) ||
+    Number.isNaN(createdDate.getTime())
+  ) {
+    return null;
+  }
+
+  const occurredDateKey = occurredDate.toISOString().slice(0, 10);
+
+  const createdDateKey = [
+    createdDate.getFullYear(),
+    String(createdDate.getMonth() + 1).padStart(2, "0"),
+    String(createdDate.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  if (occurredDateKey === createdDateKey) {
+    return null;
+  }
+
+  return {
+    recordedLater: createdDateKey > occurredDateKey,
+    recordedDate: createdDate,
+  };
+}
+export function getEventReversalLabel(event) {
+  if (!event?.reversed_at) {
+    return null;
+  }
+
+  return "Reversed";
+}
+export function getEventEffectState(event) {
+  if (!event) {
+    return null;
+  }
+
+  if (event.reversed_at) {
+    return {
+      historical: true,
+      effective: false,
+      state: "reversed",
+      label: "Historical · Reversed",
+    };
+  }
+
+  return {
+    historical: true,
+    effective: true,
+    state: "effective",
+    label: "Effective",
   };
 }

@@ -303,8 +303,6 @@ export const EVENT_CAPABILITY_MAP = {
   egg_production: "egg",
 };
 
-export const LIFECYCLE_EVENT_TYPES = new Set(["harvest", "mortality", "sale"]);
-
 export const EVENT_CATEGORY_MAP = {
   planting: ["crop", "fodder"],
   fertilizer_applied: ["crop", "fodder"],
@@ -312,6 +310,107 @@ export const EVENT_CATEGORY_MAP = {
   pest_observation: ["crop", "fodder"],
   growth_stage: ["crop", "fodder"],
   processing: ["crop", "fodder"],
+};
+export const EVENT_TRACKING_MODE_MAP = {
+  weight_check: ["individual", "group"],
+  feed_given: ["individual", "group"],
+  egg_count: ["individual", "group"],
+  harvest: ["group", "area"],
+  treatment: ["individual", "group"],
+  mortality: ["individual", "group"],
+  breeding: ["individual", "group"],
+  purchase: ["individual", "group"],
+  sale: ["individual", "group"],
+  planting: ["area"],
+  fertilizer_applied: ["area"],
+  irrigation: ["area"],
+  pest_observation: ["area"],
+  growth_stage: ["area"],
+  processing: ["group", "area"],
+  health_note: ["individual", "group", "area"],
+  other: ["individual", "group", "area"],
+};
+export const EVENT_SEMANTICS = {
+  purchase: {
+    quantityMovement: true,
+    reversible: true,
+  },
+
+  sale: {
+    quantityMovement: true,
+    statusTransition: true,
+    terminalForIndividual: true,
+    reversible: true,
+  },
+
+  mortality: {
+    quantityMovement: true,
+    statusTransition: true,
+    terminalForIndividual: true,
+    reversible: true,
+  },
+
+  breeding: {
+    activity: true,
+  },
+
+  weight_check: {
+    activity: true,
+  },
+
+  feed_given: {
+    activity: true,
+  },
+
+  egg_count: {
+    activity: true,
+  },
+
+  treatment: {
+    activity: true,
+  },
+
+  harvest: {
+    activity: true,
+  },
+
+  planting: {
+    activity: true,
+  },
+
+  fertilizer_applied: {
+    activity: true,
+  },
+
+  irrigation: {
+    activity: true,
+  },
+
+  pest_observation: {
+    activity: true,
+  },
+
+  growth_stage: {
+    activity: true,
+  },
+
+  processing: {
+    activity: true,
+  },
+
+  health_note: {
+    activity: true,
+  },
+
+  other: {
+    activity: true,
+  },
+};
+
+export const EVENT_SEMANTIC_LABELS = {
+  terminal: "Terminal lifecycle event",
+  statusChanged: "Status change",
+  quantityChanged: "Quantity movement",
 };
 
 export const LEGACY_EVENT_LABELS = {
@@ -321,6 +420,39 @@ export const LEGACY_EVENT_LABELS = {
   Feed_given: "Feed given",
   Egg_count: "Egg production",
 };
+export const EVENT_DISPLAY_LABELS = {
+  weight_check: "Weight Check",
+  feed_given: "Feed Given",
+  egg_count: "Egg Count",
+  breeding: "Breeding",
+  treatment: "Treatment",
+  health_note: "Health Note",
+
+  purchase: "Purchase",
+  sale: "Sale",
+  mortality: "Mortality",
+
+  harvest: "Harvest",
+  planting: "Planting",
+  fertilizer_applied: "Fertilizer Applied",
+  irrigation: "Irrigation",
+  pest_observation: "Pest Observation",
+  growth_stage: "Growth Stage",
+  processing: "Processing",
+
+  status_changed: "Status Changed",
+  other: "Other",
+};
+
+export const ENTITY_STATUS_LABELS = {
+  active: "Active",
+  sold: "Sold",
+  deceased: "Deceased",
+  harvested: "Harvested",
+};
+
+export const LIFECYCLE_RESTRICTED_STATUSES = ["sold", "deceased", "harvested"];
+
 export function validateEventPayload(eventType, payload) {
   const schema = EVENT_SCHEMAS[eventType];
 

@@ -28,6 +28,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "./farm-os/context/AuthContext";
 import ProtectedRoute from "./farm-os/components/ProtectedRoute";
 import FarmOSLayout from "./farm-os/components/FarmOSLayout";
+import InvestorProtectedRoute from "./farm-os/components/InvestorProtectedRoute";
 const FarmOSLogin = lazy(() => import("./farm-os/pages/Login"));
 const FarmOSOverview = lazy(() => import("./farm-os/pages/Overview"));
 const FarmOSSpecies = lazy(() => import("./farm-os/pages/Species"));
@@ -49,6 +50,9 @@ const FarmOSDailyLog = lazy(() => import("./farm-os/pages/DailyLog"));
 const FarmOSInventory = lazy(() => import("./farm-os/pages/Inventory"));
 const FarmOSSettings = lazy(() => import("./farm-os/pages/Settings"));
 const FarmOSSales = lazy(() => import("./farm-os/pages/Sales"));
+const FarmOSInvestorPortal = lazy(
+  () => import("./farm-os/pages/InvestorPortal"),
+);
 
 // The public marketing site — unchanged, still wrapped in its own Navbar/Footer.
 function PublicSite() {
@@ -124,6 +128,14 @@ function App() {
             <Route path="entities/:id" element={<FarmOSEntityDetail />} />
             <Route path="finance" element={<FarmOSFinance />} />
             <Route path="investment" element={<FarmOSInvestment />} />
+            <Route
+              path="investor-portal"
+              element={
+                <InvestorProtectedRoute>
+                  <FarmOSInvestorPortal />
+                </InvestorProtectedRoute>
+              }
+            />
             <Route path="capacity" element={<FarmOSCapacity />} />
             <Route path="scenario" element={<FarmOSScenario />} />
             <Route path="content" element={<FarmOSContentJournal />} />

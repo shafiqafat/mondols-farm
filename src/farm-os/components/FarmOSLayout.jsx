@@ -19,7 +19,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "../hooks/useAuth";
 import OfflineIndicator from "./OfflineIndicator";
@@ -134,23 +133,16 @@ function FarmOSLayout() {
             <OfflineIndicator />
 
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 gap-2 rounded-lg px-2 hover:bg-muted"
-                >
-                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <User className="size-4 text-primary" />
-                  </span>
+              <DropdownMenuTrigger className="flex h-9 items-center gap-2 rounded-lg px-2 hover:bg-muted">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  <User className="size-4 text-primary" />
+                </span>
 
-                  <span className="hidden max-w-32 truncate text-sm font-medium sm:inline">
-                    {user?.email ?? "Administrator"}
-                  </span>
+                <span className="hidden max-w-32 truncate text-sm font-medium sm:inline">
+                  {user?.email ?? "Administrator"}
+                </span>
 
-                  <ChevronDown className="hidden size-3.5 text-muted-foreground sm:block" />
-                </Button>
+                <ChevronDown className="hidden size-3.5 text-muted-foreground sm:block" />
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" className="w-64">

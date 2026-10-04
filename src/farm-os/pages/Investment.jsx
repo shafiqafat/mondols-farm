@@ -4,24 +4,22 @@ import {
   Users,
   BriefcaseBusiness,
   FolderKanban,
-  Plus,
 } from "lucide-react";
+
+
+import InvestmentList from "../components/investment/InvestmentList";
+import InvestmentDialogs from "../components/investment/InvestmentDialogs";
+import InvestorManagement from "../components/investment/InvestorManagement";
+import InvestorPortfolio from "../components/investment/InvestorPortfolio";
+import InvestmentOpportunities from "../components/investment/InvestmentOpportunities";
+import InvestmentDetail from "../components/investment/InvestmentDetail";
 
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 import { canWrite } from "../lib/permissions";
 
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 function getOpportunityStatusOptions(currentStatus, isEditing) {
   if (!isEditing) {
@@ -109,6 +107,37 @@ function getEmptyInvestmentForm() {
   };
 }
 
+function getEmptyContributionForm() {
+  return {
+    investmentId: "",
+    amount: "",
+    occurredAt: "",
+    notes: "",
+  };
+}
+
+function getEmptyAllocationForm() {
+  return {
+    investmentId: "",
+    scopeType: "full_project",
+    projectId: "",
+    speciesConfigId: "",
+    amountAllocated: "",
+    participationPct: "",
+  };
+}
+
+function getEmptyInvestorForm() {
+  return {
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    status: "active",
+    notes: "",
+  };
+}
+
 function Investment() {
   const { role } = useAuth();
   const canEdit = canWrite(role);
@@ -132,12 +161,55 @@ function Investment() {
   );
 
   const [investmentDialogOpen, setInvestmentDialogOpen] = useState(false);
+  const [investmentDetailOpen, setInvestmentDetailOpen] = useState(false);
+  const [selectedInvestment, setSelectedInvestment] = useState(null);
   const [savingInvestment, setSavingInvestment] = useState(false);
   const [investmentError, setInvestmentError] = useState("");
 
   const [investmentForm, setInvestmentForm] = useState(
     getEmptyInvestmentForm(),
   );
+
+  const [contributionDialogOpen, setContributionDialogOpen] = useState(false);
+  const [savingContribution, setSavingContribution] = useState(false);
+  const [contributionError, setContributionError] = useState("");
+
+  const [contributionForm, setContributionForm] = useState({
+    investmentId: "",
+    amount: "",
+    occurredAt: "",
+    notes: "",
+  });
+
+  const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
+  const [savingAllocation, setSavingAllocation] = useState(false);
+  const [allocationError, setAllocationError] = useState("");
+
+  const [allocationForm, setAllocationForm] = useState({
+    investmentId: "",
+    scopeType: "full_project",
+    projectId: "",
+    speciesConfigId: "",
+    amountAllocated: "",
+    participationPct: "",
+  });
+
+  const [investorDialogOpen, setInvestorDialogOpen] = useState(false);
+  const [editingInvestor, setEditingInvestor] = useState(null);
+  const [savingInvestor, setSavingInvestor] = useState(false);
+  const [investorError, setInvestorError] = useState("");
+  const [investorPortfolioOpen, setInvestorPortfolioOpen] = useState(false);
+  const [selectedInvestor, setSelectedInvestor] = useState(null);
+
+  const [investorForm, setInvestorForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    status: "active",
+    notes: "",
+  });
+
   async function loadInvestmentOverview() {
     setLoading(true);
     setLoadError("");
@@ -166,7 +238,7 @@ function Investment() {
 
       supabase
         .from("investors")
-        .select("id, name, email, status")
+        .select("id, name, email, phone, address, status, notes")
         .order("name"),
 
       supabase
@@ -410,6 +482,199 @@ function Investment() {
     await loadInvestmentOverview();
   }
 
+  async function handleCreateContribution(e) {
+    e.preventDefault();
+
+    setContributionError("");
+
+    const investmentId = contributionForm.investmentId;
+    const amount = Number(contributionForm.amount);
+
+    if (!investmentId) {
+      setContributionError("Select an investment.");
+      return;
+    }
+
+    if (!amount || amount <= 0) {
+      setContributionError("Enter a valid contribution amount.");
+      return;
+    }
+
+    setSavingContribution(true);
+
+    const { error } = await supabase.rpc(
+      "record_investment_finance_transaction",
+      {
+        p_investment_id: investmentId,
+        p_type: "contribution",
+        p_amount: amount,
+        p_occurred_at:
+          contributionForm.occurredAt || new Date().toISOString().slice(0, 10),
+        p_notes: contributionForm.notes.trim() || null,
+      },
+    );
+
+    setSavingContribution(false);
+
+    if (error) {
+      setContributionError(error.message);
+      return;
+    }
+
+    setContributionForm(getEmptyContributionForm());
+    setContributionDialogOpen(false);
+
+    await loadInvestmentOverview();
+  }
+
+  async function handleCreateAllocation(e) {
+    e.preventDefault();
+
+    setAllocationError("");
+
+    const investmentId = allocationForm.investmentId;
+    const scopeType = allocationForm.scopeType;
+    const projectId = allocationForm.projectId;
+    const speciesConfigId = allocationForm.speciesConfigId || null;
+    const amountAllocated = Number(allocationForm.amountAllocated);
+    const participationPct = allocationForm.participationPct
+      ? Number(allocationForm.participationPct)
+      : null;
+
+    if (!investmentId) {
+      setAllocationError("Select an investment.");
+      return;
+    }
+
+    if (!projectId) {
+      setAllocationError("Select a project.");
+      return;
+    }
+
+    if (!amountAllocated || amountAllocated <= 0) {
+      setAllocationError("Enter a valid allocation amount.");
+      return;
+    }
+
+    if (scopeType === "species_activity" && !speciesConfigId) {
+      setAllocationError("Select a species or activity.");
+      return;
+    }
+
+    if (
+      participationPct !== null &&
+      (participationPct < 0 || participationPct > 100)
+    ) {
+      setAllocationError("Participation must be between 0 and 100.");
+      return;
+    }
+
+    setSavingAllocation(true);
+
+    const { error } = await supabase.from("investment_allocations").insert({
+      investment_id: investmentId,
+      scope_type: scopeType,
+      project_id: projectId,
+      species_config_id: scopeType === "full_project" ? null : speciesConfigId,
+      amount_allocated: amountAllocated,
+      participation_pct: participationPct,
+    });
+
+    setSavingAllocation(false);
+
+    if (error) {
+      setAllocationError(error.message);
+      return;
+    }
+
+    setAllocationForm(getEmptyAllocationForm());
+    setAllocationDialogOpen(false);
+
+    await loadInvestmentOverview();
+  }
+
+  async function handleCreateInvestor(e) {
+    e.preventDefault();
+
+    setInvestorError("");
+
+    const name = investorForm.name.trim();
+
+    if (!name) {
+      setInvestorError("Enter the investor's name.");
+      return;
+    }
+
+    setSavingInvestor(true);
+
+    const { error } = await supabase.from("investors").insert({
+      name,
+      email: investorForm.email.trim() || null,
+      phone: investorForm.phone.trim() || null,
+      address: investorForm.address.trim() || null,
+      status: investorForm.status,
+      notes: investorForm.notes.trim() || null,
+    });
+
+    setSavingInvestor(false);
+
+    if (error) {
+      setInvestorError(error.message);
+      return;
+    }
+
+    setInvestorForm(getEmptyInvestorForm());
+    setInvestorDialogOpen(false);
+
+    await loadInvestmentOverview();
+  }
+
+  async function handleUpdateInvestor(e) {
+    e.preventDefault();
+
+    if (!editingInvestor) return;
+
+    setInvestorError("");
+
+    const name = investorForm.name.trim();
+
+    if (!name) {
+      setInvestorError("Enter the investor's name.");
+      return;
+    }
+
+    setSavingInvestor(true);
+
+    const { error } = await supabase
+      .from("investors")
+      .update({
+        name,
+        email: investorForm.email.trim() || null,
+        phone: investorForm.phone.trim() || null,
+        address: investorForm.address.trim() || null,
+        status: investorForm.status,
+        notes: investorForm.notes.trim() || null,
+      })
+      .eq("id", editingInvestor.id);
+
+    setSavingInvestor(false);
+
+    if (error) {
+      setInvestorError(error.message);
+      return;
+    }
+
+    setEditingInvestor(null);
+    setInvestorDialogOpen(false);
+
+    await loadInvestmentOverview();
+  }
+
+  function handleViewInvestorPortfolio(investor) {
+    setSelectedInvestor(investor);
+    setInvestorPortfolioOpen(true);
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadInvestmentOverview();
@@ -450,6 +715,49 @@ function Investment() {
   const totalInvestments = Number(overview?.total_investments || 0);
   const activeInvestments = Number(overview?.active_investments || 0);
   const projectsFunded = Number(overview?.projects_funded || 0);
+
+  function handleViewInvestment(investment) {
+    const investmentRows = investments.filter(
+      (item) => item.investment_id === investment.investment_id,
+    );
+
+    if (investmentRows.length === 0) {
+      setSelectedInvestment(investment);
+      setInvestmentDetailOpen(true);
+      return;
+    }
+
+    const firstRow = investmentRows[0];
+
+    const allocations = investmentRows
+      .filter((item) => item.allocation_id)
+      .map((item) => ({
+        allocationId: item.allocation_id,
+        scopeType: item.scope_type,
+        projectId: item.project_id,
+        projectName: item.project_name,
+        speciesConfigId: item.species_config_id,
+        speciesName: item.species_name,
+        amountAllocated: Number(item.amount_allocated || 0),
+        participationPct: item.participation_pct,
+      }));
+
+    const allocatedAmount = allocations.reduce(
+      (sum, allocation) => sum + Number(allocation.amountAllocated || 0),
+      0,
+    );
+
+    const contributedAmount = Number(firstRow.contributed_amount || 0);
+
+    setSelectedInvestment({
+      ...firstRow,
+      contributed_amount: contributedAmount,
+      allocated_amount: allocatedAmount,
+      allocations,
+    });
+
+    setInvestmentDetailOpen(true);
+  }
 
   return (
     <div className="space-y-12">
@@ -588,726 +896,52 @@ function Investment() {
           </CardContent>
         </Card>
       </section>
+      <InvestorManagement
+        investors={investors}
+        canEdit={canEdit}
+        onViewPortfolio={handleViewInvestorPortfolio}
+        investorDialogOpen={investorDialogOpen}
+        setInvestorDialogOpen={setInvestorDialogOpen}
+        editingInvestor={editingInvestor}
+        setEditingInvestor={setEditingInvestor}
+        investorForm={investorForm}
+        setInvestorForm={setInvestorForm}
+        investorError={investorError}
+        setInvestorError={setInvestorError}
+        savingInvestor={savingInvestor}
+        handleCreateInvestor={handleCreateInvestor}
+        handleUpdateInvestor={handleUpdateInvestor}
+        getEmptyInvestorForm={getEmptyInvestorForm}
+      />
+
+      <InvestorPortfolio
+        investor={selectedInvestor}
+        portfolio={investments}
+        open={investorPortfolioOpen}
+        onOpenChange={(open) => {
+          setInvestorPortfolioOpen(open);
+
+          if (!open) {
+            setSelectedInvestor(null);
+          }
+        }}
+        onViewInvestment={handleViewInvestment}
+      />
+
       <section className="space-y-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold tracking-[-0.02em]">
-              Investment Opportunities
-            </h2>
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.02em]">
+            Investment Operations
+          </h2>
 
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Projects and activities currently available for investor
-              participation.
-            </p>
-          </div>
-
-          {canEdit && (
-            <Button
-              type="button"
-              onClick={() => {
-                setOpportunityError("");
-                setEditingOpportunity(null);
-                setOpportunityForm(getEmptyOpportunityForm());
-                setOpportunityDialogOpen(true);
-              }}
-            >
-              <Plus className="size-4" />
-              New opportunity
-            </Button>
-          )}
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Record investor commitments, incoming contributions, and project
+            allocations.
+          </p>
         </div>
 
-        {opportunities.length === 0 ? (
-          <Card className="border-border/70 bg-card shadow-sm">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">
-                No investment opportunities have been created yet.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-5 lg:grid-cols-2">
-            {opportunities.map((opportunity) => {
-              const target = Number(opportunity.target_amount || 0);
-              const committed = Number(opportunity.total_committed || 0);
-              const contributed = Number(opportunity.total_contributed || 0);
-              const minimum = Number(opportunity.minimum_amount || 0);
-
-              const contributionProgress =
-                target > 0 ? Math.min((contributed / target) * 100, 100) : 0;
-
-              return (
-                <Card
-                  key={opportunity.opportunity_id}
-                  className="border-border/70 bg-card shadow-sm"
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="text-lg font-semibold tracking-[-0.02em]">
-                          {opportunity.title}
-                        </p>
-
-                        {opportunity.description && (
-                          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                            {opportunity.description}
-                          </p>
-                        )}
-                      </div>
-
-                      <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs font-medium capitalize">
-                        {opportunity.status}
-                      </span>
-                    </div>
-
-                    <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Target</p>
-                        <p className="mt-1 text-sm font-semibold">
-                          ৳{target.toLocaleString()}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Committed
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          ৳{committed.toLocaleString()}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">Raised</p>
-                        <p className="mt-1 text-sm font-semibold text-primary">
-                          ৳{contributed.toLocaleString()}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">Minimum</p>
-                        <p className="mt-1 text-sm font-semibold">
-                          {minimum > 0 ? `৳${minimum.toLocaleString()}` : "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-6">
-                      <div className="mb-2 flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">
-                          Funding progress
-                        </span>
-
-                        <span className="font-medium">
-                          {Math.round(contributionProgress)}%
-                        </span>
-                      </div>
-
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{
-                            width: `${contributionProgress}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-border/60 pt-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          {opportunity.investment_count} investment
-                          {opportunity.investment_count === 1 ? "" : "s"}
-                        </p>
-
-                        <p className="mt-1 text-xs text-muted-foreground capitalize">
-                          {opportunity.visibility}
-                        </p>
-                      </div>
-
-                      {canEdit && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setOpportunityError("");
-                            setEditingOpportunity(opportunity);
-
-                            setOpportunityForm({
-                              title: opportunity.title ?? "",
-                              description: opportunity.description ?? "",
-                              projectId: opportunity.project_id ?? "",
-                              speciesConfigId:
-                                opportunity.species_config_id ?? "",
-                              targetAmount: opportunity.target_amount ?? "",
-                              minimumAmount: opportunity.minimum_amount ?? "",
-                              openedAt: formatDateForInput(
-                                opportunity.opened_at,
-                              ),
-                              closesAt: formatDateForInput(
-                                opportunity.closes_at,
-                              ),
-                              status: opportunity.status ?? "draft",
-                              visibility: opportunity.visibility ?? "private",
-                            });
-
-                            setOpportunityDialogOpen(true);
-                          }}
-                        >
-                          Edit
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </section>
-      {canEdit && (
-        <Dialog
-          open={opportunityDialogOpen}
-          onOpenChange={(open) => {
-            setOpportunityDialogOpen(open);
-
-            if (!open) {
-              setOpportunityError("");
-              setEditingOpportunity(null);
-            }
-          }}
-        >
-          <DialogContent className="sm:max-w-3xl p-7 sm:p-8">
-            <DialogHeader>
-              <DialogTitle>
-                {editingOpportunity
-                  ? "Edit investment opportunity"
-                  : "Create investment opportunity"}
-              </DialogTitle>
-
-              <DialogDescription>
-                {editingOpportunity
-                  ? "Update the opportunity details without changing its investment history."
-                  : "Define a project or activity that can be offered to investors."}
-              </DialogDescription>
-            </DialogHeader>
-
-            <form
-              onSubmit={
-                editingOpportunity
-                  ? handleUpdateOpportunity
-                  : handleCreateOpportunity
-              }
-              className="space-y-8"
-            >
-              {opportunityError && (
-                <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-                  <p className="text-sm text-destructive">{opportunityError}</p>
-                </div>
-              )}
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-title"
-                    className="text-sm font-medium"
-                  >
-                    Opportunity title
-                  </label>
-
-                  <Input
-                    id="opportunity-title"
-                    placeholder="e.g. Quail Farm Expansion"
-                    value={opportunityForm.title}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        title: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-target"
-                    className="text-sm font-medium"
-                  >
-                    Target amount
-                  </label>
-
-                  <Input
-                    id="opportunity-target"
-                    type="number"
-                    min="0"
-                    step="any"
-                    placeholder="e.g. 50000"
-                    value={opportunityForm.targetAmount}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        targetAmount: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-minimum"
-                    className="text-sm font-medium"
-                  >
-                    Minimum investment
-                  </label>
-
-                  <Input
-                    id="opportunity-minimum"
-                    type="number"
-                    min="0"
-                    step="any"
-                    placeholder="e.g. 20000"
-                    value={opportunityForm.minimumAmount}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        minimumAmount: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-project"
-                    className="text-sm font-medium"
-                  >
-                    Linked project
-                  </label>
-
-                  <select
-                    id="opportunity-project"
-                    value={opportunityForm.projectId}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        projectId: e.target.value,
-                      }))
-                    }
-                    className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    <option value="">No project linked</option>
-
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                        {project.status === "completed" ? " (Completed)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-species"
-                    className="text-sm font-medium"
-                  >
-                    Species / activity
-                  </label>
-
-                  <select
-                    id="opportunity-species"
-                    value={opportunityForm.speciesConfigId}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        speciesConfigId: e.target.value,
-                      }))
-                    }
-                    className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    <option value="">All species / activity</option>
-
-                    {species.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                        {item.category ? ` · ${item.category}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-opened"
-                    className="text-sm font-medium"
-                  >
-                    Opening date
-                  </label>
-
-                  <Input
-                    id="opportunity-opened"
-                    type="date"
-                    value={opportunityForm.openedAt}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        openedAt: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-closes"
-                    className="text-sm font-medium"
-                  >
-                    Closing date
-                  </label>
-
-                  <Input
-                    id="opportunity-closes"
-                    type="date"
-                    value={opportunityForm.closesAt}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        closesAt: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-status"
-                    className="text-sm font-medium"
-                  >
-                    Status
-                  </label>
-
-                  <select
-                    id="opportunity-status"
-                    value={opportunityForm.status}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        status: e.target.value,
-                      }))
-                    }
-                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    {getOpportunityStatusOptions(
-                      editingOpportunity?.status,
-                      Boolean(editingOpportunity),
-                    ).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="opportunity-visibility"
-                    className="text-sm font-medium"
-                  >
-                    Visibility
-                  </label>
-
-                  <select
-                    id="opportunity-visibility"
-                    value={opportunityForm.visibility}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        visibility: e.target.value,
-                      }))
-                    }
-                    className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    <option value="private">Private</option>
-                    <option value="investors">Investors</option>
-                    <option value="public">Public</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2 sm:col-span-2">
-                  <label
-                    htmlFor="opportunity-description"
-                    className="text-sm font-medium"
-                  >
-                    Description
-                  </label>
-
-                  <textarea
-                    id="opportunity-description"
-                    placeholder="Describe the project, investment purpose, expected use of funds, etc."
-                    value={opportunityForm.description}
-                    onChange={(e) =>
-                      setOpportunityForm((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    rows={4}
-                    className="min-h-[100px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t border-border/60 pt-5">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setOpportunityDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-
-                <Button type="submit" disabled={savingOpportunity}>
-                  {savingOpportunity
-                    ? editingOpportunity
-                      ? "Saving…"
-                      : "Creating…"
-                    : editingOpportunity
-                      ? "Save changes"
-                      : "Create opportunity"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {canEdit && (
-        <Dialog
-          open={investmentDialogOpen}
-          onOpenChange={(open) => {
-            setInvestmentDialogOpen(open);
-
-            if (!open) {
-              setInvestmentError("");
-            }
-          }}
-        >
-          <DialogContent className="sm:max-w-3xl p-7 sm:p-8">
-            <DialogHeader>
-              <DialogTitle>Create investment</DialogTitle>
-
-              <DialogDescription>
-                Record an investor's commitment. Actual contributions and
-                project allocations are recorded separately.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleCreateInvestment} className="space-y-8">
-              {investmentError && (
-                <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-                  <p className="text-sm text-destructive">{investmentError}</p>
-                </div>
-              )}
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="investment-investor"
-                    className="text-sm font-medium"
-                  >
-                    Investor
-                  </label>
-
-                  <select
-                    id="investment-investor"
-                    value={investmentForm.investorId}
-                    onChange={(e) =>
-                      setInvestmentForm((prev) => ({
-                        ...prev,
-                        investorId: e.target.value,
-                      }))
-                    }
-                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                    required
-                  >
-                    <option value="">Select investor</option>
-
-                    {investors
-                      .filter((investor) => investor.status === "active")
-                      .map((investor) => (
-                        <option key={investor.id} value={investor.id}>
-                          {investor.name}
-                          {investor.email ? ` · ${investor.email}` : ""}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="investment-opportunity"
-                    className="text-sm font-medium"
-                  >
-                    Investment opportunity
-                  </label>
-
-                  <select
-                    id="investment-opportunity"
-                    value={investmentForm.opportunityId}
-                    onChange={(e) =>
-                      setInvestmentForm((prev) => ({
-                        ...prev,
-                        opportunityId: e.target.value,
-                      }))
-                    }
-                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    <option value="">Direct investment</option>
-
-                    {opportunities
-                      .filter((opportunity) => opportunity.status === "open")
-                      .map((opportunity) => (
-                        <option
-                          key={opportunity.opportunity_id}
-                          value={opportunity.opportunity_id}
-                        >
-                          {opportunity.title}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="investment-committed"
-                    className="text-sm font-medium"
-                  >
-                    Committed amount
-                  </label>
-
-                  <Input
-                    id="investment-committed"
-                    type="number"
-                    min="0"
-                    step="any"
-                    placeholder="e.g. 25000"
-                    value={investmentForm.committedAmount}
-                    onChange={(e) =>
-                      setInvestmentForm((prev) => ({
-                        ...prev,
-                        committedAmount: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="investment-date"
-                    className="text-sm font-medium"
-                  >
-                    Investment date
-                  </label>
-
-                  <Input
-                    id="investment-date"
-                    type="date"
-                    value={investmentForm.investedAt}
-                    onChange={(e) =>
-                      setInvestmentForm((prev) => ({
-                        ...prev,
-                        investedAt: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  <label
-                    htmlFor="investment-status"
-                    className="text-sm font-medium"
-                  >
-                    Status
-                  </label>
-
-                  <select
-                    id="investment-status"
-                    value={investmentForm.status}
-                    onChange={(e) =>
-                      setInvestmentForm((prev) => ({
-                        ...prev,
-                        status: e.target.value,
-                      }))
-                    }
-                    className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  >
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="refunded">Refunded</option>
-                  </select>
-                </div>
-
-                <div className="space-y-2.5 sm:col-span-2">
-                  <label
-                    htmlFor="investment-notes"
-                    className="text-sm font-medium"
-                  >
-                    Notes
-                  </label>
-
-                  <textarea
-                    id="investment-notes"
-                    placeholder="Optional notes about the investment commitment."
-                    value={investmentForm.notes}
-                    onChange={(e) =>
-                      setInvestmentForm((prev) => ({
-                        ...prev,
-                        notes: e.target.value,
-                      }))
-                    }
-                    rows={4}
-                    className="min-h-[100px] w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t border-border/60 pt-5">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setInvestmentDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-
-                <Button type="submit" disabled={savingInvestment}>
-                  {savingInvestment ? "Creating…" : "Create investment"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <section className="space-y-5">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold tracking-[-0.02em]">
-              Investments
-            </h2>
-
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Track investor commitments, received capital, and project
-              allocations.
-            </p>
-          </div>
-
-          {canEdit && (
+        {canEdit && (
+          <div className="flex flex-wrap gap-3">
             <Button
               type="button"
               onClick={() => {
@@ -1316,109 +950,103 @@ function Investment() {
                 setInvestmentDialogOpen(true);
               }}
             >
-              <Plus className="size-4" />
-              New investment
+              Create investment
             </Button>
-          )}
-        </div>
 
-        {investments.length === 0 ? (
-          <Card className="border-border/70 bg-card shadow-sm">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">
-                No investments have been recorded yet.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden border-border/70 bg-card shadow-sm">
-            <CardContent className="p-0">
-              <div className="divide-y divide-border/60">
-                {investments.map((investment) => {
-                  const committed = Number(investment.committed_amount || 0);
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setContributionError("");
+                setContributionForm(getEmptyContributionForm());
+                setContributionDialogOpen(true);
+              }}
+            >
+              Record contribution
+            </Button>
 
-                  const contributed = Number(
-                    investment.contributed_amount || 0,
-                  );
-
-                  const allocated = Number(investment.allocated_amount || 0);
-
-                  const unallocated = Math.max(contributed - allocated, 0);
-
-                  return (
-                    <div
-                      key={`${investment.investment_id}-${investment.allocation_id || "unallocated"}`}
-                      className="flex flex-col gap-5 p-5 transition-colors hover:bg-muted/30 lg:flex-row lg:items-start lg:justify-between"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold">
-                            {investment.investor_name}
-                          </p>
-
-                          <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium capitalize">
-                            {investment.investment_status}
-                          </span>
-                        </div>
-
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {investment.opportunity_title || "Direct investment"}
-                        </p>
-
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {investment.project_name || "No project allocated"}
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-4 sm:grid-cols-4 lg:min-w-[560px]">
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Committed
-                          </p>
-
-                          <p className="mt-1 text-sm font-semibold">
-                            ৳{committed.toLocaleString()}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Contributed
-                          </p>
-
-                          <p className="mt-1 text-sm font-semibold text-primary">
-                            ৳{contributed.toLocaleString()}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Allocated
-                          </p>
-
-                          <p className="mt-1 text-sm font-semibold">
-                            ৳{allocated.toLocaleString()}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Unallocated
-                          </p>
-
-                          <p className="mt-1 text-sm font-semibold">
-                            ৳{unallocated.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setAllocationError("");
+                setAllocationForm(getEmptyAllocationForm());
+                setAllocationDialogOpen(true);
+              }}
+            >
+              Record allocation
+            </Button>
+          </div>
         )}
       </section>
+
+      <InvestmentOpportunities
+        opportunities={opportunities}
+        projects={projects}
+        species={species}
+        canEdit={canEdit}
+        opportunityDialogOpen={opportunityDialogOpen}
+        setOpportunityDialogOpen={setOpportunityDialogOpen}
+        editingOpportunity={editingOpportunity}
+        setEditingOpportunity={setEditingOpportunity}
+        opportunityForm={opportunityForm}
+        setOpportunityForm={setOpportunityForm}
+        opportunityError={opportunityError}
+        setOpportunityError={setOpportunityError}
+        savingOpportunity={savingOpportunity}
+        handleCreateOpportunity={handleCreateOpportunity}
+        handleUpdateOpportunity={handleUpdateOpportunity}
+        formatDateForInput={formatDateForInput}
+        getEmptyOpportunityForm={getEmptyOpportunityForm}
+        getOpportunityStatusOptions={getOpportunityStatusOptions}
+      />
+
+      <InvestmentDialogs
+        canEdit={canEdit}
+        investmentDialogOpen={investmentDialogOpen}
+        setInvestmentDialogOpen={setInvestmentDialogOpen}
+        investmentError={investmentError}
+        investmentForm={investmentForm}
+        setInvestmentForm={setInvestmentForm}
+        savingInvestment={savingInvestment}
+        handleCreateInvestment={handleCreateInvestment}
+        contributionDialogOpen={contributionDialogOpen}
+        setContributionDialogOpen={setContributionDialogOpen}
+        contributionError={contributionError}
+        contributionForm={contributionForm}
+        setContributionForm={setContributionForm}
+        savingContribution={savingContribution}
+        handleCreateContribution={handleCreateContribution}
+        allocationDialogOpen={allocationDialogOpen}
+        setAllocationDialogOpen={setAllocationDialogOpen}
+        allocationError={allocationError}
+        allocationForm={allocationForm}
+        setAllocationForm={setAllocationForm}
+        savingAllocation={savingAllocation}
+        handleCreateAllocation={handleCreateAllocation}
+        investors={investors}
+        opportunities={opportunities}
+        investments={investments}
+        projects={projects}
+        species={species}
+      />
+
+      <InvestmentList
+        investments={investments}
+        canEdit={canEdit}
+        onNewInvestment={() => {
+          setInvestmentError("");
+          setInvestmentForm(getEmptyInvestmentForm());
+          setInvestmentDialogOpen(true);
+        }}
+        onViewInvestment={handleViewInvestment}
+      />
+
+      <InvestmentDetail
+        investment={selectedInvestment}
+        open={investmentDetailOpen}
+        onOpenChange={setInvestmentDetailOpen}
+      />
     </div>
   );
 }

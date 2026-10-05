@@ -24,6 +24,8 @@ function InvestmentList({
     const grouped = investmentMap.get(investmentId);
 
     if (investment.allocation_id) {
+      const amountAllocated = Number(investment.amount_allocated || 0);
+
       grouped.allocations.push({
         allocationId: investment.allocation_id,
         scopeType: investment.scope_type,
@@ -31,9 +33,11 @@ function InvestmentList({
         projectName: investment.project_name,
         speciesConfigId: investment.species_config_id,
         speciesName: investment.species_name,
-        amountAllocated: Number(investment.amount_allocated || 0),
+        amountAllocated,
         participationPct: investment.participation_pct,
       });
+
+      grouped.allocated_amount += amountAllocated;
     }
   });
 
@@ -84,19 +88,19 @@ function InvestmentList({
                       Opportunity
                     </th>
 
-                    <th className="px-5 py-4 font-medium text-muted-foreground">
+                    <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                       Committed
                     </th>
 
-                    <th className="px-5 py-4 font-medium text-muted-foreground">
+                    <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                       Contributed
                     </th>
 
-                    <th className="px-5 py-4 font-medium text-muted-foreground">
+                    <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                       Allocated
                     </th>
 
-                    <th className="px-5 py-4 font-medium text-muted-foreground">
+                    <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                       Unallocated
                     </th>
 
@@ -127,8 +131,8 @@ function InvestmentList({
                         key={investment.investment_id}
                         className="transition-colors hover:bg-muted/20"
                       >
-                        <td className="px-5 py-4">
-                          <p className="font-medium">
+                        <td className="px-5 py-5 align-middle">
+                          <p className="font-semibold">
                             {investment.investor_name}
                           </p>
 
@@ -137,7 +141,7 @@ function InvestmentList({
                           </p>
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="px-5 py-5 align-middle">
                           <p className="font-medium">
                             {investment.opportunity_title ||
                               "Direct investment"}
@@ -155,29 +159,29 @@ function InvestmentList({
                           )}
                         </td>
 
-                        <td className="px-5 py-4 font-medium">
+                        <td className="px-5 py-5 text-right align-middle font-medium">
                           ৳{committed.toLocaleString()}
                         </td>
 
-                        <td className="px-5 py-4 font-medium text-primary">
+                        <td className="px-5 py-5 text-right align-middle font-semibold text-primary">
                           ৳{contributed.toLocaleString()}
                         </td>
 
-                        <td className="px-5 py-4 font-medium">
+                        <td className="px-5 py-5 text-right align-middle font-medium">
                           ৳{allocated.toLocaleString()}
                         </td>
 
-                        <td className="px-5 py-4 font-medium">
+                        <td className="px-5 py-5 text-right align-middle font-medium">
                           ৳{unallocated.toLocaleString()}
                         </td>
 
-                        <td className="px-5 py-4">
-                          <span className="inline-flex rounded-full border border-border px-2.5 py-1 text-xs font-medium capitalize">
+                        <td className="px-5 py-5 align-middle">
+                          <span className="inline-flex rounded-full border border-border bg-muted/30 px-2.5 py-1 text-xs font-medium capitalize">
                             {investment.investment_status}
                           </span>
                         </td>
 
-                        <td className="px-5 py-4 text-right">
+                        <td className="px-5 py-5 text-right align-middle">
                           <Button
                             type="button"
                             variant="outline"

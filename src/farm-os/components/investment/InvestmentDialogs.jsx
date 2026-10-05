@@ -20,14 +20,14 @@ function InvestmentDialogs({
   savingInvestment,
   handleCreateInvestment,
 
-  // Contribution
-  contributionDialogOpen,
-  setContributionDialogOpen,
-  contributionError,
-  contributionForm,
-  setContributionForm,
-  savingContribution,
-  handleCreateContribution,
+  // Money movement
+  moneyMovementDialogOpen,
+  setMoneyMovementDialogOpen,
+  moneyMovementError,
+  moneyMovementForm,
+  setMoneyMovementForm,
+  savingMoneyMovement,
+  handleCreateMoneyMovement,
 
   // Allocation
   allocationDialogOpen,
@@ -257,44 +257,45 @@ function InvestmentDialogs({
         </DialogContent>
       </Dialog>
 
-      {/* CONTRIBUTION DIALOG */}
+      {/* MONEY MOVEMENT DIALOG */}
       <Dialog
-        open={contributionDialogOpen}
+        open={moneyMovementDialogOpen}
         onOpenChange={(open) => {
-          setContributionDialogOpen(open);
+          setMoneyMovementDialogOpen(open);
         }}
       >
         <DialogContent className="sm:max-w-2xl p-7 sm:p-8">
           <DialogHeader>
-            <DialogTitle>Record contribution</DialogTitle>
+            <DialogTitle>Record money movement</DialogTitle>
 
             <DialogDescription>
-              Record money actually received from an investor. This creates the
-              corresponding investment and finance records together.
+              Record a contribution, distribution, or refund for an investor
+              investment. The corresponding farm finance record is created
+              together.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCreateContribution} className="space-y-8">
-            {contributionError && (
+          <form onSubmit={handleCreateMoneyMovement} className="space-y-8">
+            {moneyMovementError && (
               <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-                <p className="text-sm text-destructive">{contributionError}</p>
+                <p className="text-sm text-destructive">{moneyMovementError}</p>
               </div>
             )}
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2.5 sm:col-span-2">
                 <label
-                  htmlFor="contribution-investment"
+                  htmlFor="money-movement-investment"
                   className="text-sm font-medium"
                 >
                   Investment
                 </label>
 
                 <select
-                  id="contribution-investment"
-                  value={contributionForm.investmentId}
+                  id="money-movement-investment"
+                  value={moneyMovementForm.investmentId}
                   onChange={(e) =>
-                    setContributionForm((prev) => ({
+                    setMoneyMovementForm((prev) => ({
                       ...prev,
                       investmentId: e.target.value,
                     }))
@@ -337,21 +338,47 @@ function InvestmentDialogs({
 
               <div className="space-y-2.5">
                 <label
-                  htmlFor="contribution-amount"
+                  htmlFor="money-movement-type"
                   className="text-sm font-medium"
                 >
-                  Contribution amount
+                  Movement type
+                </label>
+
+                <select
+                  id="money-movement-type"
+                  value={moneyMovementForm.type}
+                  onChange={(e) =>
+                    setMoneyMovementForm((prev) => ({
+                      ...prev,
+                      type: e.target.value,
+                    }))
+                  }
+                  className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm"
+                  required
+                >
+                  <option value="contribution">Contribution</option>
+                  <option value="distribution">Distribution</option>
+                  <option value="refund">Refund</option>
+                </select>
+              </div>
+
+              <div className="space-y-2.5">
+                <label
+                  htmlFor="money-movement-amount"
+                  className="text-sm font-medium"
+                >
+                  Amount
                 </label>
 
                 <Input
-                  id="contribution-amount"
+                  id="money-movement-amount"
                   type="number"
                   min="0"
                   step="any"
                   placeholder="e.g. 20000"
-                  value={contributionForm.amount}
+                  value={moneyMovementForm.amount}
                   onChange={(e) =>
-                    setContributionForm((prev) => ({
+                    setMoneyMovementForm((prev) => ({
                       ...prev,
                       amount: e.target.value,
                     }))
@@ -362,18 +389,18 @@ function InvestmentDialogs({
 
               <div className="space-y-2.5">
                 <label
-                  htmlFor="contribution-date"
+                  htmlFor="money-movement-date"
                   className="text-sm font-medium"
                 >
-                  Contribution date
+                  Date
                 </label>
 
                 <Input
-                  id="contribution-date"
+                  id="money-movement-date"
                   type="date"
-                  value={contributionForm.occurredAt}
+                  value={moneyMovementForm.occurredAt}
                   onChange={(e) =>
-                    setContributionForm((prev) => ({
+                    setMoneyMovementForm((prev) => ({
                       ...prev,
                       occurredAt: e.target.value,
                     }))
@@ -383,17 +410,17 @@ function InvestmentDialogs({
 
               <div className="space-y-2.5 sm:col-span-2">
                 <label
-                  htmlFor="contribution-notes"
+                  htmlFor="money-movement-notes"
                   className="text-sm font-medium"
                 >
                   Notes
                 </label>
 
                 <textarea
-                  id="contribution-notes"
-                  value={contributionForm.notes}
+                  id="money-movement-notes"
+                  value={moneyMovementForm.notes}
                   onChange={(e) =>
-                    setContributionForm((prev) => ({
+                    setMoneyMovementForm((prev) => ({
                       ...prev,
                       notes: e.target.value,
                     }))
@@ -408,13 +435,13 @@ function InvestmentDialogs({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={() => setContributionDialogOpen(false)}
+                onClick={() => setMoneyMovementDialogOpen(false)}
               >
                 Cancel
               </Button>
 
-              <Button type="submit" disabled={savingContribution}>
-                {savingContribution ? "Recording…" : "Record contribution"}
+              <Button type="submit" disabled={savingMoneyMovement}>
+                {savingMoneyMovement ? "Recording…" : "Record movement"}
               </Button>
             </div>
           </form>

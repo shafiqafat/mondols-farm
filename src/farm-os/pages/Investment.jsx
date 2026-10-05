@@ -107,9 +107,10 @@ function getEmptyInvestmentForm() {
   };
 }
 
-function getEmptyContributionForm() {
+function getEmptyMoneyMovementForm() {
   return {
     investmentId: "",
+    type: "contribution",
     amount: "",
     occurredAt: "",
     notes: "",
@@ -150,6 +151,7 @@ function Investment() {
   const [projects, setProjects] = useState([]);
   const [species, setSpecies] = useState([]);
   const [investors, setInvestors] = useState([]);
+  const [projectFunding, setProjectFunding] = useState([]);
 
   const [opportunityDialogOpen, setOpportunityDialogOpen] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState(null);
@@ -170,16 +172,13 @@ function Investment() {
     getEmptyInvestmentForm(),
   );
 
-  const [contributionDialogOpen, setContributionDialogOpen] = useState(false);
-  const [savingContribution, setSavingContribution] = useState(false);
-  const [contributionError, setContributionError] = useState("");
+  const [moneyMovementDialogOpen, setMoneyMovementDialogOpen] = useState(false);
+  const [savingMoneyMovement, setSavingMoneyMovement] = useState(false);
+  const [moneyMovementError, setMoneyMovementError] = useState("");
 
-  const [contributionForm, setContributionForm] = useState({
-    investmentId: "",
-    amount: "",
-    occurredAt: "",
-    notes: "",
-  });
+  const [moneyMovementForm, setMoneyMovementForm] = useState(
+    getEmptyMoneyMovementForm(),
+  );
 
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
   const [savingAllocation, setSavingAllocation] = useState(false);
@@ -221,6 +220,7 @@ function Investment() {
       speciesRes,
       investorsRes,
       investmentsRes,
+      projectFundingRes,
     ] = await Promise.all([
       supabase.from("investment_overview").select("*").maybeSingle(),
 
@@ -245,6 +245,10 @@ function Investment() {
         .from("investor_portfolio")
         .select("*")
         .order("invested_at", { ascending: false }),
+      supabase
+        .from("investment_project_overview")
+        .select("*")
+        .order("project_name"),
     ]);
 
     const error =
@@ -253,7 +257,8 @@ function Investment() {
       projectsRes.error ||
       speciesRes.error ||
       investorsRes.error ||
-      investmentsRes.error;
+      investmentsRes.error ||
+      projectFundingRes.error;
 
     if (error) {
       setLoadError(error.message);
@@ -267,6 +272,7 @@ function Investment() {
     setSpecies(speciesRes.data ?? []);
     setInvestments(investmentsRes.data ?? []);
     setInvestors(investorsRes.data ?? []);
+    setProjectFunding(projectFundingRes.data ?? []);
     setLoading(false);
   }
 
@@ -394,21 +400,30 @@ function Investment() {
 
     setSavingOpportunity(true);
 
-    const { error } = await supabase
-      .from("investment_opportunities")
-      .update({
-        title,
-        description: opportunityForm.description.trim() || null,
-        project_id: opportunityForm.projectId || null,
-        species_config_id: opportunityForm.speciesConfigId || null,
-        target_amount: targetAmount,
-        minimum_amount: minimumAmount,
-        opened_at: opportunityForm.openedAt || null,
-        closes_at: opportunityForm.closesAt || null,
-        status: opportunityForm.status,
-        visibility: opportunityForm.visibility,
-      })
-      .eq("id", editingOpportunity.opportunity_id);
+const opportunityId =
+  editingOpportunity.opportunity_id ?? editingOpportunity.id;
+
+if (!opportunityId) {
+  setOpportunityError("Unable to identify this investment opportunity.");
+  setSavingOpportunity(false);
+  return;
+}
+
+const { error } = await supabase
+  .from("investment_opportunities")
+  .update({
+    title,
+    description: opportunityForm.description.trim() || null,
+    project_id: opportunityForm.projectId || null,
+    species_config_id: opportunityForm.speciesConfigId || null,
+    target_amount: targetAmount,
+    minimum_amount: minimumAmount,
+    opened_at: opportunityForm.openedAt || null,
+    closes_at: opportunityForm.closesAt || null,
+    status: opportunityForm.status,
+    visibility: opportunityForm.visibility,
+  })
+  .eq("id", opportunityId);
 
     setSavingOpportunity(false);
 
@@ -482,47 +497,53 @@ function Investment() {
     await loadInvestmentOverview();
   }
 
-  async function handleCreateContribution(e) {
+  async function handleCreateMoneyMovement(e) {
     e.preventDefault();
 
-    setContributionError("");
+    setMoneyMovementError("");
 
-    const investmentId = contributionForm.investmentId;
-    const amount = Number(contributionForm.amount);
+    const investmentId = moneyMovementForm.investmentId;
+    const type = moneyMovementForm.type;
+    const amount = Number(moneyMovementForm.amount);
 
     if (!investmentId) {
-      setContributionError("Select an investment.");
+      setMoneyMovementError("Select an investment.");
+      return;
+    }
+
+    if (!["contribution", "distribution", "refund"].includes(type)) {
+      setMoneyMovementError("Select a valid money movement type.");
       return;
     }
 
     if (!amount || amount <= 0) {
-      setContributionError("Enter a valid contribution amount.");
+      setMoneyMovementError("Enter a valid amount.");
       return;
     }
 
-    setSavingContribution(true);
+    setSavingMoneyMovement(true);
 
     const { error } = await supabase.rpc(
       "record_investment_finance_transaction",
       {
         p_investment_id: investmentId,
-        p_type: "contribution",
+        p_type: type,
         p_amount: amount,
         p_occurred_at:
-          contributionForm.occurredAt || new Date().toISOString().slice(0, 10),
-        p_notes: contributionForm.notes.trim() || null,
+          moneyMovementForm.occurredAt || new Date().toISOString().slice(0, 10),
+        p_notes: moneyMovementForm.notes.trim() || null,
       },
     );
 
-    setSavingContribution(false);
+    setSavingMoneyMovement(false);
 
     if (error) {
-      setContributionError(error.message);
+      setMoneyMovementError(error.message);
       return;
     }
 
-    setContributionForm(getEmptyContributionForm());
-    setContributionDialogOpen(false);
+    setMoneyMovementForm(getEmptyMoneyMovementForm());
+    setMoneyMovementDialogOpen(false);
 
     await loadInvestmentOverview();
   }
@@ -760,7 +781,7 @@ function Investment() {
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <section className="border-b border-border/60 pb-7">
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -781,14 +802,14 @@ function Investment() {
         </div>
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-2">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-5">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Total committed
             </p>
 
-            <p className="mt-2 text-4xl font-semibold tracking-[-0.03em]">
+            <p className="mt-2 text-3xl font-semibold tracking-[-0.03em]">
               ৳{totalCommitted.toLocaleString()}
             </p>
 
@@ -799,12 +820,12 @@ function Investment() {
         </Card>
 
         <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-5">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Total raised
             </p>
 
-            <p className="mt-2 text-4xl font-semibold tracking-[-0.03em] text-primary">
+            <p className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-primary">
               ৳{totalContributed.toLocaleString()}
             </p>
 
@@ -815,7 +836,7 @@ function Investment() {
         </Card>
 
         <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-5">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Total allocated
             </p>
@@ -831,7 +852,7 @@ function Investment() {
         </Card>
 
         <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-5">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
               Unallocated funds
             </p>
@@ -847,52 +868,62 @@ function Investment() {
         </Card>
       </section>
 
-      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-5">
-            <Users className="size-5 text-primary" />
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="border-border/60 bg-card/70 shadow-sm">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Users className="size-5 text-primary" />
+            </div>
 
-            <p className="mt-4 text-xs text-muted-foreground">
-              Active investors
-            </p>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Active investors</p>
 
-            <p className="mt-1 text-2xl font-semibold">{activeInvestors}</p>
+              <p className="mt-1 text-2xl font-semibold">{activeInvestors}</p>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-5">
-            <BriefcaseBusiness className="size-5 text-primary" />
+        <Card className="border-border/60 bg-card/70 shadow-sm">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <BriefcaseBusiness className="size-5 text-primary" />
+            </div>
 
-            <p className="mt-4 text-xs text-muted-foreground">
-              Total investments
-            </p>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Total investments</p>
 
-            <p className="mt-1 text-2xl font-semibold">{totalInvestments}</p>
+              <p className="mt-1 text-2xl font-semibold">{totalInvestments}</p>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-5">
-            <BriefcaseBusiness className="size-5 text-primary" />
+        <Card className="border-border/60 bg-card/70 shadow-sm">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <BriefcaseBusiness className="size-5 text-primary" />
+            </div>
 
-            <p className="mt-4 text-xs text-muted-foreground">
-              Active investments
-            </p>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">
+                Active investments
+              </p>
 
-            <p className="mt-1 text-2xl font-semibold">{activeInvestments}</p>
+              <p className="mt-1 text-2xl font-semibold">{activeInvestments}</p>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card shadow-sm">
-          <CardContent className="p-5">
-            <FolderKanban className="size-5 text-primary" />
+        <Card className="border-border/60 bg-card/70 shadow-sm">
+          <CardContent className="flex items-center gap-4 p-5">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <FolderKanban className="size-5 text-primary" />
+            </div>
 
-            <p className="mt-4 text-xs text-muted-foreground">
-              Projects funded
-            </p>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Projects funded</p>
 
-            <p className="mt-1 text-2xl font-semibold">{projectsFunded}</p>
+              <p className="mt-1 text-2xl font-semibold">{projectsFunded}</p>
+            </div>
           </CardContent>
         </Card>
       </section>
@@ -928,54 +959,178 @@ function Investment() {
         onViewInvestment={handleViewInvestment}
       />
 
-      <section className="space-y-5">
+      <section className="space-y-[20px]">
         <div>
           <h2 className="text-xl font-semibold tracking-[-0.02em]">
             Investment Operations
           </h2>
 
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Record investor commitments, incoming contributions, and project
+          <p className="mt-[4px] max-w-2xl text-sm leading-6 text-muted-foreground">
+            Manage investor commitments, money movements, and project
             allocations.
           </p>
         </div>
 
         {canEdit && (
-          <div className="flex flex-wrap gap-3">
-            <Button
-              type="button"
-              onClick={() => {
-                setInvestmentError("");
-                setInvestmentForm(getEmptyInvestmentForm());
-                setInvestmentDialogOpen(true);
-              }}
-            >
-              Create investment
-            </Button>
+          <div className="grid gap-[12px] md:grid-cols-3">
+            <Card className="border-border/70 bg-card shadow-sm transition-colors hover:border-primary/30">
+              <CardContent className="flex h-full flex-col p-[20px]">
+                <div>
+                  <p className="text-base font-semibold">Create investment</p>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setContributionError("");
-                setContributionForm(getEmptyContributionForm());
-                setContributionDialogOpen(true);
-              }}
-            >
-              Record contribution
-            </Button>
+                  <p className="mt-[6px] text-sm leading-6 text-muted-foreground">
+                    Create a new investor commitment and establish their
+                    investment position.
+                  </p>
+                </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setAllocationError("");
-                setAllocationForm(getEmptyAllocationForm());
-                setAllocationDialogOpen(true);
-              }}
-            >
-              Record allocation
-            </Button>
+                <Button
+                  type="button"
+                  className="mt-[20px] w-full"
+                  onClick={() => {
+                    setInvestmentError("");
+                    setInvestmentForm(getEmptyInvestmentForm());
+                    setInvestmentDialogOpen(true);
+                  }}
+                >
+                  Create investment
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/70 bg-card shadow-sm transition-colors hover:border-primary/30">
+              <CardContent className="flex h-full flex-col p-[20px]">
+                <div>
+                  <p className="text-base font-semibold">Money movement</p>
+
+                  <p className="mt-[6px] text-sm leading-6 text-muted-foreground">
+                    Record contributions, distributions, or refunds for an
+                    existing investment.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-[20px] w-full"
+                  onClick={() => {
+                    setMoneyMovementError("");
+                    setMoneyMovementForm(getEmptyMoneyMovementForm());
+                    setMoneyMovementDialogOpen(true);
+                  }}
+                >
+                  Record money movement
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/70 bg-card shadow-sm transition-colors hover:border-primary/30">
+              <CardContent className="flex h-full flex-col p-[20px]">
+                <div>
+                  <p className="text-base font-semibold">Project allocation</p>
+
+                  <p className="mt-[6px] text-sm leading-6 text-muted-foreground">
+                    Assign contributed investor capital to one or more farm
+                    projects or activities.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-[20px] w-full"
+                  onClick={() => {
+                    setAllocationError("");
+                    setAllocationForm(getEmptyAllocationForm());
+                    setAllocationDialogOpen(true);
+                  }}
+                >
+                  Record allocation
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-5">
+        <div>
+          <h2 className="text-xl font-semibold tracking-[-0.02em]">
+            Project Funding
+          </h2>
+
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            See how investor capital is allocated across farm projects.
+          </p>
+        </div>
+
+        {projectFunding.length === 0 ? (
+          <Card className="border-border/70 bg-card shadow-sm">
+            <CardContent className="p-5">
+              <p className="text-sm text-muted-foreground">
+                No project funding has been recorded yet.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-5 lg:grid-cols-2">
+            {projectFunding.map((project) => (
+              <Card
+                key={project.project_id}
+                className="border-border/70 bg-card shadow-sm"
+              >
+                <CardContent className="p-5">
+                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-center">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold tracking-[-0.02em]">
+                        {project.project_name}
+                      </h3>
+
+                      <p className="mt-1 text-sm text-muted-foreground capitalize">
+                        {project.project_type || "Project"}
+                        {" · "}
+                        {project.project_status || "Unknown"}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-6 lg:justify-items-end">
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">
+                          Investors
+                        </p>
+
+                        <p className="mt-1.5 text-lg font-semibold">
+                          {Number(project.investor_count || 0)}
+                        </p>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">
+                          Investments
+                        </p>
+
+                        <p className="mt-1.5 text-lg font-semibold">
+                          {Number(project.investment_count || 0)}
+                        </p>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground">
+                          Allocated
+                        </p>
+
+                        <p className="mt-1.5 text-lg font-semibold text-primary">
+                          ৳
+                          {Number(
+                            project.total_allocated || 0,
+                          ).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </section>
@@ -1010,13 +1165,13 @@ function Investment() {
         setInvestmentForm={setInvestmentForm}
         savingInvestment={savingInvestment}
         handleCreateInvestment={handleCreateInvestment}
-        contributionDialogOpen={contributionDialogOpen}
-        setContributionDialogOpen={setContributionDialogOpen}
-        contributionError={contributionError}
-        contributionForm={contributionForm}
-        setContributionForm={setContributionForm}
-        savingContribution={savingContribution}
-        handleCreateContribution={handleCreateContribution}
+        moneyMovementDialogOpen={moneyMovementDialogOpen}
+        setMoneyMovementDialogOpen={setMoneyMovementDialogOpen}
+        moneyMovementError={moneyMovementError}
+        moneyMovementForm={moneyMovementForm}
+        setMoneyMovementForm={setMoneyMovementForm}
+        savingMoneyMovement={savingMoneyMovement}
+        handleCreateMoneyMovement={handleCreateMoneyMovement}
         allocationDialogOpen={allocationDialogOpen}
         setAllocationDialogOpen={setAllocationDialogOpen}
         allocationError={allocationError}

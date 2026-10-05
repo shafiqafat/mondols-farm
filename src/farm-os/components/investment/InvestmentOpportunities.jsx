@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Plus } from "lucide-react";
 
 function InvestmentOpportunities({
   opportunities,
@@ -28,10 +29,46 @@ function InvestmentOpportunities({
   formatDateForInput,
   getOpportunityStatusOptions,
 }) {
+  function getEmptyOpportunityForm() {
+    return {
+      title: "",
+      description: "",
+      projectId: "",
+      speciesConfigId: "",
+      targetAmount: "",
+      minimumAmount: "",
+      openedAt: "",
+      closesAt: "",
+      status: "draft",
+      visibility: "private",
+    };
+  }
+  function getOpportunityStatusClass(status) {
+    switch (status) {
+      case "open":
+        return "border-primary/30 bg-primary/10 text-primary";
+
+      case "fully_funded":
+        return "border-primary/40 bg-primary/15 text-primary";
+
+      case "upcoming":
+        return "border-border bg-muted/50 text-foreground";
+
+      case "closed":
+        return "border-border bg-muted/30 text-muted-foreground";
+
+      case "cancelled":
+        return "border-destructive/30 bg-destructive/10 text-destructive";
+
+      case "draft":
+      default:
+        return "border-border bg-muted/30 text-muted-foreground";
+    }
+  }
   return (
     <>
       <section className="space-y-5">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold tracking-[-0.02em]">
               Investment Opportunities
@@ -42,6 +79,21 @@ function InvestmentOpportunities({
               participation.
             </p>
           </div>
+
+          {canEdit && (
+            <Button
+              type="button"
+              onClick={() => {
+                setOpportunityError("");
+                setEditingOpportunity(null);
+                setOpportunityForm(getEmptyOpportunityForm());
+                setOpportunityDialogOpen(true);
+              }}
+            >
+              <Plus className="size-4" />
+              Create opportunity
+            </Button>
+          )}
         </div>
 
         {opportunities.length === 0 ? (
@@ -63,34 +115,75 @@ function InvestmentOpportunities({
               const contributionProgress =
                 target > 0 ? Math.min((contributed / target) * 100, 100) : 0;
 
+              const statusLabel =
+                opportunity.status?.replaceAll("_", " ") || "Unknown";           
+
               return (
                 <Card
                   key={opportunity.opportunity_id}
-                  className="border-border/70 bg-card shadow-sm"
+                  className="h-full border-border/70 bg-card shadow-sm"
                 >
-                  <CardContent className="p-6">
+                  <CardContent className="flex h-full flex-col p-6">
+                    {/* Header */}
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <p className="text-lg font-semibold tracking-[-0.02em]">
+                        <h3 className="text-lg font-semibold tracking-[-0.02em]">
                           {opportunity.title}
-                        </p>
-
-                        {opportunity.description && (
-                          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                            {opportunity.description}
-                          </p>
-                        )}
+                        </h3>
                       </div>
 
-                      <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs font-medium capitalize">
-                        {opportunity.status}
+                      <span
+                        className={`w-fit shrink-0 rounded-full border px-3 py-1 text-xs font-medium capitalize ${getOpportunityStatusClass(
+                          opportunity.status,
+                        )}`}
+                      >
+                        {statusLabel}
                       </span>
                     </div>
 
-                    <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    {/* Project context */}
+                    <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-border/60 py-4">
+                      <div>
+                        <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                          Project
+                        </p>
+
+                        <p className="mt-1 text-sm font-medium">
+                          {opportunity.project_name || "No project linked"}
+                        </p>
+                      </div>
+
+                      <div className="hidden h-8 w-px bg-border sm:block" />
+
+                      <div>
+                        <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                          Activity
+                        </p>
+
+                        <p className="mt-1 text-sm font-medium">
+                          {opportunity.species_name || "All activities"}
+                        </p>
+                      </div>
+
+                      <div className="hidden h-8 w-px bg-border sm:block" />
+
+                      <div>
+                        <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                          Visibility
+                        </p>
+
+                        <p className="mt-1 text-sm font-medium capitalize">
+                          {opportunity.visibility || "Private"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Financial metrics */}
+                    <div className="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
                       <div>
                         <p className="text-xs text-muted-foreground">Target</p>
-                        <p className="mt-1 text-sm font-semibold">
+
+                        <p className="mt-1.5 text-lg font-semibold">
                           ৳{target.toLocaleString()}
                         </p>
                       </div>
@@ -99,33 +192,43 @@ function InvestmentOpportunities({
                         <p className="text-xs text-muted-foreground">
                           Committed
                         </p>
-                        <p className="mt-1 text-sm font-semibold">
+
+                        <p className="mt-1.5 text-lg font-semibold">
                           ৳{committed.toLocaleString()}
                         </p>
                       </div>
 
                       <div>
                         <p className="text-xs text-muted-foreground">Raised</p>
-                        <p className="mt-1 text-sm font-semibold text-primary">
+
+                        <p className="mt-1.5 text-lg font-semibold text-primary">
                           ৳{contributed.toLocaleString()}
                         </p>
                       </div>
 
                       <div>
                         <p className="text-xs text-muted-foreground">Minimum</p>
-                        <p className="mt-1 text-sm font-semibold">
+
+                        <p className="mt-1.5 text-lg font-semibold">
                           {minimum > 0 ? `৳${minimum.toLocaleString()}` : "—"}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-6">
-                      <div className="mb-2 flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">
-                          Funding progress
-                        </span>
+                    {/* Funding progress */}
+                    <div className="mt-7">
+                      <div className="mb-2 flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-medium">
+                            Funding progress
+                          </p>
 
-                        <span className="font-medium">
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Based on actual contributions received.
+                          </p>
+                        </div>
+
+                        <span className="text-sm font-semibold">
                           {Math.round(contributionProgress)}%
                         </span>
                       </div>
@@ -138,18 +241,36 @@ function InvestmentOpportunities({
                           }}
                         />
                       </div>
+
+                      <div className="mt-2 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
+                        <span>৳{contributed.toLocaleString()} raised</span>
+
+                        <span>
+                          ৳{Math.max(target - contributed, 0).toLocaleString()}{" "}
+                          remaining
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="mt-5 flex items-center justify-between border-t border-border/60 pt-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">
+                    {/* Footer */}
+                    <div className="mt-6 flex flex-col gap-4 border-t border-border/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                        <span>
                           {opportunity.investment_count} investment
                           {opportunity.investment_count === 1 ? "" : "s"}
-                        </p>
+                        </span>
 
-                        <p className="mt-1 text-xs text-muted-foreground capitalize">
-                          {opportunity.visibility}
-                        </p>
+                        {opportunity.opened_at && (
+                          <span>
+                            Opened {formatDateForInput(opportunity.opened_at)}
+                          </span>
+                        )}
+
+                        {opportunity.closes_at && (
+                          <span>
+                            Closes {formatDateForInput(opportunity.closes_at)}
+                          </span>
+                        )}
                       </div>
 
                       {canEdit && (
@@ -182,7 +303,7 @@ function InvestmentOpportunities({
                             setOpportunityDialogOpen(true);
                           }}
                         >
-                          Edit
+                          Edit opportunity
                         </Button>
                       )}
                     </div>

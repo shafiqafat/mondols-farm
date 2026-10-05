@@ -79,24 +79,38 @@ function InvestorManagement({
               {investors.map((investor) => (
                 <div
                   key={investor.id}
-                  className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+                  className="grid gap-5 p-5 transition-colors hover:bg-muted/20 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] lg:items-center"
                 >
-                  <div>
+                  {/* Investor */}
+                  <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold">{investor.name}</p>
 
-                      <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium capitalize">
+                      <span className="inline-flex rounded-full border border-border bg-muted/30 px-2.5 py-1 text-xs font-medium capitalize">
                         {investor.status}
                       </span>
                     </div>
 
-                    <div className="mt-1 space-y-0.5 text-sm text-muted-foreground">
-                      {investor.email && <p>{investor.email}</p>}
-                      {investor.phone && <p>{investor.phone}</p>}
+                    <div className="mt-1.5 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
+                      {investor.email && <span>{investor.email}</span>}
+
+                      {investor.phone && <span>{investor.phone}</span>}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  {/* Contact / profile context */}
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Contact</p>
+
+                      <p className="mt-1 text-sm font-medium">
+                        {investor.email || investor.phone || "No contact"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-start gap-2 lg:justify-end">
                     <Button
                       type="button"
                       variant="outline"

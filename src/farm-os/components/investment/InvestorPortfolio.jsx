@@ -63,7 +63,7 @@ function InvestorPortfolio({
       onClick={() => onOpenChange(false)}
     >
       <div
-        className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-xl border border-border bg-background p-7 shadow-xl sm:p-8"
+        className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-xl border border-border bg-card p-7 shadow-xl sm:p-8"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-6">
@@ -151,30 +151,31 @@ function InvestorPortfolio({
                 <table className="w-full min-w-[900px] text-sm">
                   <thead>
                     <tr className="border-b border-border/60 bg-muted/30 text-left">
-                      <th className="px-4 py-3 font-medium text-muted-foreground">
+                      <th className="px-5 py-4 font-medium text-muted-foreground">
                         Opportunity
                       </th>
 
-                      <th className="px-4 py-3 font-medium text-muted-foreground">
+                      <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                         Committed
                       </th>
 
-                      <th className="px-4 py-3 font-medium text-muted-foreground">
+                      <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                         Contributed
                       </th>
 
-                      <th className="px-4 py-3 font-medium text-muted-foreground">
+                      <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                         Allocated
                       </th>
 
-                      <th className="px-4 py-3 font-medium text-muted-foreground">
+                      <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                         Unallocated
                       </th>
 
-                      <th className="px-4 py-3 font-medium text-muted-foreground">
+                      <th className="px-5 py-4 font-medium text-muted-foreground">
                         Status
                       </th>
-                      <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+
+                      <th className="px-5 py-4 text-right font-medium text-muted-foreground">
                         Action
                       </th>
                     </tr>
@@ -197,8 +198,11 @@ function InvestorPortfolio({
                       const unallocated = Math.max(contributed - allocated, 0);
 
                       return (
-                        <tr key={investment.investment_id}>
-                          <td className="px-4 py-4">
+                        <tr
+                          key={investment.investment_id}
+                          className="transition-colors hover:bg-muted/20"
+                        >
+                          <td className="px-5 py-5">
                             <p className="font-medium">
                               {investment.opportunity_title ||
                                 "Direct investment"}
@@ -210,28 +214,29 @@ function InvestorPortfolio({
                             </p>
                           </td>
 
-                          <td className="px-4 py-4 font-medium">
+                          <td className="px-5 py-5 text-right font-medium">
                             ৳{committed.toLocaleString()}
                           </td>
 
-                          <td className="px-4 py-4 font-medium text-primary">
+                          <td className="px-5 py-5 text-right font-semibold text-primary">
                             ৳{contributed.toLocaleString()}
                           </td>
 
-                          <td className="px-4 py-4 font-medium">
+                          <td className="px-5 py-5 text-right font-medium">
                             ৳{allocated.toLocaleString()}
                           </td>
 
-                          <td className="px-4 py-4 font-medium">
+                          <td className="px-5 py-5 text-right font-medium">
                             ৳{unallocated.toLocaleString()}
                           </td>
 
-                          <td className="px-4 py-4">
-                            <span className="rounded-full border border-border px-2.5 py-1 text-xs font-medium capitalize">
+                          <td className="px-5 py-5">
+                            <span className="inline-flex rounded-full border border-border bg-muted/30 px-2.5 py-1 text-xs font-medium capitalize">
                               {investment.investment_status}
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-right">
+
+                          <td className="px-5 py-5 text-right">
                             <Button
                               type="button"
                               variant="outline"

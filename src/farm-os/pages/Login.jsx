@@ -7,13 +7,21 @@ import { useAuth } from "../hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 function Login() {
-  const { user, signIn } = useAuth();
+  const { user, accountType, loading, signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  if (loading) {
+    return <div className="farmos-loading">Loading…</div>;
+  }
+
   if (user) {
+    if (accountType === "investor") {
+      return <Navigate to="/investor" replace />;
+    }
+
     return <Navigate to="/farm-os" replace />;
   }
 
@@ -21,11 +29,21 @@ function Login() {
     e.preventDefault();
     setError("");
     setSubmitting(true);
-    const { error } = await signIn(email, password);
+    const { error, accountType } = await signIn(email, password);
+
     setSubmitting(false);
+
     if (error) {
       setError("Couldn't sign in. Check your email and password.");
+      return;
     }
+
+    if (accountType === "investor") {
+      window.location.replace("/investor");
+      return;
+    }
+
+    window.location.replace("/farm-os");
   }
 
   return (

@@ -27,11 +27,15 @@ export function useInvestorInvestmentTransactions() {
       setTransactions([]);
       setError(queryError.message || "Unable to load investment transactions.");
       setLoading(false);
-      return;
+      return [];
     }
 
-    setTransactions(data ?? []);
+    const rows = data ?? [];
+
+    setTransactions(rows);
     setLoading(false);
+
+    return rows;
   }, []);
 
   const clearTransactions = useCallback(() => {

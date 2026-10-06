@@ -50,8 +50,19 @@ const FarmOSDailyLog = lazy(() => import("./farm-os/pages/DailyLog"));
 const FarmOSInventory = lazy(() => import("./farm-os/pages/Inventory"));
 const FarmOSSettings = lazy(() => import("./farm-os/pages/Settings"));
 const FarmOSSales = lazy(() => import("./farm-os/pages/Sales"));
-const FarmOSInvestorPortal = lazy(
-  () => import("./farm-os/pages/InvestorPortal"),
+
+const InvestorPortal = lazy(() => import("./farm-os/pages/InvestorPortal"));
+const InvestorLayout = lazy(
+  () => import("./farm-os/components/investor/InvestorLayout"),
+);
+const InvestorInvestments = lazy(
+  () => import("./farm-os/pages/InvestorInvestments"),
+);
+const InvestorTransactions = lazy(
+  () => import("./farm-os/pages/InvestorTransactions"),
+);
+const InvestorOpportunities = lazy(
+  () => import("./farm-os/pages/InvestorOpportunities"),
 );
 
 // The public marketing site — unchanged, still wrapped in its own Navbar/Footer.
@@ -103,6 +114,19 @@ function App() {
 
       <Suspense fallback={<div className="farmos-loading">Loading…</div>}>
         <Routes>
+          <Route
+            path="/investor"
+            element={
+              <InvestorProtectedRoute>
+                <InvestorLayout />
+              </InvestorProtectedRoute>
+            }
+          >
+            <Route index element={<InvestorPortal />} />
+            <Route path="investments" element={<InvestorInvestments />} />
+            <Route path="transactions" element={<InvestorTransactions />} />
+            <Route path="opportunities" element={<InvestorOpportunities />} />
+          </Route>
           {/* Farm OS — private, no public Navbar/Footer */}
           <Route path="/farm-os/login" element={<FarmOSLogin />} />
           <Route
@@ -128,14 +152,6 @@ function App() {
             <Route path="entities/:id" element={<FarmOSEntityDetail />} />
             <Route path="finance" element={<FarmOSFinance />} />
             <Route path="investment" element={<FarmOSInvestment />} />
-            <Route
-              path="investor-portal"
-              element={
-                <InvestorProtectedRoute>
-                  <FarmOSInvestorPortal />
-                </InvestorProtectedRoute>
-              }
-            />
             <Route path="capacity" element={<FarmOSCapacity />} />
             <Route path="scenario" element={<FarmOSScenario />} />
             <Route path="content" element={<FarmOSContentJournal />} />

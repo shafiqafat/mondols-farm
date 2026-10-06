@@ -5,23 +5,45 @@ import { AuthContext } from "./authContextDef";
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
+  const [accountType, setAccountType] = useState(null);
+  const [investorId, setInvestorId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function applySession(nextSession) {
+      setLoading(true);
       setSession(nextSession);
+
       if (!nextSession?.user) {
         setRole(null);
+        setAccountType(null);
+        setInvestorId(null);
         setLoading(false);
         return;
       }
 
-      const { data } = await supabase
+      setRole(null);
+      setAccountType(null);
+      setInvestorId(null);
+
+      const { data: roleData } = await supabase
         .from("farm_user_roles")
         .select("role")
         .eq("user_id", nextSession.user.id)
         .maybeSingle();
-      setRole(data?.role ?? null);
+
+      const { data: investorData } = await supabase.rpc("current_investor_id");
+
+      setRole(roleData?.role ?? null);
+
+      if (investorData) {
+        setAccountType("investor");
+        setInvestorId(investorData);
+      } else {
+        setAccountType("farm");
+        setInvestorId(null);
+      }
+
       setLoading(false);
     }
 
@@ -39,7 +61,29 @@ export function AuthProvider({ children }) {
       email,
       password,
     });
-    return { error };
+
+    if (error) {
+      return {
+        error,
+        accountType: null,
+      };
+    }
+
+    const { data: investorData, error: investorError } = await supabase.rpc(
+      "current_investor_id",
+    );
+
+    if (!investorError && investorData) {
+      return {
+        error: null,
+        accountType: "investor",
+      };
+    }
+
+    return {
+      error: null,
+      accountType: "farm",
+    };
   }
 
   async function signOut() {
@@ -50,6 +94,8 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user ?? null,
     role,
+    accountType,
+    investorId,
     loading,
     signIn,
     signOut,

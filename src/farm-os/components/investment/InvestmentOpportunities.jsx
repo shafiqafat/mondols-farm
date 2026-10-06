@@ -65,6 +65,9 @@ function InvestmentOpportunities({
         return "border-border bg-muted/30 text-muted-foreground";
     }
   }
+  const hasInvestmentHistory =
+    Boolean(editingOpportunity) &&
+    Number(editingOpportunity.investment_count || 0) > 0;
   return (
     <>
       <section className="space-y-5">
@@ -116,7 +119,7 @@ function InvestmentOpportunities({
                 target > 0 ? Math.min((contributed / target) * 100, 100) : 0;
 
               const statusLabel =
-                opportunity.status?.replaceAll("_", " ") || "Unknown";           
+                opportunity.status?.replaceAll("_", " ") || "Unknown";
 
               return (
                 <Card
@@ -393,6 +396,7 @@ function InvestmentOpportunities({
                     step="any"
                     placeholder="e.g. 50000"
                     value={opportunityForm.targetAmount}
+                    disabled={hasInvestmentHistory}
                     onChange={(e) =>
                       setOpportunityForm((prev) => ({
                         ...prev,
@@ -418,6 +422,7 @@ function InvestmentOpportunities({
                     step="any"
                     placeholder="e.g. 20000"
                     value={opportunityForm.minimumAmount}
+                    disabled={hasInvestmentHistory}
                     onChange={(e) =>
                       setOpportunityForm((prev) => ({
                         ...prev,
@@ -438,6 +443,7 @@ function InvestmentOpportunities({
                   <select
                     id="opportunity-project"
                     value={opportunityForm.projectId}
+                    disabled={hasInvestmentHistory}
                     onChange={(e) =>
                       setOpportunityForm((prev) => ({
                         ...prev,
@@ -468,6 +474,7 @@ function InvestmentOpportunities({
                   <select
                     id="opportunity-species"
                     value={opportunityForm.speciesConfigId}
+                    disabled={hasInvestmentHistory}
                     onChange={(e) =>
                       setOpportunityForm((prev) => ({
                         ...prev,

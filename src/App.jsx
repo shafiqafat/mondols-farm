@@ -64,6 +64,8 @@ const InvestorTransactions = lazy(
 const InvestorOpportunities = lazy(
   () => import("./farm-os/pages/InvestorOpportunities"),
 );
+import InvestorProjects from "./farm-os/pages/InvestorProjects";
+import InvestorProfile from "./farm-os/pages/InvestorProfile";
 
 // The public marketing site — unchanged, still wrapped in its own Navbar/Footer.
 function PublicSite() {
@@ -126,6 +128,8 @@ function App() {
             <Route path="investments" element={<InvestorInvestments />} />
             <Route path="transactions" element={<InvestorTransactions />} />
             <Route path="opportunities" element={<InvestorOpportunities />} />
+            <Route path="projects" element={<InvestorProjects />} />
+            <Route path="profile" element={<InvestorProfile />} />
           </Route>
           {/* Farm OS — private, no public Navbar/Footer */}
           <Route path="/farm-os/login" element={<FarmOSLogin />} />

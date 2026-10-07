@@ -287,6 +287,47 @@ function Investment() {
       ? Number(opportunityForm.minimumAmount)
       : null;
 
+    const roiDurationMonths = opportunityForm.roiDurationMonths
+      ? Number(opportunityForm.roiDurationMonths)
+      : null;
+
+    const roiMinPercent = opportunityForm.roiMinPercent
+      ? Number(opportunityForm.roiMinPercent)
+      : null;
+
+    const roiMaxPercent = opportunityForm.roiMaxPercent
+      ? Number(opportunityForm.roiMaxPercent)
+      : null;
+
+    if (
+      roiDurationMonths !== null &&
+      (!Number.isInteger(roiDurationMonths) || roiDurationMonths <= 0)
+    ) {
+      setOpportunityError(
+        "Project duration must be a positive whole number of months.",
+      );
+      return;
+    }
+
+    if (roiMinPercent !== null && (roiMinPercent < 0 || roiMinPercent > 20)) {
+      setOpportunityError("Base ROI minimum must be between 0% and 20%.");
+      return;
+    }
+
+    if (roiMaxPercent !== null && (roiMaxPercent < 0 || roiMaxPercent > 20)) {
+      setOpportunityError("Base ROI maximum must be between 0% and 20%.");
+      return;
+    }
+
+    if (
+      roiMinPercent !== null &&
+      roiMaxPercent !== null &&
+      roiMaxPercent < roiMinPercent
+    ) {
+      setOpportunityError("Base ROI maximum cannot be lower than the minimum.");
+      return;
+    }  
+
     if (!title) {
       setOpportunityError("Enter an opportunity title.");
       return;
@@ -329,6 +370,10 @@ function Investment() {
       closes_at: opportunityForm.closesAt || null,
       status: opportunityForm.status,
       visibility: opportunityForm.visibility,
+      roi_duration_months: roiDurationMonths,
+      roi_min_percent: roiMinPercent,
+      roi_max_percent: roiMaxPercent,
+      roi_max_percent_cap: 20,
     });
 
     setSavingOpportunity(false);
@@ -363,16 +408,65 @@ function Investment() {
 
     setOpportunityError("");
 
-    const title = opportunityForm.title.trim();
-    const targetAmount = Number(opportunityForm.targetAmount);
-    const minimumAmount = opportunityForm.minimumAmount
-      ? Number(opportunityForm.minimumAmount)
-      : null;
+      const title = opportunityForm.title.trim();
+      const targetAmount = Number(opportunityForm.targetAmount);
+      const minimumAmount = opportunityForm.minimumAmount
+        ? Number(opportunityForm.minimumAmount)
+        : null;
 
-    if (!title) {
-      setOpportunityError("Enter an opportunity title.");
-      return;
-    }
+      const roiDurationMonths = opportunityForm.roiDurationMonths
+        ? Number(opportunityForm.roiDurationMonths)
+        : null;
+
+      const roiMinPercent = opportunityForm.roiMinPercent
+        ? Number(opportunityForm.roiMinPercent)
+        : null;
+
+      const roiMaxPercent = opportunityForm.roiMaxPercent
+        ? Number(opportunityForm.roiMaxPercent)
+        : null;
+
+        if (
+          roiDurationMonths !== null &&
+          (!Number.isInteger(roiDurationMonths) || roiDurationMonths <= 0)
+        ) {
+          setOpportunityError(
+            "Project duration must be a positive whole number of months.",
+          );
+          return;
+        }
+
+        if (
+          roiMinPercent !== null &&
+          (roiMinPercent < 0 || roiMinPercent > 20)
+        ) {
+          setOpportunityError("Base ROI minimum must be between 0% and 20%.");
+          return;
+        }
+
+        if (
+          roiMaxPercent !== null &&
+          (roiMaxPercent < 0 || roiMaxPercent > 20)
+        ) {
+          setOpportunityError("Base ROI maximum must be between 0% and 20%.");
+          return;
+        }
+
+        if (
+          roiMinPercent !== null &&
+          roiMaxPercent !== null &&
+          roiMaxPercent < roiMinPercent
+        ) {
+          setOpportunityError(
+            "Base ROI maximum cannot be lower than the minimum.",
+          );
+          return;
+        }
+
+      if (!title) {
+        setOpportunityError("Enter an opportunity title.");
+        return;
+      }
 
     if (!targetAmount || targetAmount <= 0) {
       setOpportunityError("Enter a valid target amount.");
@@ -422,6 +516,10 @@ const { error } = await supabase
     closes_at: opportunityForm.closesAt || null,
     status: opportunityForm.status,
     visibility: opportunityForm.visibility,
+    roi_duration_months: roiDurationMonths,
+    roi_min_percent: roiMinPercent,
+    roi_max_percent: roiMaxPercent,
+    roi_max_percent_cap: 20,
   })
   .eq("id", opportunityId);
 

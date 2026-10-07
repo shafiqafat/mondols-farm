@@ -37,6 +37,9 @@ function InvestmentOpportunities({
       speciesConfigId: "",
       targetAmount: "",
       minimumAmount: "",
+      roiDurationMonths: "",
+      roiMinPercent: "",
+      roiMaxPercent: "",
       openedAt: "",
       closesAt: "",
       status: "draft",
@@ -293,6 +296,10 @@ function InvestmentOpportunities({
                                 opportunity.species_config_id ?? "",
                               targetAmount: opportunity.target_amount ?? "",
                               minimumAmount: opportunity.minimum_amount ?? "",
+                              roiDurationMonths:
+                                opportunity.roi_duration_months ?? "",
+                              roiMinPercent: opportunity.roi_min_percent ?? "",
+                              roiMaxPercent: opportunity.roi_max_percent ?? "",
                               openedAt: formatDateForInput(
                                 opportunity.opened_at,
                               ),
@@ -427,6 +434,84 @@ function InvestmentOpportunities({
                       setOpportunityForm((prev) => ({
                         ...prev,
                         minimumAmount: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2.5">
+                  <label
+                    htmlFor="opportunity-roi-duration"
+                    className="text-sm font-medium"
+                  >
+                    Project duration
+                  </label>
+
+                  <Input
+                    id="opportunity-roi-duration"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 6"
+                    value={opportunityForm.roiDurationMonths}
+                    onChange={(e) =>
+                      setOpportunityForm((prev) => ({
+                        ...prev,
+                        roiDurationMonths: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <p className="text-xs text-muted-foreground">
+                    Duration used to determine the expected ROI range.
+                  </p>
+                </div>
+
+                <div className="space-y-2.5">
+                  <label
+                    htmlFor="opportunity-roi-min"
+                    className="text-sm font-medium"
+                  >
+                    Base ROI minimum
+                  </label>
+
+                  <Input
+                    id="opportunity-roi-min"
+                    type="number"
+                    min="0"
+                    max="20"
+                    step="0.01"
+                    placeholder="e.g. 8"
+                    value={opportunityForm.roiMinPercent}
+                    onChange={(e) =>
+                      setOpportunityForm((prev) => ({
+                        ...prev,
+                        roiMinPercent: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2.5">
+                  <label
+                    htmlFor="opportunity-roi-max"
+                    className="text-sm font-medium"
+                  >
+                    Base ROI maximum
+                  </label>
+
+                  <Input
+                    id="opportunity-roi-max"
+                    type="number"
+                    min="0"
+                    max="20"
+                    step="0.01"
+                    placeholder="e.g. 10"
+                    value={opportunityForm.roiMaxPercent}
+                    onChange={(e) =>
+                      setOpportunityForm((prev) => ({
+                        ...prev,
+                        roiMaxPercent: e.target.value,
                       }))
                     }
                   />

@@ -10,6 +10,12 @@ function formatAmount(value) {
   return `৳${Number(value ?? 0).toLocaleString()}`;
 }
 
+function formatPercent(value) {
+  if (value == null) return "—";
+
+  return `${Number(value).toFixed(2)}%`;
+}
+
 export default function InvestorInvestmentDetail({
   open,
   onOpenChange,
@@ -102,6 +108,71 @@ export default function InvestorInvestmentDetail({
 
                 <p className="mt-1 text-xl font-semibold">
                   {formatAmount(summary.outstanding_commitment)}
+                </p>
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <div>
+                <h3 className="font-semibold">Investment ROI</h3>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  ROI terms recorded when this investment was created.
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Final ROI</p>
+
+                    <p className="mt-1 text-lg font-semibold">
+                      {formatPercent(summary.roi_final_min_percent)} –{" "}
+                      {formatPercent(summary.roi_final_max_percent)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-muted-foreground">Base ROI</p>
+
+                    <p className="mt-1 text-sm font-medium">
+                      {formatPercent(summary.roi_base_min_percent)} –{" "}
+                      {formatPercent(summary.roi_base_max_percent)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-muted-foreground">Tier bonus</p>
+
+                    <p className="mt-1 text-sm font-medium">
+                      +{formatPercent(summary.roi_bonus_percent)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-muted-foreground">Duration</p>
+
+                    <p className="mt-1 text-sm font-medium">
+                      {summary.roi_duration_months != null
+                        ? `${summary.roi_duration_months} months`
+                        : "—"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      Maximum ROI cap
+                    </p>
+
+                    <p className="mt-1 text-sm font-medium">
+                      {formatPercent(summary.roi_max_percent_cap)}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-4 border-t pt-3 text-xs text-muted-foreground">
+                  These are the projected ROI terms recorded for this
+                  investment. They are not realized returns.
                 </p>
               </div>
             </section>
@@ -237,41 +308,164 @@ export default function InvestorInvestmentDetail({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground">Distributed</p>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium">Contractual return</p>
 
-                    <p className="mt-1 text-lg font-semibold">
-                      ৳
-                      {Number(
-                        investmentPerformance.distributed_amount ?? 0,
-                      ).toLocaleString()}
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Expected return based on the ROI terms recorded when this
+                      investment was created.
                     </p>
                   </div>
 
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground">Refunded</p>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">Final ROI</p>
 
-                    <p className="mt-1 text-lg font-semibold">
-                      ৳
-                      {Number(
-                        investmentPerformance.refunded_amount ?? 0,
-                      ).toLocaleString()}
+                      <p className="mt-1 text-lg font-semibold">
+                        {Number(
+                          investmentPerformance.roi_final_min_percent ?? 0,
+                        ).toFixed(2)}
+                        %{" – "}
+                        {Number(
+                          investmentPerformance.roi_final_max_percent ?? 0,
+                        ).toFixed(2)}
+                        %
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">Base ROI</p>
+
+                      <p className="mt-1 text-lg font-semibold">
+                        {Number(
+                          investmentPerformance.roi_base_min_percent ?? 0,
+                        ).toFixed(2)}
+                        %{" – "}
+                        {Number(
+                          investmentPerformance.roi_base_max_percent ?? 0,
+                        ).toFixed(2)}
+                        %
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Tier bonus
+                      </p>
+
+                      <p className="mt-1 text-lg font-semibold">
+                        +
+                        {Number(
+                          investmentPerformance.roi_bonus_percent ?? 0,
+                        ).toFixed(2)}
+                        %
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        ROI duration
+                      </p>
+
+                      <p className="mt-1 text-lg font-semibold">
+                        {investmentPerformance.roi_duration_months ?? "—"}{" "}
+                        months
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Maximum ROI cap
+                      </p>
+
+                      <p className="mt-1 text-lg font-semibold">
+                        {Number(
+                          investmentPerformance.roi_max_percent_cap ?? 0,
+                        ).toFixed(2)}
+                        %
+                      </p>
+                    </div>
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Estimated profit
+                      </p>
+
+                      <p className="mt-1 text-lg font-semibold">
+                        {formatAmount(
+                          investmentPerformance.estimated_profit_min,
+                        )}
+                        {" – "}
+                        {formatAmount(
+                          investmentPerformance.estimated_profit_max,
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Estimated total return
+                      </p>
+
+                      <p className="mt-1 text-lg font-semibold">
+                        {formatAmount(
+                          investmentPerformance.estimated_total_min,
+                        )}
+                        {" – "}
+                        {formatAmount(
+                          investmentPerformance.estimated_total_max,
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <p className="text-sm font-medium">Cash movements</p>
+
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Actual money received from this investment so far.
                     </p>
                   </div>
 
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground">
-                      Total returned
-                    </p>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Distributed
+                      </p>
 
-                    <p className="mt-1 text-lg font-semibold">
-                      ৳
-                      {(
-                        Number(investmentPerformance.distributed_amount ?? 0) +
-                        Number(investmentPerformance.refunded_amount ?? 0)
-                      ).toLocaleString()}
-                    </p>
+                      <p className="mt-1 text-lg font-semibold">
+                        ৳
+                        {Number(
+                          investmentPerformance.distributed_amount ?? 0,
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">Refunded</p>
+
+                      <p className="mt-1 text-lg font-semibold">
+                        ৳
+                        {Number(
+                          investmentPerformance.refunded_amount ?? 0,
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg border p-4">
+                      <p className="text-xs text-muted-foreground">
+                        Total returned
+                      </p>
+
+                      <p className="mt-1 text-lg font-semibold">
+                        ৳
+                        {(
+                          Number(
+                            investmentPerformance.distributed_amount ?? 0,
+                          ) + Number(investmentPerformance.refunded_amount ?? 0)
+                        ).toLocaleString()}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

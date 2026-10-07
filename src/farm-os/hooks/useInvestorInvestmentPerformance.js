@@ -16,6 +16,10 @@ export function useInvestorInvestmentPerformance() {
     setLoading(true);
     setError("");
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { data, error: queryError } = await supabase.rpc(
       "get_investor_investment_performance",
       {
@@ -26,6 +30,17 @@ export function useInvestorInvestmentPerformance() {
     if (queryError) {
       setPerformance(null);
       setError(queryError.message || "Unable to load investment performance.");
+      setLoading(false);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setPerformance(null);
+      setError(
+        `Performance RPC returned no rows. Logged-in user: ${
+          user?.id ?? "not authenticated"
+        }`,
+      );
       setLoading(false);
       return;
     }

@@ -9,30 +9,36 @@ function InvestorProtectedRoute({ children }) {
   const [checkingInvestor, setCheckingInvestor] = useState(true);
   const [isInvestor, setIsInvestor] = useState(false);
 
-  useEffect(() => {
-    if (authLoading || !user) {
+  
+useEffect(() => {
+  let cancelled = false;
+
+  async function checkInvestorAccess() {
+    if (authLoading) return;
+
+    if (!user) {
+      setIsInvestor(false);
+      setCheckingInvestor(false);
       return;
     }
 
-    let cancelled = false;
+    setCheckingInvestor(true);
 
-    async function checkInvestorAccess() {
-      const { data, error } = await supabase.rpc("current_investor_id");
+    const { data, error } = await supabase.rpc("current_investor_id");
 
-      if (cancelled) {
-        return;
-      }
+    if (cancelled) return;
 
-      setIsInvestor(!error && Boolean(data));
-      setCheckingInvestor(false);
-    }
+    setIsInvestor(!error && Boolean(data));
+    setCheckingInvestor(false);
+  }
 
-    checkInvestorAccess();
+  checkInvestorAccess();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [user, authLoading]);
+  return () => {
+    cancelled = true;
+  };
+}, [user, authLoading]);
+
 
   if (authLoading) {
     return <div className="farmos-loading">Loading…</div>;

@@ -871,10 +871,17 @@ function Overview() {
                   </p>
                 </div>
 
-                <Button asChild variant="outline">
-                  <Link to="/farm-os/species">
-                    Add entities
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                <Button
+                  asChild
+                  variant="outline"
+                  className="shrink-0 sm:self-center"
+                >
+                  <Link
+                    to="/farm-os/species"
+                    className="flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                    <span>Add entities</span>
+                    <ArrowRight className="h-4 w-4 shrink-0" />
                   </Link>
                 </Button>
               </CardContent>

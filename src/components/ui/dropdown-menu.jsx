@@ -1,4 +1,3 @@
-import * as React from "react"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import { cn } from "cn"
 import { ChevronRightIcon, CheckIcon } from "lucide-react"
@@ -54,23 +53,21 @@ function DropdownMenuGroup({
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
 }
 
-function DropdownMenuLabel({
-  className,
-  inset,
-  ...props
-}) {
+
+function DropdownMenuLabel({ className, inset, ...props }) {
   return (
-    <MenuPrimitive.GroupLabel
+    <div
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
         "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
+
 
 function DropdownMenuItem({
   className,

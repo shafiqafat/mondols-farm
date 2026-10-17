@@ -50,6 +50,7 @@ const FarmOSDailyLog = lazy(() => import("./farm-os/pages/DailyLog"));
 const FarmOSInventory = lazy(() => import("./farm-os/pages/Inventory"));
 const FarmOSSettings = lazy(() => import("./farm-os/pages/Settings"));
 const FarmOSSales = lazy(() => import("./farm-os/pages/Sales"));
+const FarmOSReports = lazy(() => import("./farm-os/pages/Reports"));
 
 const InvestorPortal = lazy(() => import("./farm-os/pages/InvestorPortal"));
 const InvestorLayout = lazy(
@@ -162,6 +163,7 @@ function App() {
             <Route path="tasks" element={<FarmOSTasks />} />
             <Route path="daily-log" element={<FarmOSDailyLog />} />
             <Route path="sales" element={<FarmOSSales />} />
+            <Route path="reports" element={<FarmOSReports />} />
             <Route path="inventory" element={<FarmOSInventory />} />
             <Route path="settings" element={<FarmOSSettings />} />
           </Route>

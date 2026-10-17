@@ -81,6 +81,7 @@ function FarmOSLayout() {
     "/farm-os/sales": "Sales",
     "/farm-os/finance": "Finance",
     "/farm-os/tasks": "Tasks",
+    "/farm-os/reports": "Reports",
     "/farm-os/content": "Content",
     "/farm-os/settings": "Settings",
     "/farm-os/projects": "Projects",

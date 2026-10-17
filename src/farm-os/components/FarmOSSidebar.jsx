@@ -5,6 +5,7 @@ import {
   CircleDollarSign,
   FileText,
   LayoutDashboard,
+  FileBarChart,
   Package,
   Settings,
   Sprout,
@@ -13,6 +14,7 @@ import {
   ShoppingCart,
   FolderKanban,
 } from "lucide-react";
+
 import { NavLink, useLocation } from "react-router-dom";
 
 import {
@@ -93,6 +95,11 @@ const NAV_GROUPS = [
         to: "/farm-os/tasks",
         label: "Tasks",
         icon: CalendarCheck,
+      },
+      {
+        to: "/farm-os/reports",
+        label: "Reports",
+        icon: FileBarChart,
       },
     ],
   },

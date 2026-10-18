@@ -1,23 +1,36 @@
-import startingOurVegetableGarden from "../assets/image/journal/vegi.jpg"
 import growingWiththeSeasons from "../assets/image/journal/hervest.jpg";
 import mudHouse from "../assets/image/stay/mud-house.jpg"
 import lifeAroundtheFarm from "../assets/image/hero/intro-image.jpg";
 import buildingTheFarmStepbyStep from "../assets/image/hero/invest-hero.png";
+import TheFirstStep from "../assets/image/journal/TheFirstStep.jpg";
 
 const journalArticles = [
   {
     id: 1,
-    slug: "starting-our-vegetable-garden",
-    title: "Starting Our Vegetable Garden",
-    category: "Farming",
-    date: "March 12, 2026",
+    slug: "the-first-step-from-dhaka-to-my-first-farm",
+    title: "The First Step: From Dhaka to My First Farm",
+    category: "F a r m   J o u r n a l",
+    date: "October 19, 2026",
     excerpt:
-      "A look at how we're preparing the soil and starting our first seasonal vegetable garden.",
-    image: startingOurVegetableGarden,
+      "I left behind the life I had always known in Dhaka to return to Naogaon and take the first step toward a dream that had been growing inside me for years. With 32 broilers, 30 Sonali chickens, and plenty of unanswered questions, my journey into farming has begun.",
+    image: TheFirstStep,
     content: [
-      "Every season begins with preparation. Before anything is planted, we spend time understanding the soil, choosing what makes sense for the season, and preparing the beds.",
-      "Our vegetable garden is intentionally small. The goal isn't to produce everything at once, but to learn what grows well and gradually build a sustainable rhythm.",
-      "As the garden develops, we'll share updates about what we're growing, what we're learning, and what eventually makes its way from the garden to the table.",
+      "I have always wanted to do something of my own. Having a farm has been one of my dreams for a long time, but a dream can remain a dream if you never take the first step.",
+      "When COVID hit the world, it hit me too. Little by little, a dream grew inside me—a dream of building something of my own, something connected to the land. Eventually, I decided to act on it. I left Dhaka and returned to my homeland, Naogaon, to begin working toward that dream.",
+      "Leaving Dhaka meant leaving behind almost my entire life as I had known it. I had lived there from the time I was born until the day I left. My family, friends, familiar surroundings, and comfortable life were all there. I was also stepping away, at least partly, from my career in technology.",
+      "My family has been supportive, although they are understandably concerned about the changes I will face. They also have doubts about my vision. I understand those concerns. Starting something unfamiliar comes with uncertainty, and not everyone will immediately see what you see in a dream.",
+      "Naogaon is my hometown. Outside Dhaka, it is the place I know best. I also have access to family-owned land and a house, which gives me a practical starting point for this journey. My first day back felt refreshing. The air, the open sky, and the seemingly endless fields reminded me of what I had come back for.",
+      "For my first project, I decided to start small with two groups of chickens: 32 broilers and 30 Sonali chickens. Poultry seemed manageable for a beginner. I could keep them within my house boundary, and the initial cost was lower than committing to a larger farming project. This would also help me test whether I could adapt to the changes that came with relocating.",
+      "I chose Sonali chickens because I considered them a comparatively safe starting option, while broilers offered the possibility of faster growth. I wanted to learn from both projects rather than put everything into one approach.",
+      "I bought the 32 broilers from a nearby dealer and collected the 30 Sonali chickens from a farm. Both were sourced from Jamalgonj, in Joypurhat district, near the Naogaon border.",
+      "For housing, I used bamboo that we already owned to make a simple enclosure with a bamboo fence. I bought netting from the local market and initially purchased 19 kilograms of starter feed. My initial budget is around ৳16,000, although I do not think I will need to spend all of it on these first two projects.",
+      "If I am honest, I am feeling excited, anxious, hopeful, overwhelmed, and sometimes unsure. One of my biggest questions is whether I am capable enough to manage this first project successfully. Another is what happens when the time comes to sell the chickens. Where will I sell them, and how will I find the right buyers?",
+      "For now, my goal is to maintain these two projects and bring them to completion as well as I possibly can. I want to learn from mistakes and understand what it takes to manage a small farming operation. Success means building an income, becoming more independent, creating something for my family, and proving to myself that I can follow through on a difficult decision.",
+      "I also want to document this journey properly. I am using FarmOS to track feed consumption, expenses, growth, and results instead of relying only on memory or paper. These first two chicken projects will serve as learning experiences for future projects. The records I collect, the problems I encounter, and the lessons I learn can help me make better decisions next time.",
+      "I do not know exactly where this journey will lead. There will be things I get right and things I get wrong. I will face challenges I have not yet anticipated, and I will have to find answers to questions I cannot solve today. But I have started.",
+      "If you have a dream, you have to take the first step. At the end, it does not matter only whether you succeed or fail. What matters is that you make the attempt.",
+      `"And that there is not for man except that for which he strives. And that his effort is going to be seen." — Surah An-Najm (53:39–40)`,
+      "This is where my journey begins. I do not have all the answers, and I cannot promise what the outcome will be. But I am here, I have started, and I intend to give this dream my best effort.",
     ],
   },
 

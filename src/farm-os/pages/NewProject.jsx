@@ -26,12 +26,78 @@ function NewProject() {
 
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
+    const [entities, setEntities] = useState([]);
+    const [selectedEntityIds, setSelectedEntityIds] = useState([]);
+    const [entitiesLoading, setEntitiesLoading] = useState(true);
+    const [createdProjectId, setCreatedProjectId] = useState(null);
 
     useEffect(() => {
       if (!authLoading && !canWrite(role)) {
         navigate("/farm-os/projects", { replace: true });
       }
     }, [authLoading, role, navigate]);
+
+    useEffect(() => {
+  
+async function loadEntities() {
+  setEntitiesLoading(true);
+  setError("");
+
+  const [
+    { data: entityRows, error: entityError },
+    { data: assignmentRows, error: assignmentError },
+  ] = await Promise.all([
+    supabase
+      .from("farm_entities")
+      .select(
+        `
+        id,
+        label,
+        quantity,
+        status,
+        archived_at,
+        species_config:species_config_id (
+          id,
+          name,
+          category
+        )
+      `,
+      )
+      .eq("status", "active")
+      .is("archived_at", null)
+      .order("label", { ascending: true }),
+
+    supabase
+      .from("farm_project_entities")
+      .select("entity_id, project_id, ended_at"),
+  ]);
+
+  if (entityError || assignmentError) {
+    setError(
+      `Could not load available entities: ${
+        entityError?.message || assignmentError?.message
+      }`,
+    );
+    setEntities([]);
+    setEntitiesLoading(false);
+    return;
+  }
+
+  const assignedElsewhere = new Set(
+    (assignmentRows || [])
+      .filter((assignment) => assignment.ended_at === null)
+      .map((assignment) => assignment.entity_id),
+  );
+
+  setEntities(
+    (entityRows || []).filter((entity) => !assignedElsewhere.has(entity.id)),
+  );
+
+  setEntitiesLoading(false);
+}
+
+  loadEntities();
+}, []);
 
   function handleChange(field, value) {
     setForm((prev) => ({
@@ -40,38 +106,105 @@ function NewProject() {
     }));
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  function toggleEntity(entityId) {
+    setSelectedEntityIds((prev) =>
+      prev.includes(entityId)
+        ? prev.filter((id) => id !== entityId)
+        : [...prev, entityId],
+    );
+  }
 
-    if (!form.name.trim()) {
-      setError("Project name is required.");
-      return;
-    }
+  
+async function handleSubmit(event) {
+  event.preventDefault();
 
-    setSaving(true);
-    setError("");
+  if (!form.name.trim()) {
+    setError("Project name is required.");
+    return;
+  }
 
-    const { data, error: insertError } = await supabase
-      .from("farm_projects")
-      .insert({
-        name: form.name.trim(),
-        project_type: form.projectType.trim() || null,
-        purpose: form.purpose.trim() || null,
-        started_at: form.startedAt || null,
-        target_end_at: form.targetEndAt || null,
-        status: "active",
-      })
-      .select("id")
-      .single();
+  if (form.targetEndAt && form.startedAt && form.targetEndAt < form.startedAt) {
+    setError("Target end date cannot be before the start date.");
+    return;
+  }
 
-    if (insertError) {
-      setError(insertError.message);
+  setSaving(true);
+  setError("");
+
+  const startedAt = form.startedAt || localDateISO();
+
+  // Check selected entities again immediately before creation.
+  if (selectedEntityIds.length > 0) {
+    const { data: assignments, error: checkError } = await supabase
+      .from("farm_project_entities")
+      .select("entity_id, project_id, started_at, ended_at")
+      .in("entity_id", selectedEntityIds);
+
+    if (checkError) {
+      setError(`Could not verify entity assignments: ${checkError.message}`);
       setSaving(false);
       return;
     }
 
-    navigate(`/farm-os/projects/${data.id}`);
+    const conflicts = (assignments || []).filter(
+      (assignment) =>
+        assignment.started_at <= startedAt &&
+        (!assignment.ended_at || startedAt < assignment.ended_at),
+    );
+
+    if (conflicts.length > 0) {
+      setError(
+        `${conflicts.length} selected entity or entities already have a project assignment on ${startedAt}. Refresh the page and select only available entities.`,
+      );
+      setSaving(false);
+      return;
+    }
   }
+
+  const { data, error: insertError } = await supabase
+    .from("farm_projects")
+    .insert({
+      name: form.name.trim(),
+      project_type: form.projectType.trim() || null,
+      purpose: form.purpose.trim() || null,
+      started_at: startedAt,
+      target_end_at: form.targetEndAt || null,
+      status: "active",
+    })
+    .select("id")
+    .single();
+
+  if (insertError) {
+    setError(insertError.message);
+    setSaving(false);
+    return;
+  }
+
+  setCreatedProjectId(data.id);
+
+  for (const entityId of selectedEntityIds) {
+    const { error: assignmentError } = await supabase.rpc(
+      "assign_entity_to_project",
+      {
+        p_entity_id: entityId,
+        p_project_id: data.id,
+        p_role: "primary",
+        p_started_at: startedAt,
+      },
+    );
+
+    if (assignmentError) {
+      setError(
+        `The project was created, but an entity could not be assigned: ${assignmentError.message}. Open the project to review and complete its assignments.`,
+      );
+      setSaving(false);
+      return;
+    }
+  }
+
+  navigate(`/farm-os/projects/${data.id}`);
+}
+
 
     if (authLoading || !canWrite(role)) {
       return null;
@@ -154,6 +287,62 @@ function NewProject() {
                 <p className="text-xs leading-5 text-muted-foreground">
                   Use a broad production category. This should not be tied to a
                   hard-coded species.
+                </p>
+              </div>
+
+              {/* Existing flocks */}
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-medium">
+                    Existing flocks and entities
+                  </h3>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Select the existing flocks to assign to this project.
+                    Selecting a flock will not create a duplicate entity.
+                  </p>
+                </div>
+
+                {entitiesLoading ? (
+                  <p className="text-sm text-muted-foreground">
+                    Loading existing entities...
+                  </p>
+                ) : entities.length === 0 ? (
+                  <p className="rounded-xl border border-border/70 p-4 text-sm text-muted-foreground">
+                    No active entities are available. You can create the project
+                    now and assign entities later.
+                  </p>
+                ) : (
+                  <div className="max-h-64 space-y-2 overflow-y-auto rounded-xl border border-border/70 p-3">
+                    {entities.map((entity) => (
+                      <label
+                        key={entity.id}
+                        className="flex cursor-pointer items-start gap-3 rounded-lg p-2 hover:bg-muted/50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedEntityIds.includes(entity.id)}
+                          onChange={() => toggleEntity(entity.id)}
+                          className="mt-1 size-4 shrink-0 accent-primary"
+                        />
+
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium">
+                            {entity.label || "Unnamed entity"}
+                          </span>
+
+                          <span className="mt-1 block text-xs text-muted-foreground">
+                            {entity.species_config?.name || "Unknown species"}
+                            {" · "}
+                            Quantity: {entity.quantity ?? "Not recorded"}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  Selected: {selectedEntityIds.length}
                 </p>
               </div>
 
@@ -241,10 +430,23 @@ function NewProject() {
                   Cancel
                 </Button>
 
+                {createdProjectId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() =>
+                      navigate(`/farm-os/projects/${createdProjectId}`)
+                    }
+                  >
+                    Open created project
+                  </Button>
+                )}
+
                 <Button
                   type="submit"
                   className="rounded-xl px-4"
-                  disabled={saving}
+                  disabled={saving || Boolean(createdProjectId)}
                 >
                   <Save className="mr-1 size-4" />
                   {saving ? "Creating..." : "Create project"}

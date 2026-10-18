@@ -5,22 +5,27 @@ import { supabase } from "../lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-
 function getDateRange(period) {
   const now = new Date();
 
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  if (period === "all") {
+  if (period === "all" || period === "custom") {
     return { start: null, end };
   }
 
-  if (period === "custom") {
-    return { start: null, end };
-  }
+  const months = Number(period);
+  const day = end.getDate();
 
-  const start = new Date(end);
-  start.setMonth(start.getMonth() - Number(period));
+  const start = new Date(end.getFullYear(), end.getMonth() - months, 1);
+
+  const lastDayOfTargetMonth = new Date(
+    start.getFullYear(),
+    start.getMonth() + 1,
+    0,
+  ).getDate();
+
+  start.setDate(Math.min(day, lastDayOfTargetMonth));
 
   return { start, end };
 }
@@ -145,7 +150,12 @@ function Reports() {
         let query = supabase
           .from("finance_transactions")
           .select("id, type, amount, category, project_id, occurred_at, notes")
-          .lte("occurred_at", end)
+          .lt(
+            "occurred_at",
+            new Date(
+              new Date(`${end}T00:00:00`).getTime() + 24 * 60 * 60 * 1000,
+            ).toISOString(),
+          )
           .order("occurred_at", { ascending: true })
           .order("id", { ascending: true });
 
@@ -174,23 +184,28 @@ function Reports() {
         { income: 0, expenses: 0, assets: 0, count: 0 },
       );
       
-      const assignments =
-        scope === "project"
-          ? await fetchAllRows(() => {
-              let query = supabase
-                .from("farm_project_entities")
-                .select("entity_id, project_id, started_at, ended_at")
-                .eq("project_id", projectId);
+      
+const assignments =
+  scope === "project"
+    ? await fetchAllRows(() => {
+        let query = supabase
+          .from("farm_project_entities")
+          .select("entity_id, project_id, started_at, ended_at")
+          .eq("project_id", projectId)
+          .lte("started_at", end);
 
-              if (start) {
-                query = query.or(`ended_at.gte.${start},ended_at.is.null`);
-              }
+        if (start) {
+          query = query.or(`ended_at.gt.${start},ended_at.is.null`);
+        }
 
-              query = query.order("started_at", { ascending: true });
+        query = query.order("started_at", {
+          ascending: true,
+        });
 
-              return query;
-            })
-          : [];
+        return query;
+      })
+    : [];
+
 
       const assignedEntityIds = [
         ...new Set(assignments.map((assignment) => assignment.entity_id)),
@@ -228,7 +243,12 @@ function Reports() {
             .select("id, entity_id, type, payload, occurred_at, reversed_at")
             .in("entity_id", entityBatch)
             .is("reversed_at", null)
-            .lte("occurred_at", end)
+            .lt(
+              "occurred_at",
+              new Date(
+                new Date(`${end}T00:00:00`).getTime() + 24 * 60 * 60 * 1000,
+              ).toISOString(),
+            )
             .order("occurred_at", { ascending: true })
             .order("id", { ascending: true });
 
@@ -272,11 +292,11 @@ function Reports() {
       for (const event of events) {
         const payload = event.payload ?? {};
 
-        if (event.type === "feed_given") {
+        if (["feed_given", "Feed_given"].includes(event.type)) {
           activityTotals.feedKg += Number(payload.qty_kg ?? 0);
         }
 
-        if (event.type === "egg_count") {
+        if (["egg_count", "Egg_count", "egg_production"].includes(event.type)) {
           activityTotals.eggs += Number(payload.count ?? 0);
         }
 
@@ -288,7 +308,7 @@ function Reports() {
           activityTotals.mortality += Number(payload.count ?? 0);
         }
 
-        if (event.type === "weight_check") {
+        if (["weight_check", "weight"].includes(event.type)) {
           activityTotals.weightChecks += 1;
         }
       }
@@ -313,11 +333,11 @@ function Reports() {
         const summary = monthlyActivity[month];
         summary.eventCount += 1;
 
-        if (event.type === "feed_given") {
+        if (["feed_given", "Feed_given"].includes(event.type)) {
           summary.feedKg += Number(payload.qty_kg ?? 0);
         }
 
-        if (event.type === "egg_count") {
+        if (["egg_count", "Egg_count", "egg_production"].includes(event.type)) {
           summary.eggs += Number(payload.count ?? 0);
         }
 
@@ -327,6 +347,9 @@ function Reports() {
 
         if (event.type === "mortality") {
           summary.mortality += Number(payload.count ?? 0);
+        }
+        if (["weight_check", "weight"].includes(event.type)) {
+          summary.weightChecks += 1;
         }
       }
 

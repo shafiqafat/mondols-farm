@@ -240,9 +240,21 @@ function ProjectDetail() {
         setProjectEvents([]);
       }
 
+      const assignedElsewhereIds = new Set(
+        projectEntityHistoryRows
+          .filter(
+            (assignment) =>
+              assignment.project_id !== id && assignment.ended_at === null,
+          )
+          .map((assignment) => assignment.entity_id),
+      );
+
       setAvailableEntities(
         entities.filter(
-          (entity) => entity.status === "active" && !assignedIds.has(entity.id),
+          (entity) =>
+            entity.status === "active" &&
+            !assignedIds.has(entity.id) &&
+            !assignedElsewhereIds.has(entity.id),
         ),
       );
 
@@ -300,7 +312,9 @@ function ProjectDetail() {
   }
 
   async function handleAssignEntity() {
-    if (!selectedEntityId || !project?.id) return;
+    if (!selectedEntityId || !project?.id || project.status !== "active") {
+      return;
+    }
 
     setAssigning(true);
     setPageError("");
@@ -309,7 +323,7 @@ function ProjectDetail() {
       p_entity_id: selectedEntityId,
       p_project_id: project.id,
       p_role: "primary",
-      p_started_at: project.started_at,
+      p_started_at: new Date().toLocaleDateString("en-CA"),
       p_allow_transfer: false,
     });
 
@@ -351,6 +365,23 @@ function ProjectDetail() {
       current.filter((entity) => !assignedIds.has(entity.id)),
     );
 
+    setProjectEntityHistory((current) => [
+      ...current.filter(
+        (assignment) =>
+          !(
+            assignment.project_id === project.id &&
+            assignment.entity_id === selectedEntityId &&
+            assignment.ended_at === null
+          ),
+      ),
+      {
+        project_id: project.id,
+        entity_id: selectedEntityId,
+        started_at: new Date().toLocaleDateString("en-CA"),
+        ended_at: null,
+      },
+    ]);
+
     setAssigning(false);
   }
 
@@ -374,7 +405,7 @@ function ProjectDetail() {
     const { error } = await supabase
       .from("farm_project_entities")
       .update({
-        ended_at: new Date().toISOString(),
+        ended_at: new Date().toLocaleDateString("en-CA"),
       })
       .eq("project_id", project.id)
       .eq("entity_id", entityId)
@@ -389,9 +420,20 @@ function ProjectDetail() {
       current.filter((item) => item.id !== entityId),
     );
 
-    setAvailableEntities((current) =>
-      [...current, entity].sort((a, b) => a.label.localeCompare(b.label)),
+    const hasActiveAssignmentElsewhere = projectEntityHistory.some(
+      (assignment) =>
+        assignment.entity_id === entityId &&
+        assignment.project_id !== project.id &&
+        assignment.ended_at === null,
     );
+
+    if (entity.status === "active" && !hasActiveAssignmentElsewhere) {
+      setAvailableEntities((current) =>
+        current.some((item) => item.id === entityId)
+          ? current
+          : [...current, entity].sort((a, b) => a.label.localeCompare(b.label)),
+      );
+    }
   }
 
   if (pageError || !project) {

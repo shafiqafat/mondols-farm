@@ -54,12 +54,6 @@ function EditProject() {
         return;
       }
 
-      if (data.status !== "active") {
-        setError("Only active projects can be edited.");
-        setLoading(false);
-        return;
-      }
-
       setForm({
         name: data.name ?? "",
         projectType: data.project_type ?? "",
@@ -89,10 +83,19 @@ function EditProject() {
       return;
     }
 
+    if (
+      form.targetEndAt &&
+      form.startedAt &&
+      form.targetEndAt < form.startedAt
+    ) {
+      setError("Target end date cannot be earlier than the start date.");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
-    const { error: updateError } = await supabase
+    const { data: updatedProject, error: updateError } = await supabase
       .from("farm_projects")
       .update({
         name: form.name.trim(),
@@ -102,7 +105,22 @@ function EditProject() {
         target_end_at: form.targetEndAt || null,
       })
       .eq("id", id)
-      .eq("status", "active");
+      .select("id")
+      .maybeSingle();
+
+    if (updateError) {
+      setError(updateError.message);
+      setSaving(false);
+      return;
+    }
+
+    if (!updatedProject) {
+      setError(
+        "The project was not updated. It may not exist, or you may not have permission to edit it.",
+      );
+      setSaving(false);
+      return;
+    }
 
     if (updateError) {
       setError(updateError.message);

@@ -99,6 +99,7 @@ function ProjectDetail() {
   const [projectEntityHistory, setProjectEntityHistory] = useState([]);
   const [projectEvents, setProjectEvents] = useState([]);
   const [selectedTrend, setSelectedTrend] = useState("auto");
+  const [showAllActivity, setShowAllActivity] = useState(false);
   const [trendPeriod, setTrendPeriod] = useState("30");
   const [selectedEntityId, setSelectedEntityId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -569,59 +570,62 @@ function ProjectDetail() {
     return days;
   }, {});
 
-  
-const recordedTrendData = Object.values(productionTrend).sort((a, b) =>
-  a.date.localeCompare(b.date),
-);
+  const recordedTrendData = Object.values(productionTrend).sort((a, b) =>
+    a.date.localeCompare(b.date),
+  );
 
-const productionTrendData = (() => {
-  if (recordedTrendData.length === 0) return [];
+  const productionTrendData = (() => {
+    if (recordedTrendData.length === 0) return [];
 
-  const dailyData = new Map(recordedTrendData.map((item) => [item.date, item]));
-
-  const last = new Date();
-  last.setHours(12, 0, 0, 0);
-
-  let first;
-
-  if (trendPeriod === "all") {
-    first = new Date(`${recordedTrendData[0].date}T12:00:00`);
-  } else {
-    first = new Date(last);
-    first.setDate(first.getDate() - (Number(trendPeriod) - 1));
-
-    const earliestRecorded = new Date(`${recordedTrendData[0].date}T12:00:00`);
-
-    if (earliestRecorded > first) {
-      first = earliestRecorded;
-    }
-  }
-
-  const result = [];
-  const current = new Date(first);
-
-  while (current <= last) {
-    const date = [
-      current.getFullYear(),
-      String(current.getMonth() + 1).padStart(2, "0"),
-      String(current.getDate()).padStart(2, "0"),
-    ].join("-");
-
-    result.push(
-      dailyData.get(date) ?? {
-        date,
-        feedKg: 0,
-        eggs: 0,
-        harvestKg: 0,
-      },
+    const dailyData = new Map(
+      recordedTrendData.map((item) => [item.date, item]),
     );
 
-    current.setDate(current.getDate() + 1);
-  }
+    const last = new Date();
+    last.setHours(12, 0, 0, 0);
 
-  return result;
-})();
-  
+    let first;
+
+    if (trendPeriod === "all") {
+      first = new Date(`${recordedTrendData[0].date}T12:00:00`);
+    } else {
+      first = new Date(last);
+      first.setDate(first.getDate() - (Number(trendPeriod) - 1));
+
+      const earliestRecorded = new Date(
+        `${recordedTrendData[0].date}T12:00:00`,
+      );
+
+      if (earliestRecorded > first) {
+        first = earliestRecorded;
+      }
+    }
+
+    const result = [];
+    const current = new Date(first);
+
+    while (current <= last) {
+      const date = [
+        current.getFullYear(),
+        String(current.getMonth() + 1).padStart(2, "0"),
+        String(current.getDate()).padStart(2, "0"),
+      ].join("-");
+
+      result.push(
+        dailyData.get(date) ?? {
+          date,
+          feedKg: 0,
+          eggs: 0,
+          harvestKg: 0,
+        },
+      );
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    return result;
+  })();
+
   const filteredTrendData = productionTrendData;
 
   const availableTrends = {
@@ -814,7 +818,7 @@ const productionTrendData = (() => {
       </Card>
 
       {/* Project areas */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4">
         <Card className="rounded-2xl border-border/70">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
@@ -997,7 +1001,9 @@ const productionTrendData = (() => {
                       </p>
 
                       <p className="mt-2 text-xl font-semibold">
-                        {productionSummary.latestWeightKg.toFixed(2)} kg
+                        {productionSummary.latestWeightKg < 1
+                          ? `${Math.round(productionSummary.latestWeightKg * 1000)} g`
+                          : `${productionSummary.latestWeightKg.toFixed(2)} kg`}
                       </p>
                     </div>
                   )}
@@ -1015,188 +1021,271 @@ const productionTrendData = (() => {
                   )}
                 </div>
 
-                {(!activeTrend || productionTrendData.length > 1) && (
-                  <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {activeTrend?.label ?? "Production trends"}
-                        </p>
-
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Daily production activity recorded for this project
-                        </p>
-                      </div>
-
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <select
-                          value={trendPeriod}
-                          onChange={(event) =>
-                            setTrendPeriod(event.target.value)
-                          }
-                          className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm sm:w-36"
-                          aria-label="Select production date range"
-                        >
-                          <option value="7">Last 7 days</option>
-                          <option value="30">Last 30 days</option>
-                          <option value="90">Last 90 days</option>
-                          <option value="all">All history</option>
-                        </select>
-
-                        <select
-                          value={selectedTrend}
-                          onChange={(event) =>
-                            setSelectedTrend(event.target.value)
-                          }
-                          className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm sm:w-48"
-                          aria-label="Select production trend"
-                        >
-                          <option value="auto">Automatic selection</option>
-                          <option value="eggs" disabled={!availableTrends.eggs}>
-                            Egg production
-                          </option>
-                          <option
-                            value="harvest"
-                            disabled={!availableTrends.harvest}
-                          >
-                            Harvest
-                          </option>
-                          <option value="feed" disabled={!availableTrends.feed}>
-                            Feed consumption
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="h-64 w-full">
-                      {!activeTrend || filteredTrendData.length === 0 ? (
-                        <div className="flex min-h-[300px] flex-col items-center justify-center text-center">
+                <div className="grid items-start gap-4 lg:grid-cols-2">
+                  {(!activeTrend || productionTrendData.length > 1) && (
+                    <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
                           <p className="text-sm font-medium">
-                            No production data yet
+                            {activeTrend?.label ?? "Production trends"}
                           </p>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Record production activity to see trends here.
+
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Daily production activity recorded for this project
                           </p>
                         </div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={filteredTrendData}
-                            margin={{
-                              top: 8,
-                              right: 8,
-                              left: 0,
-                              bottom: 8,
-                            }}
+
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <select
+                            value={trendPeriod}
+                            onChange={(event) =>
+                              setTrendPeriod(event.target.value)
+                            }
+                            className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm sm:w-36"
+                            aria-label="Select production date range"
                           >
-                            <CartesianGrid
-                              strokeDasharray="3 3"
-                              className="stroke-border/50"
-                            />
+                            <option value="7">Last 7 days</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="all">All history</option>
+                          </select>
 
-                            <XAxis
-                              dataKey="date"
-                              tickFormatter={(value) =>
-                                new Date(
-                                  `${value}T12:00:00`,
-                                ).toLocaleDateString(undefined, {
-                                  month: "short",
-                                  day: "numeric",
-                                })
-                              }
-                              tickLine={false}
-                              axisLine={false}
-                              className="text-xs"
-                            />
+                          <select
+                            value={selectedTrend}
+                            onChange={(event) =>
+                              setSelectedTrend(event.target.value)
+                            }
+                            className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm sm:w-48"
+                            aria-label="Select production trend"
+                          >
+                            <option value="auto">Automatic selection</option>
+                            <option
+                              value="eggs"
+                              disabled={!availableTrends.eggs}
+                            >
+                              Egg production
+                            </option>
+                            <option
+                              value="harvest"
+                              disabled={!availableTrends.harvest}
+                            >
+                              Harvest
+                            </option>
+                            <option
+                              value="feed"
+                              disabled={!availableTrends.feed}
+                            >
+                              Feed consumption
+                            </option>
+                          </select>
+                        </div>
+                      </div>
 
-                            <YAxis
-                              tickLine={false}
-                              axisLine={false}
-                              width={40}
-                              className="text-xs"
-                            />
+                      <div className="h-44 w-full">
+                        {!activeTrend || filteredTrendData.length === 0 ? (
+                          <div className="flex min-h-40 flex-col items-center justify-center text-center">
+                            <p className="text-sm font-medium">
+                              No production data yet
+                            </p>
+                            <p className="mt-1 text-sm text-gray-500">
+                              Record production activity to see trends here.
+                            </p>
+                          </div>
+                        ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart
+                              data={filteredTrendData}
+                              margin={{
+                                top: 8,
+                                right: 8,
+                                left: 0,
+                                bottom: 8,
+                              }}
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                className="stroke-border/50"
+                              />
 
-                            <Tooltip
-                              formatter={(value) => [
-                                `${Number(value).toFixed(
-                                  activeTrend.dataKey === "eggs" ? 0 : 2,
-                                )}${activeTrend.unit}`,
-                                activeTrend.label,
-                              ]}
-                              labelFormatter={(value) =>
-                                new Date(
-                                  `${value}T12:00:00`,
-                                ).toLocaleDateString(undefined, {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                })
-                              }
-                            />
+                              <XAxis
+                                dataKey="date"
+                                tickFormatter={(value) =>
+                                  new Date(
+                                    `${value}T12:00:00`,
+                                  ).toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                  })
+                                }
+                                tickLine={false}
+                                axisLine={false}
+                                className="text-xs"
+                              />
 
-                            <Line
-                              type="monotone"
-                              dataKey={activeTrend.dataKey}
-                              stroke="currentColor"
-                              strokeWidth={2}
-                              dot={{ r: 3 }}
-                              activeDot={{ r: 5 }}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      )}
+                              <YAxis
+                                tickLine={false}
+                                axisLine={false}
+                                width={52}
+                                className="text-xs"
+                              />
+
+                              <Tooltip
+                                formatter={(value) => [
+                                  `${Number(value).toFixed(
+                                    activeTrend.dataKey === "eggs" ? 0 : 2,
+                                  )}${activeTrend.unit}`,
+                                  activeTrend.label,
+                                ]}
+                                labelFormatter={(value) =>
+                                  new Date(
+                                    `${value}T12:00:00`,
+                                  ).toLocaleDateString(undefined, {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                  })
+                                }
+                              />
+
+                              <Line
+                                type="monotone"
+                                dataKey={activeTrend.dataKey}
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                dot={{ r: 3 }}
+                                activeDot={{ r: 5 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Recent production events */}
-                <div>
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Recent activity
-                    </p>
+                  {/* Recent production events */}
+                  <div>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Recent activity
+                      </p>
 
-                    <span className="text-xs text-muted-foreground">
-                      Showing {Math.min(projectActivityEvents.length, 6)} of{" "}
-                      {projectActivityEvents.length}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    {projectActivityEvents.slice(0, 6).map((event) => {
-                      const entity = allEntities.find(
-                        (item) => item.id === event.entity_id,
-                      );
-
-                      return (
-                        <div
-                          key={event.id}
-                          className="flex items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-3"
-                        >
-                          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-background text-primary">
-                            <Activity className="size-4" />
+                      <span className="text-xs text-muted-foreground">
+                        {projectActivityEvents.length} events
+                      </span>
+                    </div>{" "}
+                    <div className="space-y-4">
+                      {Object.entries(
+                        projectActivityEvents
+                          .slice(0, showAllActivity ? undefined : 3)
+                          .reduce((groups, event) => {
+                            const dateKey = event.occurred_at
+                              ? event.occurred_at.slice(0, 10)
+                              : "unknown";
+                            if (!groups[dateKey]) groups[dateKey] = [];
+                            groups[dateKey].push(event);
+                            return groups;
+                          }, {}),
+                      ).map(([dateKey, events]) => (
+                        <div key={dateKey} className="space-y-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              {dateKey === "unknown"
+                                ? "Date not recorded"
+                                : new Date(
+                                    `${dateKey}T12:00:00`,
+                                  ).toLocaleDateString(undefined, {
+                                    day: "numeric",
+                                    month: "long",
+                                    year: "numeric",
+                                  })}
+                            </p>
+                            <span className="text-[11px] text-muted-foreground">
+                              {events.length}{" "}
+                              {events.length === 1 ? "event" : "events"}
+                            </span>
                           </div>
 
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium">
-                              {getEventDisplayLabel(event.type)}
-                            </p>
+                          <div className="space-y-1.5">
+                            {events.map((event) => {
+                              const entity = allEntities.find(
+                                (item) => item.id === event.entity_id,
+                              );
+                              const payload = event.payload ?? {};
 
-                            <p className="mt-0.5 text-xs text-muted-foreground">
-                              {entity?.label || "Entity"}
-                            </p>
+                              const valueLabel = (() => {
+                                switch (event.type) {
+                                  case "feed_given":
+                                  case "Feed_given":
+                                    return payload.qty_kg != null
+                                      ? `${Number(payload.qty_kg).toFixed(2)} kg`
+                                      : "";
+                                  case "weight_check":
+                                  case "weight":
+                                    return payload.kg != null
+                                      ? Number(payload.kg) < 1
+                                        ? `${Math.round(Number(payload.kg) * 1000)} g`
+                                        : `${Number(payload.kg).toFixed(2)} kg`
+                                      : "";
+                                  case "egg_count":
+                                  case "Egg_count":
+                                  case "egg_production":
+                                    return payload.count != null
+                                      ? `${payload.count} eggs`
+                                      : "";
+                                  case "mortality":
+                                    return payload.count != null
+                                      ? `${payload.count} birds`
+                                      : "";
+                                  default:
+                                    return "";
+                                }
+                              })();
 
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {event.occurred_at
-                                ? new Date(
-                                    event.occurred_at,
-                                  ).toLocaleDateString()
-                                : "Date not recorded"}
-                            </p>
+                              return (
+                                <div
+                                  key={event.id}
+                                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-background px-3 py-2"
+                                >
+                                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                    <Activity className="size-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-medium">
+                                      {getEventDisplayLabel(event.type)}
+                                    </p>
+                                    <p className="truncate text-xs text-muted-foreground">
+                                      {event.type === "note" && payload.text
+                                        ? payload.text
+                                        : entity?.label || "Entity"}
+                                    </p>
+                                  </div>
+                                  {valueLabel && (
+                                    <span className="shrink-0 text-xs font-semibold tabular-nums">
+                                      {valueLabel}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
+                    {projectActivityEvents.length > 3 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 h-8 w-full rounded-lg text-xs"
+                        onClick={() =>
+                          setShowAllActivity((current) => !current)
+                        }
+                      >
+                        {showAllActivity
+                          ? "Show less"
+                          : `View all activity (${projectActivityEvents.length})`}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </>

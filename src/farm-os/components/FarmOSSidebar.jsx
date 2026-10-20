@@ -3,13 +3,11 @@ import {
   CalendarCheck,
   ClipboardList,
   CircleDollarSign,
-  FileText,
   LayoutDashboard,
   FileBarChart,
   Package,
   Settings,
   Sprout,
-  Boxes,
   Wallet,
   ShoppingCart,
   FolderKanban,
@@ -57,11 +55,6 @@ const NAV_GROUPS = [
         icon: Sprout,
       },
       {
-        to: "/farm-os/capacity",
-        label: "Capacity",
-        icon: Boxes,
-      },
-      {
         to: "/farm-os/scenario",
         label: "Scenario",
         icon: BarChart3,
@@ -100,16 +93,6 @@ const NAV_GROUPS = [
         to: "/farm-os/reports",
         label: "Reports",
         icon: FileBarChart,
-      },
-    ],
-  },
-  {
-    label: "Content",
-    items: [
-      {
-        to: "/farm-os/content",
-        label: "Content",
-        icon: FileText,
       },
     ],
   },

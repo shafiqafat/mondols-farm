@@ -42,7 +42,6 @@ const FarmOSNewSpecies = lazy(() => import("./farm-os/pages/NewSpecies"));
 const FarmOSInvestment = lazy(() => import("./farm-os/pages/Investment"));
 const FarmOSNewEntity = lazy(() => import("./farm-os/pages/NewEntity"));
 const FarmOSNewRotationRule = lazy(() => import("./farm-os/pages/NewRotationRule"),);
-const FarmOSCapacity = lazy(() => import("./farm-os/pages/Capacity"));
 const FarmOSScenario = lazy(() => import("./farm-os/pages/Scenario"));
 const FarmOSContentJournal = lazy(() => import("./farm-os/pages/ContentJournal"));
 const FarmOSTasks = lazy(() => import("./farm-os/pages/Tasks"));
@@ -157,7 +156,6 @@ function App() {
             <Route path="entities/:id" element={<FarmOSEntityDetail />} />
             <Route path="finance" element={<FarmOSFinance />} />
             <Route path="investment" element={<FarmOSInvestment />} />
-            <Route path="capacity" element={<FarmOSCapacity />} />
             <Route path="scenario" element={<FarmOSScenario />} />
             <Route path="content" element={<FarmOSContentJournal />} />
             <Route path="tasks" element={<FarmOSTasks />} />

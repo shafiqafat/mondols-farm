@@ -50,6 +50,9 @@ function Inventory() {
   const [savingPurchase, setSavingPurchase] = useState(null);
   const [updatedItemId, setUpdatedItemId] = useState(null);
   const [pageError, setPageError] = useState("");
+  const [lotReconciliations, setLotReconciliations] = useState({});
+  const [reconcilingLotId, setReconcilingLotId] = useState(null);
+  const [reconciliationMessage, setReconciliationMessage] = useState("");
 
   async function loadAll() {
     setLoading(true);
@@ -77,7 +80,26 @@ function Inventory() {
       return;
     }
 
+    const { data: reconciliationRows, error: reconciliationErr } =
+      await supabase
+        .from("inventory_lot_reconciliations")
+        .select(
+          "lot_id, actual_quantity, recorded_consumption_quantity, adjustment_factor, reconciled_at",
+        );
+
+    if (reconciliationErr) {
+      setLoadError(
+        `Unable to load lot reconciliation data. Apply the inventory reconciliation migration first. ${reconciliationErr.message}`,
+      );
+      setLoading(false);
+      return;
+    }
+
     const grouped = {};
+    const reconciliationMap = {};
+    for (const reconciliation of reconciliationRows ?? []) {
+      reconciliationMap[reconciliation.lot_id] = reconciliation;
+    }
 
     for (const lot of lotRows ?? []) {
       if (!grouped[lot.item_id]) grouped[lot.item_id] = [];
@@ -86,6 +108,7 @@ function Inventory() {
 
     setItems(itemRows ?? []);
     setLotsByItem(grouped);
+    setLotReconciliations(reconciliationMap);
     setLoading(false);
   }
 
@@ -150,6 +173,39 @@ function Inventory() {
     });
 
     loadAll();
+  }
+
+  async function handleConfirmLotEmpty(item, lot) {
+    const existingReconciliation = lotReconciliations[lot.id];
+    if (existingReconciliation) return;
+
+    const confirmed = window.confirm(
+      `Mark the ${item.name} stock lot purchased on ${lot.purchased_at} as physically empty? FarmOS will reconcile its Daily Log measurements against the recorded lot quantity (${Number(lot.qty_purchased).toFixed(2)} ${item.unit}), mark this lot as finished, and set its remaining stock to zero. This action cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setReconcilingLotId(lot.id);
+    setPageError("");
+    setReconciliationMessage("");
+
+    const { data, error } = await supabase.rpc("confirm_inventory_lot_empty", {
+      p_lot_id: lot.id,
+    });
+
+    setReconcilingLotId(null);
+
+    if (error) {
+      setPageError(error.message);
+      return;
+    }
+
+    const factor = Number(data?.adjustment_factor);
+    const recorded = Number(data?.recorded_consumption_quantity);
+    const actual = Number(data?.actual_quantity);
+    setReconciliationMessage(
+      `Reconciled ${item.name}: ${recorded.toFixed(2)} ${item.unit} recorded against ${actual.toFixed(2)} ${item.unit} actual stock (adjustment factor ${factor.toFixed(4)}). Original Daily Log measurements are preserved.`,
+    );
+    await loadAll();
   }
 
   function updatePurchaseForm(itemId, field, value) {
@@ -335,6 +391,15 @@ function Inventory() {
 
               <p className="mt-1 text-sm text-muted-foreground">{pageError}</p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {reconciliationMessage && (
+        <Card className="border-emerald-500/30 bg-emerald-500/[0.04]">
+          <CardContent className="flex items-start gap-3 p-4">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
+            <p className="text-sm text-foreground">{reconciliationMessage}</p>
           </CardContent>
         </Card>
       )}
@@ -593,27 +658,83 @@ function Inventory() {
                         </div>
 
                         <div className="divide-y divide-border/50">
-                          {lots.map((lot) => (
-                            <div
-                              key={lot.id}
-                              className="grid grid-cols-[1fr_1fr_1fr] gap-3 px-3 py-2.5 text-xs"
-                            >
-                              <span className="flex items-center gap-1.5 text-muted-foreground">
-                                <CalendarDays className="size-3.5" />
-                                {lot.purchased_at}
-                              </span>
+                          {lots.map((lot) => {
+                            const reconciliation = lotReconciliations[lot.id];
+                            return (
+                              <div key={lot.id} className="space-y-2 px-3 py-3">
+                                <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 text-xs">
+                                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                                    <CalendarDays className="size-3.5" />
+                                    {lot.purchased_at}
+                                  </span>
 
-                              <span className="font-medium">
-                                {Number(lot.qty_remaining).toFixed(2)}{" "}
-                                {item.unit}
-                              </span>
+                                  <span className="font-medium">
+                                    {Number(lot.qty_remaining).toFixed(2)}{" "}
+                                    {item.unit}
+                                  </span>
 
-                              <span className="text-muted-foreground">
-                                ৳{Number(lot.cost_per_unit).toFixed(2)}/
-                                {item.unit}
-                              </span>
-                            </div>
-                          ))}
+                                  <span className="text-muted-foreground">
+                                    ৳{Number(lot.cost_per_unit).toFixed(2)}/
+                                    {item.unit}
+                                  </span>
+                                </div>
+
+                                {reconciliation ? (
+                                  <div className="rounded-md bg-emerald-500/[0.07] px-3 py-2 text-xs">
+                                    <p className="font-medium text-emerald-700">
+                                      Finished · Empty confirmed and reconciled
+                                    </p>
+                                    <p className="mt-1 text-muted-foreground">
+                                      Actual:{" "}
+                                      {Number(
+                                        reconciliation.actual_quantity,
+                                      ).toFixed(2)}{" "}
+                                      {item.unit}
+                                      {" · "}Recorded use:{" "}
+                                      {Number(
+                                        reconciliation.recorded_consumption_quantity,
+                                      ).toFixed(2)}{" "}
+                                      {item.unit}
+                                      {" · "}Factor:{" "}
+                                      {Number(
+                                        reconciliation.adjustment_factor,
+                                      ).toFixed(4)}
+                                    </p>
+                                    <p className="mt-1 text-muted-foreground">
+                                      {new Date(
+                                        reconciliation.reconciled_at,
+                                      ).toLocaleString()}
+                                    </p>
+                                  </div>
+                                ) : canEdit ? (
+                                  <div className="flex flex-col gap-2 rounded-md border border-dashed border-border/70 p-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <p className="text-xs leading-5 text-muted-foreground">
+                                      When this lot is physically empty,
+                                      reconcile its Daily Log measurements
+                                      against the actual stock quantity (
+                                      {Number(lot.qty_purchased).toFixed(2)}{" "}
+                                      {item.unit}).
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="shrink-0"
+                                      disabled={reconcilingLotId === lot.id}
+                                      onClick={() =>
+                                        handleConfirmLotEmpty(item, lot)
+                                      }
+                                    >
+                                      <CheckCircle2 className="size-3.5" />
+                                      {reconcilingLotId === lot.id
+                                        ? "Reconciling…"
+                                        : "Mark Storage Empty"}
+                                    </Button>
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>

@@ -789,6 +789,36 @@ const { error } = await supabase
     await loadInvestmentOverview();
   }
 
+  async function handleReviewInvestor(investorId, decision) {
+  const decisionLabel = decision === "approve" ? "approve" : "reject";
+
+  if (
+    !window.confirm(
+      `Are you sure you want to ${decisionLabel} this investor registration?`,
+    )
+  ) {
+    return;
+  }
+
+  setInvestorError("");
+  setSavingInvestor(true);
+
+  const { error } = await supabase.rpc("review_investor_registration", {
+    p_investor_id: investorId,
+    p_decision: decision,
+    p_notes: null,
+  });
+
+  setSavingInvestor(false);
+
+  if (error) {
+    setInvestorError(error.message);
+    return;
+  }
+
+  await loadInvestmentOverview();
+}
+
   function handleViewInvestorPortfolio(investor) {
     setSelectedInvestor(investor);
     setInvestorPortfolioOpen(true);
@@ -1040,6 +1070,7 @@ const { error } = await supabase
         savingInvestor={savingInvestor}
         handleCreateInvestor={handleCreateInvestor}
         handleUpdateInvestor={handleUpdateInvestor}
+        onReviewInvestor={handleReviewInvestor}
         getEmptyInvestorForm={getEmptyInvestorForm}
       />
 

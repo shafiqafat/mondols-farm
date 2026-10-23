@@ -30,6 +30,7 @@ import ProtectedRoute from "./farm-os/components/ProtectedRoute";
 import FarmOSLayout from "./farm-os/components/FarmOSLayout";
 import InvestorProtectedRoute from "./farm-os/components/InvestorProtectedRoute";
 const FarmOSLogin = lazy(() => import("./farm-os/pages/Login"));
+const InvestorRegister = lazy(() => import("./farm-os/pages/InvestorRegister"));
 const FarmOSOverview = lazy(() => import("./farm-os/pages/Overview"));
 const FarmOSSpecies = lazy(() => import("./farm-os/pages/Species"));
 const FarmOSProjects = lazy(() => import("./farm-os/pages/Projects"));
@@ -133,6 +134,7 @@ function App() {
           </Route>
           {/* Farm OS — private, no public Navbar/Footer */}
           <Route path="/farm-os/login" element={<FarmOSLogin />} />
+          <Route path="/investor/register" element={<InvestorRegister />} />
           <Route
             path="/farm-os/*"
             element={

@@ -13,6 +13,7 @@ import { Plus } from "lucide-react";
 function InvestorManagement({
   investors,
   canEdit,
+  onReviewInvestor,
 
   onViewPortfolio,
 
@@ -111,6 +112,26 @@ function InvestorManagement({
 
                   {/* Actions */}
                   <div className="flex items-center justify-start gap-2 lg:justify-end">
+                    {canEdit && investor.status === "pending" && (
+                      <>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => onReviewInvestor(investor.id, "approve")}
+                        >
+                          Approve
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => onReviewInvestor(investor.id, "reject")}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
                     <Button
                       type="button"
                       variant="outline"

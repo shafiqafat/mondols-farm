@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import gsap from "gsap";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
 import { useAuth } from "../hooks/useAuth";
@@ -62,7 +61,6 @@ function Finance() {
   const [transactionsVisible, setTransactionsVisible] = useState(false);
 
   const transactionsSectionRef = useRef(null);
-  const editDialogRef = useRef(null);
   const transactionsListRef = useRef(null);
 
   const [txn, setTxn] = useState({
@@ -157,28 +155,6 @@ function Finance() {
 
     return () => observer.disconnect();
   }, []);
-
-  useEffect(() => {
-    const element = editDialogRef.current;
-
-    if (!element || !editingTxn) return;
-
-    gsap.fromTo(
-      element,
-      {
-        opacity: 0,
-        scale: 0.94,
-        y: 8,
-      },
-      {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        duration: 0.45,
-        ease: "back.out(1.4)",
-      },
-    );
-  }, [editingTxn]);
 
   async function handleUpdateTransaction(e) {
     e.preventDefault();
@@ -1187,7 +1163,7 @@ function Finance() {
             }
           }}
         >
-          <DialogContent ref={editDialogRef} className="sm:max-w-3xl">
+          <DialogContent className="w-[calc(100%-2rem)] max-w-3xl">
             <DialogHeader>
               <DialogTitle className="text-xl tracking-tight">
                 Edit transaction

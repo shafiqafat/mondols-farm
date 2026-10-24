@@ -125,6 +125,16 @@ function Login() {
                   <LockKeyhole className="size-4" />
                   {submitting ? "Signing in…" : "Sign in"}
                 </Button>
+
+                <p className="mt-0 text-center text-sm text-muted-foreground">
+                  New to investing?{" "}
+                  <a
+                    href="/investor/register"
+                    className="font-medium text-primary underline-offset-5 hover:underline"
+                  >
+                    Register
+                  </a>
+                </p>
               </div>
             </div>
           </div>

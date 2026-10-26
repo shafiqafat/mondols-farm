@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { useNavigate, useParams } from "react-router-dom";
 import { getEventDisplayLabel } from "../lib/eventUtils";
+import { computeExpectedHarvest } from "../engines/cropForecastEngine";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -130,7 +131,7 @@ function ProjectDetail() {
         supabase
           .from("farm_entities")
           .select(
-            "id, label, quantity, status, location, species_config:species_config_id(name)",
+            "id, label, quantity, status, location, tracking_mode, species_config:species_config_id(name, category, space_unit)",
           )
           .is("archived_at", null)
           .order("label"),
@@ -532,6 +533,33 @@ function ProjectDetail() {
     ...buildProductionMetrics(projectActivityEvents),
   };
 
+  // Crop and fodder entities are shown as independent production cycles.
+  const cropCycles = assignedEntities
+    .filter((entity) =>
+      ["crop", "fodder"].includes(entity.species_config?.category),
+    )
+    .map((entity) => {
+      const entityEvents = projectActivityEvents.filter(
+        (event) => event.entity_id === entity.id,
+      );
+      const forecast = computeExpectedHarvest(entityEvents);
+      const hasHarvest = entityEvents.some(
+        (event) => event.type === "harvest" && !event.reversed_at,
+      );
+
+      return {
+        ...entity,
+        forecast,
+        hasHarvest,
+      };
+    });
+
+  const totalCultivatedArea = cropCycles.reduce((total, crop) => {
+    if (crop.tracking_mode !== "area") return total;
+    const area = Number(crop.quantity);
+    return Number.isFinite(area) && area > 0 ? total + area : total;
+  }, 0);
+
   const productionTrend = projectActivityEvents.reduce((days, event) => {
     const payload = event.payload ?? {};
     const date = event.occurred_at?.slice(0, 10);
@@ -816,6 +844,107 @@ function ProjectDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Crop cycle overview */}
+      {cropCycles.length > 0 && (
+        <Card className="rounded-2xl border-border/70">
+          <CardHeader>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-lg">
+                  Crop production overview
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Each crop entity represents a separate crop or growing cycle.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <span className="rounded-full border border-border/60 px-3 py-1">
+                  {cropCycles.length} crop cycle
+                  {cropCycles.length === 1 ? "" : "s"}
+                </span>
+                {cropCycles.some((crop) => crop.tracking_mode === "area") && (
+                  <span className="rounded-full border border-border/60 px-3 py-1">
+                    {totalCultivatedArea.toLocaleString(undefined, {
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    total area units
+                  </span>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {cropCycles.map((crop) => (
+                <div
+                  key={crop.id}
+                  className="rounded-xl border border-border/60 bg-muted/20 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">
+                        {crop.label}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {crop.species_config?.name || "Crop"}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0 capitalize">
+                      {crop.hasHarvest
+                        ? "Harvest recorded"
+                        : crop.status || "Active"}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        Cultivated area
+                      </span>
+                      <span className="font-medium">
+                        {crop.tracking_mode === "area" && crop.quantity != null
+                          ? `${crop.quantity} ${crop.species_config?.space_unit || "area units"}`
+                          : "Not recorded as area"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-muted-foreground">Planted</span>
+                      <span className="text-right font-medium">
+                        {crop.forecast?.plantedAt || "Not recorded"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-muted-foreground">
+                        Expected harvest
+                      </span>
+                      <span className="text-right font-medium">
+                        {crop.forecast?.expectedHarvestDate || "Not available"}
+                      </span>
+                    </div>
+                    {crop.forecast?.expectedDurationDays && (
+                      <p className="text-xs text-muted-foreground">
+                        Estimated growing duration:{" "}
+                        {crop.forecast.expectedDurationDays} days
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 w-full rounded-lg"
+                    onClick={() => navigate(`/farm-os/entities/${crop.id}`)}
+                  >
+                    View crop history
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Project areas */}
       <div className="grid items-start gap-4">

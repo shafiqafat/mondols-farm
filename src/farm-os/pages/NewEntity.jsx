@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Leaf, Plus } from "lucide-react";
 
 import { supabase } from "../lib/supabaseClient";
+import { localDateISO } from "../lib/localDate";
 import { useAuth } from "../hooks/useAuth";
 import { canWrite } from "../lib/permissions";
 
@@ -31,8 +32,13 @@ function NewEntity() {
   const [loadingParents, setLoadingParents] = useState(true);
   const [parentError, setParentError] = useState("");
 
+  const [projects, setProjects] = useState([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+  const [projectsError, setProjectsError] = useState("");
+
   const [newEntity, setNewEntity] = useState({
     speciesConfigId: "",
+    projectId: "",
     trackingMode: "group",
     label: "",
     quantity: "",
@@ -57,22 +63,24 @@ function NewEntity() {
     fatherExternalReference: "",
   });
 
-    const [savingEntity, setSavingEntity] = useState(false);
-    const [pageError, setPageError] = useState("");
+  const [savingEntity, setSavingEntity] = useState(false);
+  const [pageError, setPageError] = useState("");
 
-    useEffect(() => {
-      if (!authLoading && !canWrite(role)) {
-        navigate("/farm-os/species", { replace: true });
-      }
-    }, [authLoading, role, navigate]);
+  useEffect(() => {
+    if (!authLoading && !canWrite(role)) {
+      navigate("/farm-os/species", { replace: true });
+    }
+  }, [authLoading, role, navigate]);
 
   useEffect(() => {
     async function loadRegistrationData() {
       setLoadingSpecies(true);
       setLoadingParents(true);
+      setLoadingProjects(true);
 
       setSpeciesError("");
       setParentError("");
+      setProjectsError("");
 
       const speciesRes = await supabase
         .from("species_config")
@@ -109,11 +117,23 @@ species_config (
       if (parentEntitiesRes.error) {
         setParentError(parentEntitiesRes.error.message);
         setLoadingParents(false);
-        return;
+      } else {
+        setParentEntities(parentEntitiesRes.data ?? []);
+        setLoadingParents(false);
       }
 
-      setParentEntities(parentEntitiesRes.data ?? []);
-      setLoadingParents(false);
+      const projectsRes = await supabase
+        .from("farm_projects")
+        .select("id, name, project_type, started_at")
+        .eq("status", "active")
+        .order("name", { ascending: true });
+
+      if (projectsRes.error) {
+        setProjectsError(projectsRes.error.message);
+      } else {
+        setProjects(projectsRes.data ?? []);
+      }
+      setLoadingProjects(false);
     }
 
     loadRegistrationData();
@@ -500,6 +520,28 @@ species_config (
       }
     }
 
+    // Assign through the existing RPC after any lifecycle/parentage records
+    // are saved, so a failed assignment never leaves cleanup blocked by FKs.
+    if (newEntity.projectId) {
+      const { error: assignmentError } = await supabase.rpc(
+        "assign_entity_to_project",
+        {
+          p_entity_id: createdEntity.id,
+          p_project_id: newEntity.projectId,
+          p_role: "primary",
+          p_started_at: localDateISO(),
+        },
+      );
+
+      if (assignmentError) {
+        setSavingEntity(false);
+        setPageError(
+          `Entity was registered, but project assignment failed: ${assignmentError.message}. You can assign it later from the project page.`,
+        );
+        return;
+      }
+    }
+
     setSavingEntity(false);
 
     navigate(`/farm-os/entities/${createdEntity.id}`);
@@ -510,761 +552,787 @@ species_config (
       species.name.trim().toLowerCase() === speciesSearch.trim().toLowerCase(),
   );
 
-    if (authLoading || !canWrite(role)) {
-      return null;
-    }
+  if (authLoading || !canWrite(role)) {
+    return null;
+  }
 
-    return (
-      <div className="space-y-7">
-        {/* Page Header */}
-        <div className="flex flex-col gap-5 border-b border-border/60 pb-7">
-          <div className="flex items-center gap-2">
-            <div className="w-fit">
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="!inline-flex !w-fit !flex-row !items-center !justify-start gap-2 whitespace-nowrap px-2"
+  return (
+    <div className="space-y-7">
+      {/* Page Header */}
+      <div className="flex flex-col gap-5 border-b border-border/60 pb-7">
+        <div className="flex items-center gap-2">
+          <div className="w-fit">
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="!inline-flex !w-fit !flex-row !items-center !justify-start gap-2 whitespace-nowrap px-2"
+            >
+              <Link
+                to="/farm-os/species"
+                className="!inline-flex !w-fit !flex-row !items-center gap-2 whitespace-nowrap"
               >
-                <Link
-                  to="/farm-os/species"
-                  className="!inline-flex !w-fit !flex-row !items-center gap-2 whitespace-nowrap"
-                >
-                  <ArrowLeft className="size-4 shrink-0" />
-                  <span className="whitespace-nowrap">
-                    Back to Species & Entities
-                  </span>
-                </Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-              <Leaf className="size-4 text-primary" />
-              <span>Farm configuration</span>
-            </div>
-
-            <div>
-              <h1 className="text-4xl font-semibold tracking-[-0.03em] text-foreground sm:text-5xl">
-                Register farm entity
-              </h1>
-
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Register an actual animal, group, crop plot, or other operating
-                unit on your farm.
-              </p>
-            </div>
+                <ArrowLeft className="size-4 shrink-0" />
+                <span className="whitespace-nowrap">
+                  Back to Species & Entities
+                </span>
+              </Link>
+            </Button>
           </div>
         </div>
 
-        {pageError && (
-          <Card className="border-destructive/30 bg-destructive/[0.03]">
-            <CardContent className="p-4">
-              <p className="text-sm font-medium text-destructive">
-                {pageError}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            <Leaf className="size-4 text-primary" />
+            <span>Farm configuration</span>
+          </div>
 
-        {speciesError && (
-          <Card className="border-destructive/30 bg-destructive/[0.03]">
-            <CardContent className="p-4">
-              <p className="text-sm font-medium text-destructive">
-                Unable to load species and crop configurations.
-              </p>
+          <div>
+            <h1 className="text-4xl font-semibold tracking-[-0.03em] text-foreground sm:text-5xl">
+              Register farm entity
+            </h1>
 
-              <p className="mt-1 text-sm text-muted-foreground">
-                {speciesError}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Register an actual animal, group, crop plot, or other operating
+              unit on your farm.
+            </p>
+          </div>
+        </div>
+      </div>
 
-        {parentError && (
-          <Card className="border-destructive/30 bg-destructive/[0.03]">
-            <CardContent className="p-4">
-              <p className="text-sm font-medium text-destructive">
-                Unable to load existing farm entities.
-              </p>
+      {pageError && (
+        <Card className="border-destructive/30 bg-destructive/[0.03]">
+          <CardContent className="p-4">
+            <p className="text-sm font-medium text-destructive">{pageError}</p>
+          </CardContent>
+        </Card>
+      )}
 
-              <p className="mt-1 text-sm text-muted-foreground">
-                {parentError}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+      {speciesError && (
+        <Card className="border-destructive/30 bg-destructive/[0.03]">
+          <CardContent className="p-4">
+            <p className="text-sm font-medium text-destructive">
+              Unable to load species and crop configurations.
+            </p>
 
-        <Card className="border-border/70 shadow-sm">
-          <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
-            <CardTitle className="text-base">Entity registration</CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">{speciesError}</p>
+          </CardContent>
+        </Card>
+      )}
 
-            <CardDescription>
-              Connect this farm entity to an existing species or crop
-              configuration.
-            </CardDescription>
-          </CardHeader>
+      {parentError && (
+        <Card className="border-destructive/30 bg-destructive/[0.03]">
+          <CardContent className="p-4">
+            <p className="text-sm font-medium text-destructive">
+              Unable to load existing farm entities.
+            </p>
 
-          <CardContent className="p-5 sm:p-6">
-            <form onSubmit={handleAddEntity} className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Species / Crop */}
-                <div className="space-y-2 md:col-span-2">
-                  <label
-                    htmlFor="entity-species"
-                    className="text-sm font-medium"
-                  >
-                    Species or crop
-                  </label>
+            <p className="mt-1 text-sm text-muted-foreground">{parentError}</p>
+          </CardContent>
+        </Card>
+      )}
 
-                  <Input
-                    id="entity-species"
-                    type="text"
-                    list="farm-os-species-options"
-                    placeholder="Type or select a species/crop"
-                    value={speciesSearch}
-                    onChange={(e) => handleSpeciesChange(e.target.value)}
-                    disabled={loadingSpecies}
-                    required
-                  />
+      <Card className="border-border/70 shadow-sm">
+        <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
+          <CardTitle className="text-base">Entity registration</CardTitle>
 
-                  <datalist id="farm-os-species-options">
-                    {speciesList.map((species) => (
-                      <option key={species.id} value={species.name} />
-                    ))}
-                  </datalist>
+          <CardDescription>
+            Connect this farm entity to an existing species or crop
+            configuration.
+          </CardDescription>
+        </CardHeader>
 
-                  {speciesSearch.trim() && !hasExactSpeciesMatch && (
-                    <div className="rounded-lg border border-dashed border-border p-3">
-                      <p className="text-sm text-muted-foreground">
-                        "{speciesSearch.trim()}" is not configured yet.
-                      </p>
+        <CardContent className="p-5 sm:p-6">
+          <form onSubmit={handleAddEntity} className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Species / Crop */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="entity-species" className="text-sm font-medium">
+                  Species or crop
+                </label>
 
-                      <Button
-                        asChild
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2 gap-2"
-                      >
-                        <Link to="/farm-os/species/new">
-                          <Plus className="size-4" />
-                          Add species/crop
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
+                <Input
+                  id="entity-species"
+                  type="text"
+                  list="farm-os-species-options"
+                  placeholder="Type or select a species/crop"
+                  value={speciesSearch}
+                  onChange={(e) => handleSpeciesChange(e.target.value)}
+                  disabled={loadingSpecies}
+                  required
+                />
 
-                  {speciesSearch.trim() && hasExactSpeciesMatch && (
-                    <p className="text-xs text-muted-foreground">
-                      Species/crop configuration selected.
+                <datalist id="farm-os-species-options">
+                  {speciesList.map((species) => (
+                    <option key={species.id} value={species.name} />
+                  ))}
+                </datalist>
+
+                {speciesSearch.trim() && !hasExactSpeciesMatch && (
+                  <div className="rounded-lg border border-dashed border-border p-3">
+                    <p className="text-sm text-muted-foreground">
+                      "{speciesSearch.trim()}" is not configured yet.
                     </p>
+
+                    <Button
+                      asChild
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 gap-2"
+                    >
+                      <Link to="/farm-os/species/new">
+                        <Plus className="size-4" />
+                        Add species/crop
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+
+                {speciesSearch.trim() && hasExactSpeciesMatch && (
+                  <p className="text-xs text-muted-foreground">
+                    Species/crop configuration selected.
+                  </p>
+                )}
+              </div>
+
+              {/* Tracking mode */}
+              <div className="space-y-2 md:col-span-2">
+                <label
+                  htmlFor="entity-tracking-mode"
+                  className="text-sm font-medium"
+                >
+                  Tracking mode
+                </label>
+
+                <select
+                  id="entity-tracking-mode"
+                  value={newEntity.trackingMode}
+                  onChange={(e) => {
+                    const trackingMode = e.target.value;
+
+                    setNewEntity((prev) => ({
+                      ...prev,
+                      trackingMode,
+
+                      ...(trackingMode !== "individual"
+                        ? {
+                            originType: "purchased",
+                            ageAtAcquisition: "",
+                            ageUnit: "days",
+                            birthDate: "",
+                            birthDatePrecision: "unknown",
+
+                            motherType: "not_recorded",
+                            motherEntityId: "",
+                            motherExternalReference: "",
+
+                            fatherType: "not_recorded",
+                            fatherEntityId: "",
+                            fatherExternalReference: "",
+                          }
+                        : {}),
+                    }));
+                  }}
+                  disabled={!newEntity.speciesConfigId}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {getTrackingModesForSpecies(newEntity.speciesConfigId).map(
+                    (mode) => (
+                      <option key={mode} value={mode}>
+                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                      </option>
+                    ),
                   )}
-                </div>
+                </select>
 
-                {/* Tracking mode */}
-                <div className="space-y-2 md:col-span-2">
-                  <label
-                    htmlFor="entity-tracking-mode"
-                    className="text-sm font-medium"
-                  >
-                    Tracking mode
-                  </label>
+                <p className="text-xs text-muted-foreground">
+                  Choose whether this entity represents one individual, a group,
+                  or an area.
+                </p>
+              </div>
 
-                  <select
-                    id="entity-tracking-mode"
-                    value={newEntity.trackingMode}
-                    onChange={(e) => {
-                      const trackingMode = e.target.value;
+              {/* Entity Label */}
+              <div className="space-y-2">
+                <label htmlFor="entity-label" className="text-sm font-medium">
+                  Entity label
+                </label>
 
-                      setNewEntity((prev) => ({
-                        ...prev,
-                        trackingMode,
+                <Input
+                  id="entity-label"
+                  type="text"
+                  placeholder="e.g. Quail flock — batch 1"
+                  value={newEntity.label}
+                  onChange={(e) =>
+                    setNewEntity((prev) => ({
+                      ...prev,
+                      label: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
 
-                        ...(trackingMode !== "individual"
-                          ? {
-                              originType: "purchased",
-                              ageAtAcquisition: "",
-                              ageUnit: "days",
-                              birthDate: "",
-                              birthDatePrecision: "unknown",
+              {/* Quantity */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="entity-quantity"
+                  className="text-sm font-medium"
+                >
+                  {newEntity.trackingMode === "area"
+                    ? "Area / size"
+                    : "Quantity"}
+                </label>
 
-                              motherType: "not_recorded",
-                              motherEntityId: "",
-                              motherExternalReference: "",
-
-                              fatherType: "not_recorded",
-                              fatherEntityId: "",
-                              fatherExternalReference: "",
-                            }
-                          : {}),
-                      }));
-                    }}
-                    disabled={!newEntity.speciesConfigId}
-                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {getTrackingModesForSpecies(newEntity.speciesConfigId).map(
-                      (mode) => (
-                        <option key={mode} value={mode}>
-                          {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                        </option>
-                      ),
-                    )}
-                  </select>
-
-                  <p className="text-xs text-muted-foreground">
-                    Choose whether this entity represents one individual, a
-                    group, or an area.
-                  </p>
-                </div>
-
-                {/* Entity Label */}
-                <div className="space-y-2">
-                  <label htmlFor="entity-label" className="text-sm font-medium">
-                    Entity label
-                  </label>
-
-                  <Input
-                    id="entity-label"
-                    type="text"
-                    placeholder="e.g. Quail flock — batch 1"
-                    value={newEntity.label}
-                    onChange={(e) =>
-                      setNewEntity((prev) => ({
-                        ...prev,
-                        label: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-
-                {/* Quantity */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="entity-quantity"
-                    className="text-sm font-medium"
-                  >
-                    {newEntity.trackingMode === "area"
-                      ? "Area / size"
-                      : "Quantity"}
-                  </label>
-
-                  <Input
-                    id="entity-quantity"
-                    type="number"
-                    step="any"
-                    placeholder={
-                      newEntity.trackingMode === "area"
-                        ? "e.g. 5"
-                        : newEntity.trackingMode === "individual"
-                          ? "Usually 1"
-                          : "e.g. 100"
-                    }
-                    value={newEntity.quantity}
-                    onChange={(e) =>
-                      setNewEntity((prev) => ({
-                        ...prev,
-                        quantity: e.target.value,
-                      }))
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {newEntity.trackingMode === "area"
-                      ? "Enter the area using the configured land unit."
+                <Input
+                  id="entity-quantity"
+                  type="number"
+                  step="any"
+                  placeholder={
+                    newEntity.trackingMode === "area"
+                      ? "e.g. 5"
                       : newEntity.trackingMode === "individual"
-                        ? "An individual entity normally has quantity 1."
-                        : "Number of animals or items in this group."}
-                  </p>
-                </div>
+                        ? "Usually 1"
+                        : "e.g. 100"
+                  }
+                  value={newEntity.quantity}
+                  onChange={(e) =>
+                    setNewEntity((prev) => ({
+                      ...prev,
+                      quantity: e.target.value,
+                    }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  {newEntity.trackingMode === "area"
+                    ? "Enter the area using the configured land unit."
+                    : newEntity.trackingMode === "individual"
+                      ? "An individual entity normally has quantity 1."
+                      : "Number of animals or items in this group."}
+                </p>
+              </div>
 
-                {/* Origin */}
-                <div className="space-y-2 md:col-span-2">
+              {/* Origin */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="entity-origin" className="text-sm font-medium">
+                  Origin
+                </label>
+
+                <select
+                  id="entity-origin"
+                  value={newEntity.originType}
+                  onChange={(e) =>
+                    setNewEntity((prev) => ({
+                      ...prev,
+                      originType: e.target.value,
+                      acquiredAt: "",
+                      ageAtAcquisition: "",
+                      birthDate: "",
+                      birthDatePrecision: "unknown",
+
+                      motherType: "not_recorded",
+                      motherEntityId: "",
+                      motherExternalReference: "",
+
+                      fatherType: "not_recorded",
+                      fatherEntityId: "",
+                      fatherExternalReference: "",
+                    }))
+                  }
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="purchased">Purchased</option>
+                  <option value="born_on_farm">Born on farm</option>
+                  <option value="transferred">Transferred</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              {/* Age at acquisition */}
+              {newEntity.originType !== "born_on_farm" &&
+                newEntity.trackingMode === "individual" && (
+                  <div className="space-y-2">
+                    <label htmlFor="entity-age" className="text-sm font-medium">
+                      Age at acquisition
+                    </label>
+
+                    <div className="flex gap-2">
+                      <Input
+                        id="entity-age"
+                        type="number"
+                        min="0"
+                        step="any"
+                        placeholder="e.g. 3"
+                        value={newEntity.ageAtAcquisition}
+                        onChange={(e) =>
+                          setNewEntity((prev) => ({
+                            ...prev,
+                            ageAtAcquisition: e.target.value,
+                          }))
+                        }
+                      />
+
+                      <select
+                        value={newEntity.ageUnit}
+                        onChange={(e) =>
+                          setNewEntity((prev) => ({
+                            ...prev,
+                            ageUnit: e.target.value,
+                          }))
+                        }
+                        className="h-9 w-[120px] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="days">Days</option>
+                        <option value="months">Months</option>
+                        <option value="years">Years</option>
+                      </select>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Age when the entity was acquired.
+                    </p>
+                  </div>
+                )}
+
+              {/* Lifecycle information */}
+              {newEntity.originType !== "born_on_farm" &&
+                newEntity.trackingMode === "individual" && (
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="entity-acquired"
+                      className="text-sm font-medium"
+                    >
+                      Acquired date
+                    </label>
+
+                    <Input
+                      id="entity-acquired"
+                      type="date"
+                      value={newEntity.acquiredAt}
+                      onChange={(e) =>
+                        setNewEntity((prev) => ({
+                          ...prev,
+                          acquiredAt: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                )}
+
+              {/* Birth date */}
+              {newEntity.trackingMode === "individual" && (
+                <div className="space-y-2">
                   <label
-                    htmlFor="entity-origin"
+                    htmlFor="entity-birth-date"
                     className="text-sm font-medium"
                   >
-                    Origin
+                    Birth date
                   </label>
 
-                  <select
-                    id="entity-origin"
-                    value={newEntity.originType}
+                  <Input
+                    id="entity-birth-date"
+                    type="date"
+                    value={newEntity.birthDate}
                     onChange={(e) =>
                       setNewEntity((prev) => ({
                         ...prev,
-                        originType: e.target.value,
-                        acquiredAt: "",
-                        ageAtAcquisition: "",
-                        birthDate: "",
-                        birthDatePrecision: "unknown",
+                        birthDate: e.target.value,
+                        birthDatePrecision: e.target.value
+                          ? prev.birthDatePrecision === "unknown"
+                            ? "exact"
+                            : prev.birthDatePrecision
+                          : "unknown",
+                      }))
+                    }
+                  />
 
-                        motherType: "not_recorded",
-                        motherEntityId: "",
-                        motherExternalReference: "",
+                  <p className="text-xs text-muted-foreground">
+                    {newEntity.originType === "born_on_farm"
+                      ? "Required for farm-born entities."
+                      : "Leave empty if the birth date is not known."}
+                  </p>
+                </div>
+              )}
 
-                        fatherType: "not_recorded",
-                        fatherEntityId: "",
-                        fatherExternalReference: "",
+              {/* Birth date precision */}
+              {newEntity.birthDate && (
+                <div className="space-y-2">
+                  <label
+                    htmlFor="entity-birth-date-precision"
+                    className="text-sm font-medium"
+                  >
+                    Birth date precision
+                  </label>
+
+                  <select
+                    id="entity-birth-date-precision"
+                    value={newEntity.birthDatePrecision}
+                    onChange={(e) =>
+                      setNewEntity((prev) => ({
+                        ...prev,
+                        birthDatePrecision: e.target.value,
                       }))
                     }
                     className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <option value="purchased">Purchased</option>
-                    <option value="born_on_farm">Born on farm</option>
-                    <option value="transferred">Transferred</option>
-                    <option value="other">Other</option>
+                    <option value="exact">Exact</option>
+                    <option value="estimated">Estimated</option>
+                    <option value="approximate">Approximate</option>
                   </select>
                 </div>
+              )}
 
-                {/* Age at acquisition */}
-                {newEntity.originType !== "born_on_farm" &&
-                  newEntity.trackingMode === "individual" && (
+              {/* Parentage - Mother */}
+              {newEntity.originType === "born_on_farm" &&
+                newEntity.trackingMode === "individual" && (
+                  <div className="space-y-4 md:col-span-2">
+                    <div>
+                      <h3 className="text-sm font-semibold">Mother</h3>
+
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Record where the mother came from, if known.
+                      </p>
+                    </div>
+
+                    {/* Mother type */}
                     <div className="space-y-2">
                       <label
-                        htmlFor="entity-age"
+                        htmlFor="mother-type"
                         className="text-sm font-medium"
                       >
-                        Age at acquisition
+                        Mother type
                       </label>
 
-                      <div className="flex gap-2">
-                        <Input
-                          id="entity-age"
-                          type="number"
-                          min="0"
-                          step="any"
-                          placeholder="e.g. 3"
-                          value={newEntity.ageAtAcquisition}
+                      <select
+                        id="mother-type"
+                        value={newEntity.motherType}
+                        onChange={(e) =>
+                          setNewEntity((prev) => ({
+                            ...prev,
+                            motherType: e.target.value,
+                            motherEntityId: "",
+                            motherExternalReference: "",
+                          }))
+                        }
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="farm_entity">Farm entity</option>
+                        <option value="external">External</option>
+                        <option value="unknown">Unknown</option>
+                        <option value="not_recorded">Not recorded</option>
+                      </select>
+                    </div>
+
+                    {/* Mother farm entity */}
+                    {newEntity.motherType === "farm_entity" && (
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="mother-entity"
+                          className="text-sm font-medium"
+                        >
+                          Mother farm entity
+                        </label>
+
+                        <select
+                          id="mother-entity"
+                          value={newEntity.motherEntityId}
                           onChange={(e) =>
                             setNewEntity((prev) => ({
                               ...prev,
-                              ageAtAcquisition: e.target.value,
+                              motherEntityId: e.target.value,
+                            }))
+                          }
+                          disabled={loadingParents}
+                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <option value="">
+                            {loadingParents
+                              ? "Loading farm entities..."
+                              : "Select mother"}
+                          </option>
+
+                          {getIndividualParentEntities().map((entity) => (
+                            <option key={entity.id} value={entity.id}>
+                              {entity.species_config?.name
+                                ? `${entity.species_config.name} — ${entity.label}`
+                                : entity.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        {!loadingParents && parentEntities.length === 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            No active farm entities are available.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Mother external reference */}
+                    {newEntity.motherType === "external" && (
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="mother-external-reference"
+                          className="text-sm font-medium"
+                        >
+                          External mother reference
+                        </label>
+
+                        <Input
+                          id="mother-external-reference"
+                          type="text"
+                          placeholder="e.g. Neighbor's goat"
+                          value={newEntity.motherExternalReference}
+                          onChange={(e) =>
+                            setNewEntity((prev) => ({
+                              ...prev,
+                              motherExternalReference: e.target.value,
                             }))
                           }
                         />
 
-                        <select
-                          value={newEntity.ageUnit}
-                          onChange={(e) =>
-                            setNewEntity((prev) => ({
-                              ...prev,
-                              ageUnit: e.target.value,
-                            }))
-                          }
-                          className="h-9 w-[120px] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <option value="days">Days</option>
-                          <option value="months">Months</option>
-                          <option value="years">Years</option>
-                        </select>
+                        <p className="text-xs text-muted-foreground">
+                          Use this for a parent that belongs to another farm or
+                          is otherwise outside FarmOS.
+                        </p>
                       </div>
+                    )}
+                  </div>
+                )}
 
-                      <p className="text-xs text-muted-foreground">
-                        Age when the entity was acquired.
+              {/* Parentage - Father */}
+              {newEntity.originType === "born_on_farm" &&
+                newEntity.trackingMode === "individual" && (
+                  <div className="space-y-4 md:col-span-2">
+                    <div>
+                      <h3 className="text-sm font-semibold">Father</h3>
+
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Record where the father came from, if known.
                       </p>
                     </div>
-                  )}
 
-                {/* Lifecycle information */}
-                {newEntity.originType !== "born_on_farm" &&
-                  newEntity.trackingMode === "individual" && (
+                    {/* Father type */}
                     <div className="space-y-2">
                       <label
-                        htmlFor="entity-acquired"
+                        htmlFor="father-type"
                         className="text-sm font-medium"
                       >
-                        Acquired date
+                        Father type
                       </label>
 
-                      <Input
-                        id="entity-acquired"
-                        type="date"
-                        value={newEntity.acquiredAt}
+                      <select
+                        id="father-type"
+                        value={newEntity.fatherType}
                         onChange={(e) =>
                           setNewEntity((prev) => ({
                             ...prev,
-                            acquiredAt: e.target.value,
+                            fatherType: e.target.value,
+                            fatherEntityId: "",
+                            fatherExternalReference: "",
                           }))
                         }
-                      />
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <option value="farm_entity">Farm entity</option>
+                        <option value="external">External</option>
+                        <option value="unknown">Unknown</option>
+                        <option value="not_recorded">Not recorded</option>
+                      </select>
                     </div>
-                  )}
 
-                {/* Birth date */}
-                {newEntity.trackingMode === "individual" && (
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="entity-birth-date"
-                      className="text-sm font-medium"
-                    >
-                      Birth date
-                    </label>
-
-                    <Input
-                      id="entity-birth-date"
-                      type="date"
-                      value={newEntity.birthDate}
-                      onChange={(e) =>
-                        setNewEntity((prev) => ({
-                          ...prev,
-                          birthDate: e.target.value,
-                          birthDatePrecision: e.target.value
-                            ? prev.birthDatePrecision === "unknown"
-                              ? "exact"
-                              : prev.birthDatePrecision
-                            : "unknown",
-                        }))
-                      }
-                    />
-
-                    <p className="text-xs text-muted-foreground">
-                      {newEntity.originType === "born_on_farm"
-                        ? "Required for farm-born entities."
-                        : "Leave empty if the birth date is not known."}
-                    </p>
-                  </div>
-                )}
-
-                {/* Birth date precision */}
-                {newEntity.birthDate && (
-                  <div className="space-y-2">
-                    <label
-                      htmlFor="entity-birth-date-precision"
-                      className="text-sm font-medium"
-                    >
-                      Birth date precision
-                    </label>
-
-                    <select
-                      id="entity-birth-date-precision"
-                      value={newEntity.birthDatePrecision}
-                      onChange={(e) =>
-                        setNewEntity((prev) => ({
-                          ...prev,
-                          birthDatePrecision: e.target.value,
-                        }))
-                      }
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="exact">Exact</option>
-                      <option value="estimated">Estimated</option>
-                      <option value="approximate">Approximate</option>
-                    </select>
-                  </div>
-                )}
-
-                {/* Parentage - Mother */}
-                {newEntity.originType === "born_on_farm" &&
-                  newEntity.trackingMode === "individual" && (
-                    <div className="space-y-4 md:col-span-2">
-                      <div>
-                        <h3 className="text-sm font-semibold">Mother</h3>
-
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Record where the mother came from, if known.
-                        </p>
-                      </div>
-
-                      {/* Mother type */}
+                    {/* Father farm entity */}
+                    {newEntity.fatherType === "farm_entity" && (
                       <div className="space-y-2">
                         <label
-                          htmlFor="mother-type"
+                          htmlFor="father-entity"
                           className="text-sm font-medium"
                         >
-                          Mother type
+                          Father farm entity
                         </label>
 
                         <select
-                          id="mother-type"
-                          value={newEntity.motherType}
+                          id="father-entity"
+                          value={newEntity.fatherEntityId}
                           onChange={(e) =>
                             setNewEntity((prev) => ({
                               ...prev,
-                              motherType: e.target.value,
-                              motherEntityId: "",
-                              motherExternalReference: "",
+                              fatherEntityId: e.target.value,
                             }))
                           }
+                          disabled={loadingParents}
                           className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
-                          <option value="farm_entity">Farm entity</option>
-                          <option value="external">External</option>
-                          <option value="unknown">Unknown</option>
-                          <option value="not_recorded">Not recorded</option>
-                        </select>
-                      </div>
+                          <option value="">
+                            {loadingParents
+                              ? "Loading farm entities..."
+                              : "Select father"}
+                          </option>
 
-                      {/* Mother farm entity */}
-                      {newEntity.motherType === "farm_entity" && (
-                        <div className="space-y-2">
-                          <label
-                            htmlFor="mother-entity"
-                            className="text-sm font-medium"
-                          >
-                            Mother farm entity
-                          </label>
-
-                          <select
-                            id="mother-entity"
-                            value={newEntity.motherEntityId}
-                            onChange={(e) =>
-                              setNewEntity((prev) => ({
-                                ...prev,
-                                motherEntityId: e.target.value,
-                              }))
-                            }
-                            disabled={loadingParents}
-                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            <option value="">
-                              {loadingParents
-                                ? "Loading farm entities..."
-                                : "Select mother"}
+                          {getIndividualParentEntities().map((entity) => (
+                            <option key={entity.id} value={entity.id}>
+                              {entity.species_config?.name
+                                ? `${entity.species_config.name} — ${entity.label}`
+                                : entity.label}
                             </option>
+                          ))}
+                        </select>
 
-                            {getIndividualParentEntities().map((entity) => (
-                              <option key={entity.id} value={entity.id}>
-                                {entity.species_config?.name
-                                  ? `${entity.species_config.name} — ${entity.label}`
-                                  : entity.label}
-                              </option>
-                            ))}
-                          </select>
-
-                          {!loadingParents && parentEntities.length === 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              No active farm entities are available.
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Mother external reference */}
-                      {newEntity.motherType === "external" && (
-                        <div className="space-y-2">
-                          <label
-                            htmlFor="mother-external-reference"
-                            className="text-sm font-medium"
-                          >
-                            External mother reference
-                          </label>
-
-                          <Input
-                            id="mother-external-reference"
-                            type="text"
-                            placeholder="e.g. Neighbor's goat"
-                            value={newEntity.motherExternalReference}
-                            onChange={(e) =>
-                              setNewEntity((prev) => ({
-                                ...prev,
-                                motherExternalReference: e.target.value,
-                              }))
-                            }
-                          />
-
+                        {!loadingParents && parentEntities.length === 0 && (
                           <p className="text-xs text-muted-foreground">
-                            Use this for a parent that belongs to another farm
-                            or is otherwise outside FarmOS.
+                            No active farm entities are available.
                           </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                {/* Parentage - Father */}
-                {newEntity.originType === "born_on_farm" &&
-                  newEntity.trackingMode === "individual" && (
-                    <div className="space-y-4 md:col-span-2">
-                      <div>
-                        <h3 className="text-sm font-semibold">Father</h3>
-
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Record where the father came from, if known.
-                        </p>
+                        )}
                       </div>
+                    )}
 
-                      {/* Father type */}
+                    {/* Father external reference */}
+                    {newEntity.fatherType === "external" && (
                       <div className="space-y-2">
                         <label
-                          htmlFor="father-type"
+                          htmlFor="father-external-reference"
                           className="text-sm font-medium"
                         >
-                          Father type
+                          External father reference
                         </label>
 
-                        <select
-                          id="father-type"
-                          value={newEntity.fatherType}
+                        <Input
+                          id="father-external-reference"
+                          type="text"
+                          placeholder="e.g. Neighbor's buck"
+                          value={newEntity.fatherExternalReference}
                           onChange={(e) =>
                             setNewEntity((prev) => ({
                               ...prev,
-                              fatherType: e.target.value,
-                              fatherEntityId: "",
-                              fatherExternalReference: "",
+                              fatherExternalReference: e.target.value,
                             }))
                           }
-                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          <option value="farm_entity">Farm entity</option>
-                          <option value="external">External</option>
-                          <option value="unknown">Unknown</option>
-                          <option value="not_recorded">Not recorded</option>
-                        </select>
+                        />
+
+                        <p className="text-xs text-muted-foreground">
+                          Use this for a parent that belongs to another farm or
+                          is otherwise outside FarmOS.
+                        </p>
                       </div>
+                    )}
+                  </div>
+                )}
 
-                      {/* Father farm entity */}
-                      {newEntity.fatherType === "farm_entity" && (
-                        <div className="space-y-2">
-                          <label
-                            htmlFor="father-entity"
-                            className="text-sm font-medium"
-                          >
-                            Father farm entity
-                          </label>
+              {/* Optional project assignment */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="entity-project" className="text-sm font-medium">
+                  Assign to project (optional)
+                </label>
 
-                          <select
-                            id="father-entity"
-                            value={newEntity.fatherEntityId}
-                            onChange={(e) =>
-                              setNewEntity((prev) => ({
-                                ...prev,
-                                fatherEntityId: e.target.value,
-                              }))
-                            }
-                            disabled={loadingParents}
-                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            <option value="">
-                              {loadingParents
-                                ? "Loading farm entities..."
-                                : "Select father"}
-                            </option>
-
-                            {getIndividualParentEntities().map((entity) => (
-                              <option key={entity.id} value={entity.id}>
-                                {entity.species_config?.name
-                                  ? `${entity.species_config.name} — ${entity.label}`
-                                  : entity.label}
-                              </option>
-                            ))}
-                          </select>
-
-                          {!loadingParents && parentEntities.length === 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              No active farm entities are available.
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Father external reference */}
-                      {newEntity.fatherType === "external" && (
-                        <div className="space-y-2">
-                          <label
-                            htmlFor="father-external-reference"
-                            className="text-sm font-medium"
-                          >
-                            External father reference
-                          </label>
-
-                          <Input
-                            id="father-external-reference"
-                            type="text"
-                            placeholder="e.g. Neighbor's buck"
-                            value={newEntity.fatherExternalReference}
-                            onChange={(e) =>
-                              setNewEntity((prev) => ({
-                                ...prev,
-                                fatherExternalReference: e.target.value,
-                              }))
-                            }
-                          />
-
-                          <p className="text-xs text-muted-foreground">
-                            Use this for a parent that belongs to another farm
-                            or is otherwise outside FarmOS.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                {/* Location */}
-                <div className="space-y-2">
-                  <label
-                    htmlFor="entity-location"
-                    className="text-sm font-medium"
-                  >
-                    Location
-                  </label>
-
-                  <Input
-                    id="entity-location"
-                    type="text"
-                    placeholder="e.g. Quail shed"
-                    value={newEntity.location}
-                    onChange={(e) =>
-                      setNewEntity((prev) => ({
-                        ...prev,
-                        location: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-
-                {/* Notes */}
-                <div className="space-y-2 md:col-span-2">
-                  <label htmlFor="entity-notes" className="text-sm font-medium">
-                    Notes
-                  </label>
-
-                  <Input
-                    id="entity-notes"
-                    type="text"
-                    placeholder="Optional notes about this entity"
-                    value={newEntity.notes}
-                    onChange={(e) =>
-                      setNewEntity((prev) => ({
-                        ...prev,
-                        notes: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="submit"
-                  disabled={
-                    savingEntity ||
-                    loadingSpecies ||
-                    !newEntity.speciesConfigId ||
-                    !newEntity.label.trim()
+                <select
+                  id="entity-project"
+                  value={newEntity.projectId}
+                  onChange={(e) =>
+                    setNewEntity((prev) => ({
+                      ...prev,
+                      projectId: e.target.value,
+                    }))
                   }
-                  className="gap-2 rounded-[12px]"
+                  disabled={loadingProjects}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <Plus className="size-4" />
+                  <option value="">
+                    {loadingProjects ? "Loading projects..." : "No project yet"}
+                  </option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                      {project.project_type ? ` · ${project.project_type}` : ""}
+                    </option>
+                  ))}
+                </select>
 
-                  {savingEntity ? "Registering…" : "Register entity"}
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Choose an active project to assign this entity during
+                  registration. You can leave this empty and assign it later.
+                </p>
 
-                <Button
-                  asChild
-                  type="button"
-                  variant="outline"
-                  disabled={savingEntity}
-                >
-                  <Link to="/farm-os/species">Cancel</Link>
-                </Button>
+                {projectsError && (
+                  <p className="text-xs text-destructive">
+                    Projects could not be loaded: {projectsError}
+                  </p>
+                )}
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    );
+
+              {/* Location */}
+              <div className="space-y-2">
+                <label
+                  htmlFor="entity-location"
+                  className="text-sm font-medium"
+                >
+                  Location
+                </label>
+
+                <Input
+                  id="entity-location"
+                  type="text"
+                  placeholder="e.g. Quail shed"
+                  value={newEntity.location}
+                  onChange={(e) =>
+                    setNewEntity((prev) => ({
+                      ...prev,
+                      location: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="entity-notes" className="text-sm font-medium">
+                  Notes
+                </label>
+
+                <Input
+                  id="entity-notes"
+                  type="text"
+                  placeholder="Optional notes about this entity"
+                  value={newEntity.notes}
+                  onChange={(e) =>
+                    setNewEntity((prev) => ({
+                      ...prev,
+                      notes: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="submit"
+                disabled={
+                  savingEntity ||
+                  loadingSpecies ||
+                  !newEntity.speciesConfigId ||
+                  !newEntity.label.trim()
+                }
+                className="gap-2 rounded-[12px]"
+              >
+                <Plus className="size-4" />
+
+                {savingEntity ? "Registering…" : "Register entity"}
+              </Button>
+
+              <Button
+                asChild
+                type="button"
+                variant="outline"
+                disabled={savingEntity}
+              >
+                <Link to="/farm-os/species">Cancel</Link>
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export default NewEntity;

@@ -123,6 +123,17 @@ function formatAge(ageInDays) {
 
   return `${years} year${years === 1 ? "" : "s"} ${months} month${months === 1 ? "" : "s"}`;
 }
+function formatCropDate(dateValue) {
+  if (!dateValue) return "Not recorded";
+  const date = new Date(`${String(dateValue).slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "Not available";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
 function formatLifecycleDate(dateValue) {
   if (!dateValue) {
     return "Unknown";
@@ -348,7 +359,7 @@ function EntityDetail() {
         supabase
           .from("farm_entities")
           .select(
-            "*, species_config:species_config_id(id, name, category, capabilities)",
+            "*, species_config:species_config_id(id, name, category, capabilities, space_unit)",
           )
           .eq("id", id)
           .single(),
@@ -639,7 +650,11 @@ function EntityDetail() {
                 {entity.quantity != null && (
                   <>
                     <span>·</span>
-                    <span>{entity.quantity} currently</span>
+                    <span>
+                      {entity.tracking_mode === "area"
+                        ? `${entity.quantity} ${entity.species_config?.space_unit || "area units"}`
+                        : `${entity.quantity} currently`}
+                    </span>
                   </>
                 )}
 
@@ -697,10 +712,16 @@ function EntityDetail() {
 
               <div className="min-w-0">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Quantity
+                  {entity.tracking_mode === "area"
+                    ? "Cultivated area"
+                    : "Quantity"}
                 </p>
                 <p className="mt-0.5 text-lg font-semibold">
-                  {entity.quantity ?? "—"}
+                  {entity.quantity == null
+                    ? "—"
+                    : entity.tracking_mode === "area"
+                      ? `${entity.quantity} ${entity.species_config?.space_unit || "area units"}`
+                      : entity.quantity}
                 </p>
               </div>
             </CardContent>
@@ -916,14 +937,48 @@ function EntityDetail() {
 
       {harvestOutlook && (
         <Card className="border-border/70 bg-secondary/50 shadow-sm">
-          <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">
-              Planted {harvestOutlook.plantedAt}
-              {harvestOutlook.variety ? ` (${harvestOutlook.variety})` : ""} —
-              expected harvest around{" "}
-              <strong className="font-semibold text-foreground">
-                {harvestOutlook.expectedHarvestDate}
-              </strong>
+          <CardContent className="space-y-3 p-4">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Crop timeline
+              </p>
+              <h2 className="mt-1 text-base font-semibold">Expected harvest</h2>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
+                <p className="text-xs text-muted-foreground">Planting date</p>
+                <p className="mt-1 text-sm font-semibold">
+                  {formatCropDate(harvestOutlook.plantedAt)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
+                <p className="text-xs text-muted-foreground">
+                  Growing duration
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {harvestOutlook.expectedDurationDays} days
+                </p>
+              </div>
+              <div className="rounded-lg border border-border/60 bg-background/70 p-3">
+                <p className="text-xs text-muted-foreground">
+                  Expected harvest date
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  {formatCropDate(harvestOutlook.expectedHarvestDate)}
+                </p>
+              </div>
+            </div>
+            {harvestOutlook.variety && (
+              <p className="text-sm text-muted-foreground">
+                Variety:{" "}
+                <span className="font-medium text-foreground">
+                  {harvestOutlook.variety}
+                </span>
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              This is an estimate based on the most recent planting event and
+              its recorded growing duration.
             </p>
           </CardContent>
         </Card>
@@ -1033,7 +1088,7 @@ function EntityDetail() {
                   htmlFor="entity-event-date"
                   className="text-sm font-medium"
                 >
-                  Date
+                  {form.type === "planting" ? "Planting date" : "Event date"}
                 </label>
 
                 <Input
@@ -1050,6 +1105,17 @@ function EntityDetail() {
                 />
               </div>
             </div>
+
+            {form.type === "planting" && (
+              <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 px-3 py-3">
+                <p className="text-sm font-medium">Record a crop planting</p>
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  Enter the actual planting date, crop variety (if known), and
+                  the expected number of days from planting to harvest. FarmOS
+                  uses the duration to estimate the harvest date.
+                </p>
+              </div>
+            )}
 
             {selectedTypeDef && (
               <div className="mt-5 border-t border-border/60 pt-5">
@@ -1095,7 +1161,16 @@ function EntityDetail() {
                               type={field.type}
                               min={field.min}
                               step={field.step}
-                              placeholder={field.placeholder ?? ""}
+                              placeholder={
+                                field.placeholder ??
+                                (form.type === "planting" &&
+                                field.key === "variety"
+                                  ? "e.g. BARI spinach-1"
+                                  : form.type === "planting" &&
+                                      field.key === "expectedDurationDays"
+                                    ? "e.g. 35"
+                                    : "")
+                              }
                               value={form.values[field.key] ?? ""}
                               onChange={(e) =>
                                 setForm((prev) => ({

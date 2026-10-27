@@ -51,36 +51,38 @@ function Navbar() {
   const closeMenu = () => {
     setMenuOpen(false);
   };
-    useEffect(() => {
-      if (!menuOpen) return;
+  useEffect(() => {
+    if (!menuOpen) return;
 
-      const menu = mobileMenuRef.current;
+    const menu = mobileMenuRef.current;
 
-      if (!menu) return;
+    if (!menu) return;
 
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        return;
-      }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
 
-      const links = menu.querySelectorAll(".mobile-menu__links a");
-      const cta = menu.querySelector(".mobile-menu__cta");
+    const links = menu.querySelectorAll(".mobile-menu__links a");
+    const ctas = menu.querySelectorAll(
+      ".mobile-menu__cta, .mobile-menu__farm-os",
+    );
 
-      gsap.fromTo(
-        [...links, cta],
-        {
-          opacity: 0,
-          y: 15,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.4,
-          stagger: 0.06,
-          delay: 0.12,
-          ease: "power3.out",
-        },
-      );
-    }, [menuOpen]);
+    gsap.fromTo(
+      [...links, ...ctas],
+      {
+        opacity: 0,
+        y: 15,
+      },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.4,
+        stagger: 0.06,
+        delay: 0.12,
+        ease: "power3.out",
+      },
+    );
+  }, [menuOpen]);
 
   return (
     <header
@@ -104,6 +106,16 @@ function Navbar() {
         </nav>
 
         {/* Desktop CTA */}
+        <a
+          href="https://mondols-farm.vercel.app/farm-os"
+          className="navbar__farm-os"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open Farm OS in a new tab"
+        >
+          Farm OS <span>↗</span>
+        </a>
+
         <Link to="/stay" className="navbar__cta">
           Book a Stay
           <span>→</span>
@@ -154,6 +166,17 @@ function Navbar() {
             Contact
           </Link>
         </nav>
+
+        <a
+          href="https://mondols-farm.vercel.app/farm-os"
+          className="mobile-menu__farm-os"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={closeMenu}
+          aria-label="Open Farm OS in a new tab"
+        >
+          Open Farm OS <span>↗</span>
+        </a>
 
         <Link to="/stay" className="mobile-menu__cta" onClick={closeMenu}>
           Book a Stay

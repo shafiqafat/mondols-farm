@@ -14,6 +14,7 @@ import {
   Plus,
   Receipt,
   ShoppingCart,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -48,6 +49,7 @@ function Inventory() {
   const [addingItem, setAddingItem] = useState(false);
   const [purchaseForms, setPurchaseForms] = useState({});
   const [savingPurchase, setSavingPurchase] = useState(null);
+  const [deletingLotId, setDeletingLotId] = useState(null);
   const [updatedItemId, setUpdatedItemId] = useState(null);
   const [pageError, setPageError] = useState("");
   const [lotReconciliations, setLotReconciliations] = useState({});
@@ -180,7 +182,7 @@ function Inventory() {
     if (existingReconciliation) return;
 
     const confirmed = window.confirm(
-      `Mark the ${item.name} stock lot purchased on ${lot.purchased_at} as physically empty? FarmOS will reconcile its Daily Log measurements against the recorded lot quantity (${Number(lot.qty_purchased).toFixed(2)} ${item.unit}), mark this lot as finished, and set its remaining stock to zero. This action cannot be undone.`,
+      `Confirm that the ${item.name} stock lot purchased on ${lot.purchased_at} is physically empty? FarmOS will compare the lot's actual recorded quantity (${Number(lot.qty_purchased).toFixed(2)} ${item.unit}) with its Daily Log allocations and distribute the difference proportionally. This action cannot be undone.`,
     );
     if (!confirmed) return;
 
@@ -206,6 +208,37 @@ function Inventory() {
       `Reconciled ${item.name}: ${recorded.toFixed(2)} ${item.unit} recorded against ${actual.toFixed(2)} ${item.unit} actual stock (adjustment factor ${factor.toFixed(4)}). Original Daily Log measurements are preserved.`,
     );
     await loadAll();
+  }
+
+  async function handleDeletePurchase(item, lot) {
+    if (!canEdit || deletingLotId) return;
+
+    const totalCost = Number(lot.qty_purchased) * Number(lot.cost_per_unit);
+    const confirmed = window.confirm(
+      `Delete this purchase record for ${item.name}?\n\nDate: ${lot.purchased_at}\nQuantity: ${Number(lot.qty_purchased).toFixed(2)} ${item.unit}\nPurchase cost: ৳${totalCost.toFixed(2)}\n\nThe linked Finance expense will also be deleted. Purchases with consumption or reconciliation history cannot be deleted. This action cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingLotId(lot.id);
+    setPageError("");
+    setReconciliationMessage("");
+
+    try {
+      const { error } = await supabase.rpc("delete_inventory_purchase", {
+        p_lot_id: lot.id,
+      });
+
+      if (error) throw error;
+
+      setReconciliationMessage(
+        `Deleted the ${item.name} purchase from ${lot.purchased_at} and its linked Finance expense.`,
+      );
+      await loadAll();
+    } catch (error) {
+      setPageError(error?.message || "Unable to delete this purchase record.");
+    } finally {
+      setDeletingLotId(null);
+    }
   }
 
   function updatePurchaseForm(itemId, field, value) {
@@ -651,10 +684,11 @@ function Inventory() {
 
                     <div className="border-t border-border/60 px-4 pb-4">
                       <div className="mt-2.5 overflow-hidden rounded-md border border-border/50">
-                        <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 border-b border-border/50 bg-muted/30 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                        <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 border-b border-border/50 bg-muted/30 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                           <span>Date</span>
                           <span>Remaining</span>
                           <span>Cost / unit</span>
+                          <span>Action</span>
                         </div>
 
                         <div className="divide-y divide-border/50">
@@ -662,7 +696,7 @@ function Inventory() {
                             const reconciliation = lotReconciliations[lot.id];
                             return (
                               <div key={lot.id} className="space-y-2 px-3 py-3">
-                                <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 text-xs">
+                                <div className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-3 text-xs">
                                   <span className="flex items-center gap-1.5 text-muted-foreground">
                                     <CalendarDays className="size-3.5" />
                                     {lot.purchased_at}
@@ -677,12 +711,38 @@ function Inventory() {
                                     ৳{Number(lot.cost_per_unit).toFixed(2)}/
                                     {item.unit}
                                   </span>
+
+                                  {canEdit && (
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="destructive"
+                                      className="h-8 gap-1.5 px-2"
+                                      disabled={
+                                        deletingLotId !== null ||
+                                        Boolean(reconciliation)
+                                      }
+                                      title={
+                                        reconciliation
+                                          ? "Reconciled purchase history cannot be deleted"
+                                          : "Delete purchase and linked Finance expense"
+                                      }
+                                      onClick={() =>
+                                        handleDeletePurchase(item, lot)
+                                      }
+                                    >
+                                      <Trash2 className="size-3.5" />
+                                      {deletingLotId === lot.id
+                                        ? "Deleting…"
+                                        : "Delete"}
+                                    </Button>
+                                  )}
                                 </div>
 
                                 {reconciliation ? (
                                   <div className="rounded-md bg-emerald-500/[0.07] px-3 py-2 text-xs">
                                     <p className="font-medium text-emerald-700">
-                                      Finished · Empty confirmed and reconciled
+                                      Empty confirmed · Reconciled
                                     </p>
                                     <p className="mt-1 text-muted-foreground">
                                       Actual:{" "}
@@ -728,7 +788,7 @@ function Inventory() {
                                       <CheckCircle2 className="size-3.5" />
                                       {reconcilingLotId === lot.id
                                         ? "Reconciling…"
-                                        : "Mark Storage Empty"}
+                                        : "Confirm empty & reconcile"}
                                     </Button>
                                   </div>
                                 ) : null}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { AuthContext } from "./authContextDef";
 
@@ -9,51 +9,116 @@ export function AuthProvider({ children }) {
   const [investorId, setInvestorId] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const currentUserIdRef = useRef(null);
+  const requestIdRef = useRef(0);
+  const initializedRef = useRef(false);
+
   useEffect(() => {
+    let mounted = true;
+
     async function applySession(nextSession) {
-      setLoading(true);
+      if (!mounted) return;
+
+      const nextUser = nextSession?.user ?? null;
+      const nextUserId = nextUser?.id ?? null;
+      const currentUserId = currentUserIdRef.current;
+
+      // Same user: token refresh only.
+      // Keep the existing account state and loading status.
+      if (nextUserId && nextUserId === currentUserId) {
+        setSession(nextSession);
+        return;
+      }
+
+      // Ignore duplicate signed-out events after initialization.
+      if (!nextUserId && !currentUserId && initializedRef.current) {
+        setSession(nextSession);
+        return;
+      }
+
+      const requestId = ++requestIdRef.current;
+      currentUserIdRef.current = nextUserId;
       setSession(nextSession);
 
-      if (!nextSession?.user) {
+      if (!nextUser) {
         setRole(null);
         setAccountType(null);
         setInvestorId(null);
+        initializedRef.current = true;
         setLoading(false);
         return;
       }
 
+      setLoading(true);
       setRole(null);
       setAccountType(null);
       setInvestorId(null);
 
-      const { data: roleData } = await supabase
-        .from("farm_user_roles")
-        .select("role")
-        .eq("user_id", nextSession.user.id)
-        .maybeSingle();
+      try {
+        const { data: roleData, error: roleError } = await supabase
+          .from("farm_user_roles")
+          .select("role")
+          .eq("user_id", nextUserId)
+          .maybeSingle();
 
-      const { data: investorData } = await supabase.rpc("current_investor_id");
+        if (roleError) throw roleError;
 
-      setRole(roleData?.role ?? null);
+        const { data: investorData, error: investorError } = await supabase.rpc(
+          "current_investor_id",
+        );
 
-      if (investorData) {
-        setAccountType("investor");
-        setInvestorId(investorData);
-      } else {
-        setAccountType("farm");
-        setInvestorId(null);
+        if (investorError) throw investorError;
+
+        // Ignore outdated requests if the user changed during loading.
+        if (!mounted || requestId !== requestIdRef.current) {
+          return;
+        }
+
+        setRole(roleData?.role ?? null);
+
+        if (investorData) {
+          setAccountType("investor");
+          setInvestorId(investorData);
+        } else {
+          setAccountType("farm");
+          setInvestorId(null);
+        }
+      } catch (error) {
+        if (!mounted || requestId !== requestIdRef.current) {
+          return;
+        }
+
+        console.error("Failed to load user account:", error);
+      } finally {
+        if (mounted && requestId === requestIdRef.current) {
+          initializedRef.current = true;
+          setLoading(false);
+        }
       }
-
-      setLoading(false);
     }
 
-    supabase.auth.getSession().then(({ data }) => applySession(data.session));
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        console.error("Failed to restore session:", error);
+        if (mounted) setLoading(false);
+        return;
+      }
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, newSession) => applySession(newSession)
-    );
+      applySession(data.session);
+    });
 
-    return () => listener.subscription.unsubscribe();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      // Supabase can emit token-refresh events when a tab becomes active.
+      applySession(nextSession);
+    });
+
+    return () => {
+      mounted = false;
+      requestIdRef.current += 1;
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function signIn(email, password) {
@@ -63,10 +128,7 @@ export function AuthProvider({ children }) {
     });
 
     if (error) {
-      return {
-        error,
-        accountType: null,
-      };
+      return { error, accountType: null };
     }
 
     const { data: investorData, error: investorError } = await supabase.rpc(
@@ -74,16 +136,10 @@ export function AuthProvider({ children }) {
     );
 
     if (!investorError && investorData) {
-      return {
-        error: null,
-        accountType: "investor",
-      };
+      return { error: null, accountType: "investor" };
     }
 
-    return {
-      error: null,
-      accountType: "farm",
-    };
+    return { error: null, accountType: "farm" };
   }
 
   async function signOut() {

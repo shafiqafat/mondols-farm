@@ -11,10 +11,12 @@ import {
   CalendarDays,
   CheckCircle2,
   Package,
+  Pencil,
   Plus,
+  Save,
+  X,
   Receipt,
   ShoppingCart,
-  Trash2,
 } from "lucide-react";
 
 import {
@@ -41,7 +43,10 @@ function Inventory() {
 
   const [newItem, setNewItem] = useState({
     name: "",
+    category: "other",
+    description: "",
     unit: "kg",
+    storageLocation: "",
     reorderLeadTimeDays: "",
     safetyStock: "",
   });
@@ -49,12 +54,16 @@ function Inventory() {
   const [addingItem, setAddingItem] = useState(false);
   const [purchaseForms, setPurchaseForms] = useState({});
   const [savingPurchase, setSavingPurchase] = useState(null);
-  const [deletingLotId, setDeletingLotId] = useState(null);
   const [updatedItemId, setUpdatedItemId] = useState(null);
   const [pageError, setPageError] = useState("");
   const [lotReconciliations, setLotReconciliations] = useState({});
   const [reconcilingLotId, setReconcilingLotId] = useState(null);
   const [reconciliationMessage, setReconciliationMessage] = useState("");
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [itemEditForm, setItemEditForm] = useState({});
+  const [editingLotId, setEditingLotId] = useState(null);
+  const [lotEditForm, setLotEditForm] = useState({});
+  const [savingEdit, setSavingEdit] = useState(false);
 
   async function loadAll() {
     setLoading(true);
@@ -151,6 +160,9 @@ function Inventory() {
 
     const { error } = await supabase.from("inventory_items").insert({
       name: newItem.name.trim(),
+      category: newItem.category,
+      description: newItem.description.trim() || null,
+      storage_location: newItem.storageLocation.trim() || null,
       unit: newItem.unit,
       reorder_lead_time_days:
         newItem.reorderLeadTimeDays !== ""
@@ -169,7 +181,10 @@ function Inventory() {
 
     setNewItem({
       name: "",
+      category: "other",
+      description: "",
       unit: "kg",
+      storageLocation: "",
       reorderLeadTimeDays: "",
       safetyStock: "",
     });
@@ -210,37 +225,6 @@ function Inventory() {
     await loadAll();
   }
 
-  async function handleDeletePurchase(item, lot) {
-    if (!canEdit || deletingLotId) return;
-
-    const totalCost = Number(lot.qty_purchased) * Number(lot.cost_per_unit);
-    const confirmed = window.confirm(
-      `Delete this purchase record for ${item.name}?\n\nDate: ${lot.purchased_at}\nQuantity: ${Number(lot.qty_purchased).toFixed(2)} ${item.unit}\nPurchase cost: ৳${totalCost.toFixed(2)}\n\nThe linked Finance expense will also be deleted. Purchases with consumption or reconciliation history cannot be deleted. This action cannot be undone.`,
-    );
-    if (!confirmed) return;
-
-    setDeletingLotId(lot.id);
-    setPageError("");
-    setReconciliationMessage("");
-
-    try {
-      const { error } = await supabase.rpc("delete_inventory_purchase", {
-        p_lot_id: lot.id,
-      });
-
-      if (error) throw error;
-
-      setReconciliationMessage(
-        `Deleted the ${item.name} purchase from ${lot.purchased_at} and its linked Finance expense.`,
-      );
-      await loadAll();
-    } catch (error) {
-      setPageError(error?.message || "Unable to delete this purchase record.");
-    } finally {
-      setDeletingLotId(null);
-    }
-  }
-
   function updatePurchaseForm(itemId, field, value) {
     setPurchaseForms((prev) => ({
       ...prev,
@@ -252,6 +236,126 @@ function Inventory() {
         [field]: value,
       },
     }));
+  }
+
+  function startEditItem(item) {
+    setPageError("");
+    setEditingItemId(item.id);
+    setItemEditForm({
+      name: item.name ?? "",
+      category: item.category ?? "other",
+      description: item.description ?? "",
+      storageLocation: item.storage_location ?? "",
+      unit: item.unit ?? "kg",
+      reorderLeadTimeDays: item.reorder_lead_time_days ?? "",
+      safetyStock: item.safety_stock ?? "",
+    });
+  }
+
+  async function handleSaveItem(item) {
+    if (!itemEditForm.name?.trim()) {
+      setPageError("Inventory item name is required.");
+      return;
+    }
+
+    const hasLots = (lotsByItem[item.id] ?? []).length > 0;
+    if (hasLots && itemEditForm.unit !== item.unit) {
+      setPageError(
+        "The unit cannot be changed while purchase lots exist. Create a new inventory item with the correct unit instead.",
+      );
+      return;
+    }
+
+    setSavingEdit(true);
+    setPageError("");
+    const nextName = itemEditForm.name.trim();
+    const { error } = await supabase
+      .from("inventory_items")
+      .update({
+        name: nextName,
+        category: itemEditForm.category,
+        description: itemEditForm.description?.trim() || null,
+        storage_location: itemEditForm.storageLocation?.trim() || null,
+        unit: itemEditForm.unit,
+        reorder_lead_time_days:
+          itemEditForm.reorderLeadTimeDays !== ""
+            ? Number(itemEditForm.reorderLeadTimeDays)
+            : null,
+        safety_stock:
+          itemEditForm.safetyStock !== ""
+            ? Number(itemEditForm.safetyStock)
+            : null,
+      })
+      .eq("id", item.id);
+
+    if (!error && nextName !== item.name) {
+      const lotIds = (lotsByItem[item.id] ?? []).map((lot) => lot.id);
+      if (lotIds.length) {
+        const { error: financeError } = await supabase
+          .from("finance_transactions")
+          .update({ category: nextName })
+          .in("inventory_lot_id", lotIds);
+        if (financeError) {
+          setPageError(
+            `Item was updated, but linked purchase categories could not be renamed: ${financeError.message}`,
+          );
+        }
+      }
+    }
+
+    setSavingEdit(false);
+    if (error) {
+      setPageError(error.message);
+      return;
+    }
+    setEditingItemId(null);
+    await loadAll();
+  }
+
+  function startEditLot(lot) {
+    setPageError("");
+    setEditingLotId(lot.id);
+    setLotEditForm({
+      qty: String(lot.qty_purchased ?? ""),
+      costPerUnit: String(lot.cost_per_unit ?? ""),
+      purchasedAt: lot.purchased_at ?? localDateISO(),
+      expiryDate: lot.expiry_date ?? "",
+    });
+  }
+
+  async function handleSaveLot(lot) {
+    const qty = Number(lotEditForm.qty);
+    const cost = Number(lotEditForm.costPerUnit);
+    if (
+      !Number.isFinite(qty) ||
+      qty <= 0 ||
+      !Number.isFinite(cost) ||
+      cost < 0 ||
+      !lotEditForm.purchasedAt
+    ) {
+      setPageError(
+        "Enter a valid purchase quantity, non-negative unit cost, and purchase date.",
+      );
+      return;
+    }
+
+    setSavingEdit(true);
+    setPageError("");
+    const { error } = await supabase.rpc("edit_inventory_purchase", {
+      p_lot_id: lot.id,
+      p_qty: qty,
+      p_cost_per_unit: cost,
+      p_purchased_at: lotEditForm.purchasedAt,
+      p_expiry_date: lotEditForm.expiryDate || null,
+    });
+    setSavingEdit(false);
+
+    if (error) {
+      setPageError(error.message);
+      return;
+    }
+    setEditingLotId(null);
+    await loadAll();
   }
 
   async function handleRecordPurchase(item) {
@@ -281,6 +385,7 @@ function Inventory() {
       p_qty: qty,
       p_cost_per_unit: cost,
       p_purchased_at: purchasedAt,
+      p_expiry_date: form.expiryDate || null,
     });
 
     setSavingPurchase(null);
@@ -296,6 +401,7 @@ function Inventory() {
         qty: "",
         costPerUnit: "",
         purchasedAt: localDateISO(),
+        expiryDate: "",
       },
     }));
 
@@ -565,6 +671,7 @@ function Inventory() {
             qty: "",
             costPerUnit: "",
             purchasedAt: localDateISO(),
+            expiryDate: "",
           };
 
           return (
@@ -596,16 +703,160 @@ function Inventory() {
                       )}
                     </div>
 
-                    <div className="min-w-0">
-                      <CardTitle className="truncate text-lg">
-                        {item.name}
-                      </CardTitle>
-
-                      <CardDescription className="mt-1">
-                        Average cost ৳{weightedAvgCost.toFixed(2)}/{item.unit}
-                        {safetyStock != null &&
-                          ` · Safety stock ${safetyStock} ${item.unit}`}
-                      </CardDescription>
+                    <div className="min-w-0 flex-1">
+                      {editingItemId === item.id ? (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Input
+                            value={itemEditForm.name ?? ""}
+                            onChange={(e) =>
+                              setItemEditForm((p) => ({
+                                ...p,
+                                name: e.target.value,
+                              }))
+                            }
+                            placeholder="Item name"
+                          />
+                          <select
+                            value={itemEditForm.category ?? "other"}
+                            onChange={(e) =>
+                              setItemEditForm((p) => ({
+                                ...p,
+                                category: e.target.value,
+                              }))
+                            }
+                            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                          >
+                            <option value="seeds">Seeds</option>
+                            <option value="feed">Animal feed</option>
+                            <option value="medicine">Medicine</option>
+                            <option value="fertilizer">Fertilizer</option>
+                            <option value="pesticide">Pesticide</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="materials">Materials</option>
+                            <option value="other">Other</option>
+                          </select>
+                          <select
+                            value={itemEditForm.unit ?? item.unit}
+                            onChange={(e) =>
+                              setItemEditForm((p) => ({
+                                ...p,
+                                unit: e.target.value,
+                              }))
+                            }
+                            disabled={lots.length > 0}
+                            className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                          >
+                            <option value="kg">kg</option>
+                            <option value="g">gram (g)</option>
+                            <option value="liter">liter</option>
+                            <option value="ml">milliliter (ml)</option>
+                            <option value="bag">bag</option>
+                            <option value="packet">packet</option>
+                            <option value="piece">piece</option>
+                            <option value="unit">unit</option>
+                          </select>
+                          <Input
+                            value={itemEditForm.storageLocation ?? ""}
+                            onChange={(e) =>
+                              setItemEditForm((p) => ({
+                                ...p,
+                                storageLocation: e.target.value,
+                              }))
+                            }
+                            placeholder="Storage location (optional)"
+                          />
+                          <Input
+                            value={itemEditForm.description ?? ""}
+                            onChange={(e) =>
+                              setItemEditForm((p) => ({
+                                ...p,
+                                description: e.target.value,
+                              }))
+                            }
+                            placeholder="Description (optional)"
+                          />
+                          <Input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={itemEditForm.reorderLeadTimeDays ?? ""}
+                            onChange={(e) =>
+                              setItemEditForm((p) => ({
+                                ...p,
+                                reorderLeadTimeDays: e.target.value,
+                              }))
+                            }
+                            placeholder="Reorder lead time (days)"
+                          />
+                          <Input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={itemEditForm.safetyStock ?? ""}
+                            onChange={(e) =>
+                              setItemEditForm((p) => ({
+                                ...p,
+                                safetyStock: e.target.value,
+                              }))
+                            }
+                            placeholder={`Safety stock (${item.unit})`}
+                          />
+                          <div className="flex gap-2 sm:col-span-2">
+                            <Button
+                              size="sm"
+                              type="button"
+                              onClick={() => handleSaveItem(item)}
+                              disabled={savingEdit}
+                            >
+                              <Save className="size-3.5" /> Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              type="button"
+                              variant="outline"
+                              onClick={() => setEditingItemId(null)}
+                              disabled={savingEdit}
+                            >
+                              <X className="size-3.5" /> Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <CardTitle className="truncate text-lg">
+                              {item.name}
+                            </CardTitle>
+                            {canEdit && (
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="size-7"
+                                onClick={() => startEditItem(item)}
+                                aria-label={`Edit ${item.name}`}
+                              >
+                                <Pencil className="size-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                          <CardDescription className="mt-1">
+                            Average cost ৳{weightedAvgCost.toFixed(2)}/
+                            {item.unit}
+                            {safetyStock != null &&
+                              ` · Safety stock ${safetyStock} ${item.unit}`}
+                            {item.category &&
+                              ` · ${String(item.category).replaceAll("_", " ")}`}
+                            {item.storage_location &&
+                              ` · Stored: ${item.storage_location}`}
+                          </CardDescription>
+                          {item.description && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {item.description}
+                            </p>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -684,11 +935,10 @@ function Inventory() {
 
                     <div className="border-t border-border/60 px-4 pb-4">
                       <div className="mt-2.5 overflow-hidden rounded-md border border-border/50">
-                        <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-3 border-b border-border/50 bg-muted/30 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                        <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 border-b border-border/50 bg-muted/30 px-3 py-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                           <span>Date</span>
                           <span>Remaining</span>
                           <span>Cost / unit</span>
-                          <span>Action</span>
                         </div>
 
                         <div className="divide-y divide-border/50">
@@ -696,10 +946,35 @@ function Inventory() {
                             const reconciliation = lotReconciliations[lot.id];
                             return (
                               <div key={lot.id} className="space-y-2 px-3 py-3">
-                                <div className="grid grid-cols-[1fr_1fr_1fr_auto] items-center gap-3 text-xs">
+                                <div className="grid grid-cols-[1fr_1fr_1fr] gap-3 text-xs">
                                   <span className="flex items-center gap-1.5 text-muted-foreground">
                                     <CalendarDays className="size-3.5" />
-                                    {lot.purchased_at}
+                                    <span>{lot.purchased_at}</span>
+                                    {lot.expiry_date &&
+                                      (() => {
+                                        const daysLeft = Math.ceil(
+                                          (new Date(
+                                            `${lot.expiry_date}T00:00:00`,
+                                          ) -
+                                            new Date(
+                                              new Date().toDateString(),
+                                            )) /
+                                            86400000,
+                                        );
+                                        const expiryLabel =
+                                          daysLeft < 0
+                                            ? "Expired"
+                                            : daysLeft <= 30
+                                              ? `Expires in ${daysLeft}d`
+                                              : `Expires ${lot.expiry_date}`;
+                                        return (
+                                          <span
+                                            className={`block text-[11px] ${daysLeft <= 30 ? "font-medium text-amber-700" : ""}`}
+                                          >
+                                            {expiryLabel}
+                                          </span>
+                                        );
+                                      })()}
                                   </span>
 
                                   <span className="font-medium">
@@ -707,37 +982,101 @@ function Inventory() {
                                     {item.unit}
                                   </span>
 
-                                  <span className="text-muted-foreground">
+                                  <span className="flex items-center justify-between gap-2 text-muted-foreground">
                                     ৳{Number(lot.cost_per_unit).toFixed(2)}/
                                     {item.unit}
+                                    {canEdit && !reconciliation && (
+                                      <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        className="size-7"
+                                        onClick={() => startEditLot(lot)}
+                                        aria-label="Edit purchase lot"
+                                      >
+                                        <Pencil className="size-3.5" />
+                                      </Button>
+                                    )}
                                   </span>
-
-                                  {canEdit && (
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="destructive"
-                                      className="h-8 gap-1.5 px-2"
-                                      disabled={
-                                        deletingLotId !== null ||
-                                        Boolean(reconciliation)
-                                      }
-                                      title={
-                                        reconciliation
-                                          ? "Reconciled purchase history cannot be deleted"
-                                          : "Delete purchase and linked Finance expense"
-                                      }
-                                      onClick={() =>
-                                        handleDeletePurchase(item, lot)
-                                      }
-                                    >
-                                      <Trash2 className="size-3.5" />
-                                      {deletingLotId === lot.id
-                                        ? "Deleting…"
-                                        : "Delete"}
-                                    </Button>
-                                  )}
                                 </div>
+
+                                {editingLotId === lot.id ? (
+                                  <div className="grid gap-2 rounded-md border border-primary/20 bg-muted/20 p-3 sm:grid-cols-3">
+                                    <Input
+                                      type="number"
+                                      min="0.000001"
+                                      step="any"
+                                      value={lotEditForm.qty ?? ""}
+                                      onChange={(e) =>
+                                        setLotEditForm((p) => ({
+                                          ...p,
+                                          qty: e.target.value,
+                                        }))
+                                      }
+                                      placeholder={`Purchased quantity (${item.unit})`}
+                                    />
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="any"
+                                      value={lotEditForm.costPerUnit ?? ""}
+                                      onChange={(e) =>
+                                        setLotEditForm((p) => ({
+                                          ...p,
+                                          costPerUnit: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="Cost per unit"
+                                    />
+                                    <Input
+                                      type="date"
+                                      value={lotEditForm.purchasedAt ?? ""}
+                                      onChange={(e) =>
+                                        setLotEditForm((p) => ({
+                                          ...p,
+                                          purchasedAt: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                    <Input
+                                      type="date"
+                                      value={lotEditForm.expiryDate ?? ""}
+                                      onChange={(e) =>
+                                        setLotEditForm((p) => ({
+                                          ...p,
+                                          expiryDate: e.target.value,
+                                        }))
+                                      }
+                                      aria-label="Expiry date (optional)"
+                                    />
+                                    <div className="flex gap-2 sm:col-span-3">
+                                      <Button
+                                        size="sm"
+                                        type="button"
+                                        onClick={() => handleSaveLot(lot)}
+                                        disabled={savingEdit}
+                                      >
+                                        <Save className="size-3.5" /> Save
+                                        purchase
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setEditingLotId(null)}
+                                        disabled={savingEdit}
+                                      >
+                                        <X className="size-3.5" /> Cancel
+                                      </Button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground sm:col-span-3">
+                                      Only untouched purchase lots can be
+                                      edited. Lots with consumption or
+                                      reconciliation history are locked to
+                                      protect FIFO and audit records.
+                                    </p>
+                                  </div>
+                                ) : null}
 
                                 {reconciliation ? (
                                   <div className="rounded-md bg-emerald-500/[0.07] px-3 py-2 text-xs">
@@ -815,7 +1154,7 @@ function Inventory() {
                       </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
                       <Input
                         type="number"
                         step="any"
@@ -852,6 +1191,20 @@ function Inventory() {
                             e.target.value,
                           )
                         }
+                      />
+
+                      <Input
+                        type="date"
+                        value={form.expiryDate ?? ""}
+                        onChange={(e) =>
+                          updatePurchaseForm(
+                            item.id,
+                            "expiryDate",
+                            e.target.value,
+                          )
+                        }
+                        aria-label="Expiry date (optional)"
+                        title="Expiry date (optional)"
                       />
 
                       <Button
@@ -900,61 +1253,113 @@ function Inventory() {
               </div>
             </div>
 
-            <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-5">
-              <Input
-                type="text"
-                placeholder="Name, e.g. Quail Layer Feed"
-                value={newItem.name}
-                onChange={(e) =>
-                  setNewItem((p) => ({ ...p, name: e.target.value }))
-                }
-                required
-              />
-
-              <select
-                value={newItem.unit}
-                onChange={(e) =>
-                  setNewItem((p) => ({ ...p, unit: e.target.value }))
-                }
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <option value="kg">kg</option>
-                <option value="liter">liter</option>
-                <option value="bag">bag</option>
-                <option value="unit">unit</option>
-              </select>
-
-              <Input
-                type="number"
-                min="0"
-                placeholder="Reorder lead time (days)"
-                value={newItem.reorderLeadTimeDays}
-                onChange={(e) =>
-                  setNewItem((p) => ({
-                    ...p,
-                    reorderLeadTimeDays: e.target.value,
-                  }))
-                }
-              />
-
-              <Input
-                type="number"
-                min="0"
-                step="any"
-                placeholder="Safety stock"
-                value={newItem.safetyStock}
-                onChange={(e) =>
-                  setNewItem((p) => ({
-                    ...p,
-                    safetyStock: e.target.value,
-                  }))
-                }
-              />
-
-              <Button type="submit" disabled={addingItem} className="w-full">
-                <Plus className="size-4" />
-                {addingItem ? "Adding…" : "Add item"}
-              </Button>
+            <div className="space-y-4 p-5">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Basic information
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <Input
+                    type="text"
+                    placeholder="Item name, e.g. Carrot seeds"
+                    value={newItem.name}
+                    onChange={(e) =>
+                      setNewItem((p) => ({ ...p, name: e.target.value }))
+                    }
+                    required
+                  />
+                  <select
+                    value={newItem.category}
+                    onChange={(e) =>
+                      setNewItem((p) => ({ ...p, category: e.target.value }))
+                    }
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="seeds">Seeds</option>
+                    <option value="feed">Animal feed</option>
+                    <option value="medicine">Medicine</option>
+                    <option value="fertilizer">Fertilizer</option>
+                    <option value="pesticide">Pesticide</option>
+                    <option value="equipment">Equipment</option>
+                    <option value="materials">Materials</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <select
+                    value={newItem.unit}
+                    onChange={(e) =>
+                      setNewItem((p) => ({ ...p, unit: e.target.value }))
+                    }
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="kg">kg</option>
+                    <option value="g">gram (g)</option>
+                    <option value="liter">liter</option>
+                    <option value="ml">milliliter (ml)</option>
+                    <option value="bag">bag</option>
+                    <option value="packet">packet</option>
+                    <option value="piece">piece</option>
+                    <option value="unit">unit</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Stock management
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Reorder lead time (days)"
+                    value={newItem.reorderLeadTimeDays}
+                    onChange={(e) =>
+                      setNewItem((p) => ({
+                        ...p,
+                        reorderLeadTimeDays: e.target.value,
+                      }))
+                    }
+                  />
+                  <Input
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder={`Safety stock (${newItem.unit})`}
+                    value={newItem.safetyStock}
+                    onChange={(e) =>
+                      setNewItem((p) => ({ ...p, safetyStock: e.target.value }))
+                    }
+                  />
+                  <Input
+                    placeholder="Storage location (optional)"
+                    value={newItem.storageLocation}
+                    onChange={(e) =>
+                      setNewItem((p) => ({
+                        ...p,
+                        storageLocation: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                  Additional details
+                </p>
+                <Input
+                  placeholder="Description (optional)"
+                  value={newItem.description}
+                  onChange={(e) =>
+                    setNewItem((p) => ({ ...p, description: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button type="submit" disabled={addingItem}>
+                  <Plus className="size-4" />
+                  {addingItem ? "Adding…" : "Add inventory item"}
+                </Button>
+              </div>
             </div>
           </form>
         </section>

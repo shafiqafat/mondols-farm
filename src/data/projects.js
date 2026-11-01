@@ -1,7 +1,10 @@
 import quailFarming from "../assets/image/projects/quail-farming.jpg";
 import goatRearing from "../assets/image/projects/goat-rearing.avif";
 import mustardCultivation from "../assets/image/projects/mustard-cultivation.jpg";
-import chickenRearing from "../assets/image/projects/chicken-rearing.jpg";
+import broilerChickens from "../assets/image/projects/broiler-chicken.jpg";
+import sonaliChickens from "../assets/image/projects/Sonali-chicken.jpg";
+import mixedVegetableGarden from "../assets/image/journal/vegi.jpg";
+import deshiPigeon from "../assets/image/projects/jalali-pigeon.jpg";
 
 const projects = [
   {
@@ -12,7 +15,7 @@ const projects = [
       "A small-scale poultry project focused on raising Sonali chickens with proper feeding, housing, and daily care.",
     status: "ONGOING",
     category: "Poultry",
-    image: chickenRearing,
+    image: sonaliChickens,
 
     details: {
       startDate: "October 2026",
@@ -37,6 +40,45 @@ const projects = [
   },
 
   {
+    id: "mixed-vegetable-garden",
+    slug: "mixed-vegetable-garden",
+    title: "Mixed Vegetable Garden",
+    description:
+      "An upcoming seasonal vegetable project featuring carrots, black cumin, coriander, Malabar spinach, red amaranth, and sweet pumpkin.",
+    status: "UPCOMING",
+    category: "Vegetable Farming",
+    image: mixedVegetableGarden,
+
+    details: {
+      season: "Winter and seasonal cultivation",
+      area: "To be determined",
+      variety: "Multiple seasonal crops",
+      purpose: "Household food production and potential surplus sales",
+      irrigation: "Based on crop requirements and available water",
+      fertilizer: "Organic matter and appropriate soil amendments",
+      crops: [
+        "Carrot",
+        "Black cumin",
+        "Coriander",
+        "Malabar spinach",
+        "Red amaranth",
+        "Sweet pumpkin",
+      ],
+    },
+
+    overview:
+      "The mixed vegetable garden will diversify farm production through several crops with different growing periods. The plan prioritizes household food needs, affordable cultivation, and the possibility of selling surplus produce.",
+
+    approach: [
+      "Prepare the soil and assess sunlight and drainage.",
+      "Select suitable planting times for each crop.",
+      "Use compost and other appropriate soil amendments.",
+      "Monitor pests, water requirements, and crop growth.",
+      "Record costs and harvest quantities for each crop.",
+    ],
+  },
+
+  {
     id: "broiler-chickens",
     slug: "broiler-chickens",
     title: "Broiler Chicken Rearing",
@@ -44,7 +86,7 @@ const projects = [
       "A broiler poultry project focused on efficient growth, responsible care, and careful feed-cost management.",
     status: "ONGOING",
     category: "Poultry",
-    image: chickenRearing,
+    image: broilerChickens,
 
     details: {
       startDate: "October 2026",
@@ -65,37 +107,6 @@ const projects = [
       "Provide clean drinking water and suitable ventilation.",
       "Monitor growth, mortality, and feed consumption.",
       "Track operating costs and sales to assess profitability.",
-    ],
-  },
-
-  {
-    id: "mixed-vegetable-garden",
-    slug: "mixed-vegetable-garden",
-    title: "Mixed Vegetable Garden",
-    description:
-      "An upcoming seasonal vegetable project featuring carrots, black cumin, coriander, Malabar spinach, red amaranth, and sweet pumpkin.",
-    status: "UPCOMING",
-    category: "Vegetable Farming",
-    image: mustardCultivation,
-
-    details: {
-      season: "Winter and seasonal cultivation",
-      area: "To be determined",
-      variety: "Multiple seasonal crops",
-      purpose: "Household food production and potential surplus sales",
-      irrigation: "Based on crop requirements and available water",
-      fertilizer: "Organic matter and appropriate soil amendments",
-    },
-
-    overview:
-      "The mixed vegetable garden will diversify farm production through several crops with different growing periods. The plan prioritizes household food needs, affordable cultivation, and the possibility of selling surplus produce.",
-
-    approach: [
-      "Prepare the soil and assess sunlight and drainage.",
-      "Select suitable planting times for each crop.",
-      "Use compost and other appropriate soil amendments.",
-      "Monitor pests, water requirements, and crop growth.",
-      "Record costs and harvest quantities for each crop.",
     ],
   },
 
@@ -138,14 +149,14 @@ const projects = [
     title: "Quail Farming",
     description:
       "A proposed small-scale quail project to evaluate suitable housing, feeding requirements, and market opportunities.",
-    status: "UPCOMING",
+    status: "ONGOING",
     category: "Poultry",
     image: quailFarming,
 
     details: {
       breed: "Japanese quail under consideration",
-      currentScale: "Not started",
-      targetScale: "To be determined",
+      currentScale: "5 birds",
+      targetScale: "100 birds",
       purpose: "Evaluate small-scale egg or meat production",
       housing: "To be planned according to the production model",
       feed: "Suitable balanced quail feed",
@@ -190,6 +201,36 @@ const projects = [
       "Apply fertilizer according to crop recommendations.",
       "Monitor weeds, pests, and soil moisture.",
       "Record cultivation expenses and harvested yield.",
+    ],
+  },
+
+  {
+    id: "pigeon-rearing",
+    slug: "pigeon-rearing",
+    title: "Pigeon Rearing",
+    description:
+      "A proposed small-scale pigeon project to evaluate suitable housing, feeding requirements, and market opportunities.",
+    status: "ONGOING",
+    category: "Poultry",
+    image: deshiPigeon,
+
+    details: {
+      breed: "Deshi pigeon under consideration",
+      currentScale: "1 pair",
+      targetScale: "10 pairs",
+      purpose: "Evaluate small-scale egg or meat production",
+      housing: "To be planned according to the production model",
+      feed: "Suitable balanced pigeon feed",
+    },
+
+    overview:
+      "Pigeon rearing remains a proposed project. Before starting, we will evaluate local demand, chick availability, housing requirements, feed costs, and the most practical production model.",
+
+    approach: [
+      "Research local demand for pigeon eggs and meat.",
+      "Estimate startup costs and recurring feed expenses.",
+      "Prepare appropriate housing and biosecurity measures.",
+      "Start only after evaluating the market and available budget.",
     ],
   },
 ];

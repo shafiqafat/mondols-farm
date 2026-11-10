@@ -1,5 +1,5 @@
 import growingWiththeSeasons from "../assets/image/journal/hervest.jpg";
-import mudHouse from "../assets/image/stay/mud-house.jpg"
+// import mudHouse from "../assets/image/stay/mud-house.jpg"
 import lifeAroundtheFarm from "../assets/image/hero/intro-image.jpg";
 import buildingTheFarmStepbyStep from "../assets/image/hero/invest-hero.png";
 import TheFirstStep from "../assets/image/journal/TheFirstStep.jpg";
@@ -36,33 +36,38 @@ const journalArticles = [
 
   {
     id: 2,
-    slug: "life-around-the-farm",
-    title: "Life Around the Farm",
+    slug: "one-month-in-village-life-building-my-farm",
+    title: "One Month in Village Life: Learning, Growing, and Building My Farm",
     category: "Farm Updates",
-    date: "March 5, 2026",
+    date: "November 9, 2026",
     excerpt:
-      "The small routines, unexpected moments, and everyday work that make up life on the farm.",
+      "One month into my village farm life, things are slowly taking shape. From raising broiler, Sonali, and Deshi chickens to bringing home pigeons, quails, and Black Bengal goats, the farm is gradually becoming more diverse. There have been challenges and losses along the way, but every experience has become an opportunity to learn.",
     image: lifeAroundtheFarm,
     content: [
-      "Farm life rarely follows exactly the same routine every day. There is always something that needs attention, whether it is a garden bed, an animal, or a small repair.",
-      "These ordinary moments are a big part of what makes the farm special.",
-      "This journal is where we'll document those moments and keep a record of how the farm changes over time.",
-    ],
-  },
+      "It has been around a month since I started this new chapter of my life in the village. When I first left Dhaka and came to Naogaon, I knew that adjusting to a different environment would take time. What I didn't fully understand was how much I would have to learn along the way.",
+      "Village life is different from what I was used to. The environment, the culture, the daily routines, and even the responsibilities are new experiences for me. But slowly, I am getting used to them. More importantly, I am beginning to understand what it means to take care of a farm.",
 
-  {
-    id: 3,
-    slug: "why-we-chose-a-mud-house",
-    title: "Why We Chose a Mud House",
-    category: "Homestay",
-    date: "February 24, 2026",
-    excerpt:
-      "The story behind creating a traditional mud house for guests visiting the farm.",
-    image: mudHouse,
-    content: [
-      "The Mud House is one of the most personal parts of our homestay project.",
-      "Instead of creating a conventional accommodation experience, we wanted to preserve something connected to the character of rural living.",
-      "The result is a simple space where guests can experience the countryside without completely separating themselves from it.",
+      "My first major step was starting poultry farming. I began with 32 broiler chicks and 30 Sonali chicks. I also added two Deshi chicken chicks to the farm.",
+      "Managing these birds has been an interesting experience. From feeding and providing water to maintaining their housing and observing their health, there is always something that needs attention.",
+      "However, the first month also brought some difficult moments. I lost one broiler and three Sonali chickens. The Sonali birds were affected by Gambura disease. Losing animals is never easy, especially when you are just starting and trying to understand how everything works.",
+      "These experiences have reminded me that farming is not simply about buying animals and providing food. It requires attention, knowledge, patience, and proper health management. There is still a lot for me to learn.",
+
+      "During this first month, I also started adding other animals to the farm. I brought in two Deshi pigeons, five quails, and two female Black Bengal goats.",
+      "Each addition represents a new opportunity to learn about a different type of animal and its requirements. My priority is to understand the animals, learn their needs, manage their expenses, and build a system that I can maintain over time.",
+
+      "Alongside animal farming, I have started working on the land. I have prepared around four kathas of land for my upcoming grass and vegetable projects. Grass planting has already started, and I have also purchased seeds for the vegetable garden.",
+      "The plan is to develop this land gradually, growing useful forage and seasonal vegetables. I want the farm to become more diversified, where different activities can support one another.",
+      "For me, growing vegetables is not only about potential income. Producing food for the household is also an important part of the vision.",
+
+      "Perhaps the most valuable part of this first month has been the personal experience. I am still adjusting to the new environment and culture. I am learning how to work with farm animals, understand their behaviour, recognise problems, and manage responsibilities that I had never experienced in this way before.",
+      "Some days are challenging. There are unexpected problems, things that don't go according to plan, and moments when I realise how much I still don't know. But it is enjoyable too.",
+      "Every day brings something new to learn. I have started to see the farm as more than a business or an agricultural project. It has become a learning platform where I can experiment, make mistakes, develop practical skills, and gradually build something of my own.",
+
+      "Looking back, I can see that quite a few things have happened in a relatively short time. The farm has started with poultry, expanded into pigeons, quails, and goats, and begun preparing for grass and vegetable cultivation.",
+      "Of course, everything is still at an early stage. I cannot yet say which projects will be successful or how far I will be able to take them. There will be more challenges, expenses, mistakes, and lessons ahead.",
+      "For now, I want to focus on learning, maintaining what I have started, and making gradual progress rather than rushing toward expansion.",
+      "A month ago, I was taking my first steps into an unfamiliar life. Today, I am a little more comfortable, a little more experienced, and certainly more aware of what this journey requires.",
+      "One month down. Many lessons learned. And a lot more growing to do.",
     ],
   },
 

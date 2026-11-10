@@ -116,15 +116,15 @@ const projects = [
     title: "Goat Rearing",
     description:
       "A planned small-scale goat-rearing project focused on healthy livestock, suitable housing, and affordable feeding.",
-    status: "UPCOMING",
+    status: "ONGOING",
     category: "Livestock",
     image: goatRearing,
 
     details: {
       startDate: "Planned for November 2026",
       breed: "Black Bengal goat",
-      currentScale: "Not started",
-      targetScale: "To be determined",
+      currentScale: "2 goats",
+      targetScale: "Gradual expansion based on results",
       purpose: "Livestock production and gradual farm expansion",
       housing: "Clean, dry, and well-ventilated shelter",
       feed: "Suitable forage, including planned Napier grass, with supplementary feed as needed",

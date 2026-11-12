@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { LockKeyhole, Sprout } from "lucide-react";
 import farmLoginImage from "../../assets/image/loader.png";
 
@@ -109,6 +109,14 @@ function Login() {
                     placeholder="Enter your password"
                     className="h-11"
                   />
+                  <div className="flex justify-end">
+                    <Link
+                      to="/farm-os/forgot-password"
+                      className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                 </div>
 
                 {error && (

@@ -142,6 +142,24 @@ export function AuthProvider({ children }) {
     return { error: null, accountType: "farm" };
   }
 
+  async function requestPasswordReset(email) {
+    const redirectTo = `${window.location.origin}/farm-os/reset-password`;
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+
+    return { error };
+  }
+
+  async function updatePassword(password) {
+    const { data, error } = await supabase.auth.updateUser({
+      password,
+    });
+
+    return { data, error };
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
   }
@@ -154,6 +172,8 @@ export function AuthProvider({ children }) {
     investorId,
     loading,
     signIn,
+    requestPasswordReset,
+    updatePassword,
     signOut,
   };
 

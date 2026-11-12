@@ -30,6 +30,10 @@ import ProtectedRoute from "./farm-os/components/ProtectedRoute";
 import FarmOSLayout from "./farm-os/components/FarmOSLayout";
 import InvestorProtectedRoute from "./farm-os/components/InvestorProtectedRoute";
 const FarmOSLogin = lazy(() => import("./farm-os/pages/Login"));
+const FarmOSForgotPassword = lazy(
+  () => import("./farm-os/pages/ForgotPassword"),
+);
+const FarmOSResetPassword = lazy(() => import("./farm-os/pages/ResetPassword"));
 const InvestorRegister = lazy(() => import("./farm-os/pages/InvestorRegister"));
 const FarmOSOverview = lazy(() => import("./farm-os/pages/Overview"));
 const FarmOSSpecies = lazy(() => import("./farm-os/pages/Species"));
@@ -42,9 +46,13 @@ const FarmOSFinance = lazy(() => import("./farm-os/pages/Finance"));
 const FarmOSNewSpecies = lazy(() => import("./farm-os/pages/NewSpecies"));
 const FarmOSInvestment = lazy(() => import("./farm-os/pages/Investment"));
 const FarmOSNewEntity = lazy(() => import("./farm-os/pages/NewEntity"));
-const FarmOSNewRotationRule = lazy(() => import("./farm-os/pages/NewRotationRule"),);
+const FarmOSNewRotationRule = lazy(
+  () => import("./farm-os/pages/NewRotationRule"),
+);
 const FarmOSScenario = lazy(() => import("./farm-os/pages/Scenario"));
-const FarmOSContentJournal = lazy(() => import("./farm-os/pages/ContentJournal"));
+const FarmOSContentJournal = lazy(
+  () => import("./farm-os/pages/ContentJournal"),
+);
 const FarmOSTasks = lazy(() => import("./farm-os/pages/Tasks"));
 const FarmOSDailyLog = lazy(() => import("./farm-os/pages/DailyLog"));
 const FarmOSInventory = lazy(() => import("./farm-os/pages/Inventory"));
@@ -75,32 +83,32 @@ function PublicSite() {
       <Navbar />
 
       <Suspense fallback={<div className="farmos-loading">Loading…</div>}>
-      <Routes>
-        <Route path="/" element={<Home />} />
+        <Routes>
+          <Route path="/" element={<Home />} />
 
-        <Route path="/farm" element={<Farm />} />
-        <Route path="/farm/:slug" element={<ProjectDetail />} />
+          <Route path="/farm" element={<Farm />} />
+          <Route path="/farm/:slug" element={<ProjectDetail />} />
 
-        <Route path="/stay" element={<Stay />} />
-        <Route path="/stay/:slug" element={<StayDetail />} />
+          <Route path="/stay" element={<Stay />} />
+          <Route path="/stay/:slug" element={<StayDetail />} />
 
-        <Route path="/shop" element={<Shop />} />
-        <Route path="/shop/:slug" element={<ProductDetail />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/shop/:slug" element={<ProductDetail />} />
 
-        <Route path="/journal" element={<Journal />} />
-        <Route path="/journal/:slug" element={<JournalDetail />} />
+          <Route path="/journal" element={<Journal />} />
+          <Route path="/journal/:slug" element={<JournalDetail />} />
 
-        <Route path="/gallery" element={<Gallery />} />
+          <Route path="/gallery" element={<Gallery />} />
 
-        <Route path="/invest" element={<Invest />} />
-        <Route path="/invest/:slug" element={<InvestmentDetail />} />
+          <Route path="/invest" element={<Invest />} />
+          <Route path="/invest/:slug" element={<InvestmentDetail />} />
 
-        <Route path="/about" element={<About />} />
+          <Route path="/about" element={<About />} />
 
-        <Route path="/contact" element={<Contact />} />
+          <Route path="/contact" element={<Contact />} />
 
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </Suspense>
 
       <Footer />
@@ -134,6 +142,14 @@ function App() {
           </Route>
           {/* Farm OS — private, no public Navbar/Footer */}
           <Route path="/farm-os/login" element={<FarmOSLogin />} />
+          <Route
+            path="/farm-os/forgot-password"
+            element={<FarmOSForgotPassword />}
+          />
+          <Route
+            path="/farm-os/reset-password"
+            element={<FarmOSResetPassword />}
+          />
           <Route path="/investor/register" element={<InvestorRegister />} />
           <Route
             path="/farm-os/*"

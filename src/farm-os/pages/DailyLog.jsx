@@ -19,6 +19,119 @@ import { Input } from "@/components/ui/input";
 
 // Kept local so this page does not depend on an eventDefinitions module
 // that may not exist in every FarmOS checkout.
+const EXTRA_ACTIVITY_DEFS = {
+  treatment: {
+    label: "Medicine / Treatment",
+    eventType: "treatment",
+    fields: [
+      {
+        key: "medicine",
+        label: "Medicine name",
+        type: "text",
+        required: true,
+        placeholder: "Medicine / treatment name",
+      },
+      { key: "dose", label: "Dose", type: "number", placeholder: "0.00" },
+      {
+        key: "unit",
+        label: "Dose unit",
+        type: "text",
+        placeholder: "ml, g, tablet",
+      },
+      {
+        key: "reason",
+        label: "Reason / symptoms",
+        type: "text",
+        placeholder: "Why was it given?",
+      },
+    ],
+  },
+  vaccination: {
+    label: "Vaccination",
+    eventType: "treatment",
+    fields: [
+      {
+        key: "medicine",
+        label: "Vaccine name",
+        type: "text",
+        required: true,
+        placeholder: "Vaccine name",
+      },
+      { key: "dose", label: "Dose", type: "number", placeholder: "0.00" },
+      {
+        key: "unit",
+        label: "Dose unit",
+        type: "text",
+        placeholder: "ml, drop, dose",
+      },
+      {
+        key: "reason",
+        label: "Purpose / disease",
+        type: "text",
+        placeholder: "e.g. scheduled vaccination",
+      },
+      { key: "next_due_date", label: "Next vaccination date", type: "date" },
+    ],
+  },
+  health_observation: {
+    label: "Health observation",
+    eventType: "health_note",
+    fields: [
+      {
+        key: "notes",
+        label: "Symptoms / observation",
+        type: "text",
+        required: true,
+        placeholder: "Describe behaviour or symptoms",
+      },
+      {
+        key: "action",
+        label: "Action taken",
+        type: "text",
+        placeholder: "Optional",
+      },
+    ],
+  },
+  breeding_record: {
+    label: "Breeding / Mating",
+    eventType: "breeding",
+    fields: [
+      {
+        key: "quantity",
+        label: "Number of animals",
+        type: "number",
+        required: true,
+        placeholder: "1",
+      },
+      {
+        key: "notes",
+        label: "Breeding details",
+        type: "text",
+        placeholder: "Pairing, mating or observation details",
+      },
+    ],
+  },
+  cleaning: {
+    label: "Cleaning / Disinfection",
+    eventType: "note",
+    fields: [
+      {
+        key: "area",
+        label: "Area cleaned",
+        type: "text",
+        required: true,
+        placeholder: "e.g. poultry shed, goat pen",
+      },
+      {
+        key: "disinfectant",
+        label: "Disinfectant / method",
+        type: "text",
+        placeholder: "Optional",
+      },
+    ],
+  },
+};
+
 const EVENT_SCHEMAS = {
   weight_check: {
     fields: [
@@ -250,6 +363,7 @@ function DailyLog() {
 
   const [date, setDate] = useState(localDateISO());
   const [entityValues, setEntityValues] = useState({});
+  const [selectedActivities, setSelectedActivities] = useState({});
   const [feedItemSelection, setFeedItemSelection] = useState({});
   const [expense, setExpense] = useState({
     amount: "",
@@ -428,28 +542,99 @@ function DailyLog() {
     }));
   }
 
+  function customActivityValueKey(activityKey, fieldKey) {
+    return `${activityKey}__${fieldKey}`;
+  }
+
+  function updateCustomActivityField(entityId, activityKey, fieldKey, value) {
+    updateEntityField(
+      entityId,
+      customActivityValueKey(activityKey, fieldKey),
+      value,
+    );
+  }
+
+  function addEntityActivity(entityId, activityKey) {
+    if (!activityKey) return;
+    setSelectedActivities((prev) => {
+      const current = prev[entityId] ?? [];
+      if (current.includes(activityKey)) return prev;
+      return { ...prev, [entityId]: [...current, activityKey] };
+    });
+  }
+
+  function removeEntityActivity(entityId, activityKey) {
+    setSelectedActivities((prev) => ({
+      ...prev,
+      [entityId]: (prev[entityId] ?? []).filter((key) => key !== activityKey),
+    }));
+
+    updateEntityField(entityId, activityKey, "");
+    if (activityKey === "feed_kg") {
+      setFeedItemSelection((prev) => ({ ...prev, [entityId]: "" }));
+    }
+  }
+
   function startEditing(log) {
     const events = Array.isArray(log.event_data) ? log.event_data : [];
     const nextValues = {};
     const nextFeedItems = {};
+    const nextActivities = {};
     for (const event of events) {
       const entityId = event.entity_id;
       const payload = event.payload ?? {};
       const current = nextValues[entityId] ?? {};
+      const activityKeys = nextActivities[entityId] ?? [];
       if (event.type === "feed_given") {
         current.feed_kg = payload.qty_kg ?? "";
+        activityKeys.push("feed_kg");
         if (payload.item_id) nextFeedItems[entityId] = payload.item_id;
-      } else if (event.type === "egg_count")
+      } else if (event.type === "egg_count") {
         current.egg_count = payload.count ?? "";
-      else if (event.type === "weight_check")
+        activityKeys.push("egg_count");
+      } else if (event.type === "weight_check") {
         current.weight_kg = payload.kg ?? "";
-      else if (event.type === "harvest")
+        activityKeys.push("weight_kg");
+      } else if (event.type === "harvest") {
         current.harvest_kg = payload.qty_kg ?? "";
-      else if (event.type === "mortality")
+        activityKeys.push("harvest_kg");
+      } else if (event.type === "mortality") {
         current.mortality = payload.count ?? "";
-      else if (event.type === "note") current.note = payload.text ?? "";
+        activityKeys.push("mortality");
+      } else if (event.type === "treatment") {
+        const key =
+          payload.activity_kind === "vaccination" ? "vaccination" : "treatment";
+        for (const field of EXTRA_ACTIVITY_DEFS[key].fields) {
+          current[customActivityValueKey(key, field.key)] =
+            payload[field.key] ?? "";
+        }
+        activityKeys.push(key);
+      } else if (event.type === "health_note") {
+        current[customActivityValueKey("health_observation", "notes")] =
+          payload.notes ?? "";
+        current[customActivityValueKey("health_observation", "action")] =
+          payload.action ?? "";
+        activityKeys.push("health_observation");
+      } else if (event.type === "breeding") {
+        current[customActivityValueKey("breeding_record", "quantity")] =
+          payload.quantity ?? "";
+        current[customActivityValueKey("breeding_record", "notes")] =
+          payload.notes ?? "";
+        activityKeys.push("breeding_record");
+      } else if (event.type === "note") {
+        const noteText = payload.text ?? "";
+        if (noteText.startsWith("Water management: ")) {
+          current[customActivityValueKey("water_management", "notes")] =
+            noteText.replace(/^Water management:\s*/, "");
+        } else {
+          current.note = noteText;
+          activityKeys.push("note");
+        }
+      }
       nextValues[entityId] = current;
+      nextActivities[entityId] = [...new Set(activityKeys)];
     }
+    setSelectedActivities(nextActivities);
     setEditingBatch(log);
     setDate(log.log_date);
     setEntityValues(nextValues);
@@ -483,6 +668,7 @@ function DailyLog() {
   function cancelEditing() {
     setEditingBatch(null);
     setEntityValues({});
+    setSelectedActivities({});
     setFeedItemSelection({});
     setExpense({ amount: "", category: "", entityId: "" });
     setContent({ photos: "", videos: "", note: "" });
@@ -669,19 +855,45 @@ function DailyLog() {
         feedItemSelection,
       });
 
+      for (const entity of entities) {
+        const values = entityValues[entity.id] ?? {};
+        for (const activityKey of selectedActivities[entity.id] ?? []) {
+          const definition = EXTRA_ACTIVITY_DEFS[activityKey];
+          if (!definition) continue;
+          for (const field of definition.fields) {
+            if (
+              field.required &&
+              !String(
+                values[customActivityValueKey(activityKey, field.key)] ?? "",
+              ).trim()
+            ) {
+              inputValidationErrors.push(
+                `${field.label} is required for ${entity.label}.`,
+              );
+            }
+          }
+        }
+      }
+
       if (inputValidationErrors.length > 0) {
         setSubmitError(inputValidationErrors[0]);
         return;
       }
       const allRows = entities.flatMap((entity) => {
         const capabilities = entity.species_config?.capabilities ?? {};
-        const fields = getQuickFieldsForCapabilities(capabilities);
+        const allFields = getQuickFieldsForCapabilities(capabilities);
+        const selectedKeys = selectedActivities[entity.id] ?? [];
+        const fields = allFields.filter((field) =>
+          selectedKeys.includes(field.key),
+        );
         const values = entityValues[entity.id] ?? {};
-        return buildEventRows({
+        const baseRows = buildEventRows({
           entityId: entity.id,
           occurredAt: date,
           fields,
-          values,
+          values: selectedKeys.includes("note")
+            ? values
+            : { ...values, note: "" },
         }).map((row) => {
           if (row.type === "feed_given" && feedItemSelection[entity.id]) {
             return {
@@ -694,6 +906,49 @@ function DailyLog() {
           }
           return row;
         });
+
+        const extraRows = selectedKeys
+          .filter((key) => EXTRA_ACTIVITY_DEFS[key])
+          .flatMap((key) => {
+            const definition = EXTRA_ACTIVITY_DEFS[key];
+            const payload = {};
+
+            for (const field of definition.fields) {
+              const raw = values[customActivityValueKey(key, field.key)] ?? "";
+              if (raw === "") continue;
+              payload[field.key] = field.type === "number" ? Number(raw) : raw;
+            }
+
+            if (key === "vaccination") payload.activity_kind = "vaccination";
+            if (key === "treatment") payload.activity_kind = "medicine";
+            if (key === "cleaning") {
+              payload.text = `Cleaning / disinfection: ${payload.area}${payload.disinfectant ? ` · ${payload.disinfectant}` : ""}`;
+            }
+
+            return [
+              {
+                entity_id: entity.id,
+                type: definition.eventType,
+                payload,
+                occurred_at: date,
+              },
+            ];
+          });
+
+        const waterNotes =
+          values[customActivityValueKey("water_management", "notes")] ?? "";
+        const waterRows = waterNotes.trim()
+          ? [
+              {
+                entity_id: entity.id,
+                type: "note",
+                payload: { text: `Water management: ${waterNotes.trim()}` },
+                occurred_at: date,
+              },
+            ]
+          : [];
+
+        return [...baseRows, ...extraRows, ...waterRows];
       });
 
       const photos = content.photos !== "" ? Number(content.photos) : 0;
@@ -765,6 +1020,7 @@ function DailyLog() {
         });
 
         setEntityValues({});
+        setSelectedActivities({});
         setExpense({ amount: "", category: "", entityId: "" });
         setContent({ photos: "", videos: "", note: "" });
         setSubmitWarning(
@@ -798,6 +1054,7 @@ function DailyLog() {
       }
 
       setEntityValues({});
+      setSelectedActivities({});
       setFeedItemSelection({});
       setExpense({ amount: "", category: "", entityId: "" });
       setContent({ photos: "", videos: "", note: "" });
@@ -928,61 +1185,235 @@ function DailyLog() {
                   </CardHeader>
 
                   <CardContent>
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {fields.map((field) => (
-                        <label
-                          key={field.key}
-                          className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground"
-                        >
-                          <span>{field.label}</span>
-                          <Input
-                            type="number"
-                            inputMode={field.inputMode}
-                            step="any"
-                            value={values[field.key] ?? ""}
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                        <label className="flex flex-1 flex-col gap-1.5 text-sm font-medium text-muted-foreground">
+                          <span>Add activity</span>
+                          <select
+                            value=""
                             onChange={(e) =>
-                              updateEntityField(
-                                entity.id,
-                                field.key,
-                                e.target.value,
-                              )
+                              addEntityActivity(entity.id, e.target.value)
                             }
-                          />
-                          {field.key === "feed_kg" &&
-                            inventoryItems.length > 0 && (
-                              <select
-                                className="mt-1 min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                value={feedItemSelection[entity.id] ?? ""}
-                                onChange={(e) =>
-                                  setFeedItemSelection((prev) => ({
-                                    ...prev,
-                                    [entity.id]: e.target.value,
-                                  }))
-                                }
-                              >
-                                <option value="">From stock…</option>
-                                {inventoryItems.map((item) => (
-                                  <option key={item.id} value={item.id}>
-                                    {item.name}
-                                  </option>
-                                ))}
-                              </select>
+                            className="min-h-12 w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring/30"
+                          >
+                            <option value="">Choose an activity…</option>
+                            {fields
+                              .filter(
+                                (field) =>
+                                  !(
+                                    selectedActivities[entity.id] ?? []
+                                  ).includes(field.key),
+                              )
+                              .map((field) => (
+                                <option key={field.key} value={field.key}>
+                                  {field.label}
+                                </option>
+                              ))}
+                            {!(selectedActivities[entity.id] ?? []).includes(
+                              "note",
+                            ) && (
+                              <option value="note">Note / observation</option>
                             )}
+                            {Object.entries(EXTRA_ACTIVITY_DEFS)
+                              .filter(
+                                ([key]) =>
+                                  !(
+                                    selectedActivities[entity.id] ?? []
+                                  ).includes(key),
+                              )
+                              .map(([key, definition]) => (
+                                <option key={key} value={key}>
+                                  {definition.label}
+                                </option>
+                              ))}
+                          </select>
                         </label>
-                      ))}
-                    </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground sm:max-w-44 sm:pb-3">
+                          Add any other activity you want to record.
+                        </p>
+                      </div>
 
-                    <label className="flex flex-col gap-1.5 text-sm font-medium text-muted-foreground">
-                      <span>Note</span>
-                      <Input
-                        type="text"
-                        placeholder="Optional — e.g. field inspection, health observation"
-                        value={values.note ?? ""}
-                        onChange={(e) =>
-                          updateEntityField(entity.id, "note", e.target.value)
-                        }
-                      />
-                    </label>
+                      {(selectedActivities[entity.id] ?? []).length === 0 ? (
+                        <p className="rounded-lg border border-dashed border-border/80 px-4 py-4 text-sm text-muted-foreground">
+                          No additional activities yet. Use the dropdown to add
+                          feed, health, production or other records.
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          {(selectedActivities[entity.id] ?? []).map(
+                            (activityKey) => {
+                              const field = fields.find(
+                                (item) => item.key === activityKey,
+                              );
+                              return (
+                                <div
+                                  key={activityKey}
+                                  className="rounded-lg border border-border/70 bg-muted/[0.12] p-3"
+                                >
+                                  <div className="mb-2 flex items-center justify-between gap-3">
+                                    <span className="text-sm font-medium text-foreground">
+                                      {EXTRA_ACTIVITY_DEFS[activityKey]
+                                        ?.label ??
+                                        (activityKey === "note"
+                                          ? "Note / observation"
+                                          : field?.label)}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() =>
+                                        removeEntityActivity(
+                                          entity.id,
+                                          activityKey,
+                                        )
+                                      }
+                                      className="h-8 px-2 text-muted-foreground"
+                                      aria-label={`Remove ${activityKey} activity`}
+                                    >
+                                      <X className="mr-1 size-4" />
+                                      Remove
+                                    </Button>
+                                  </div>
+
+                                  {EXTRA_ACTIVITY_DEFS[activityKey] ? (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                      {EXTRA_ACTIVITY_DEFS[
+                                        activityKey
+                                      ].fields.map((field) => (
+                                        <label
+                                          key={field.key}
+                                          className="flex flex-col gap-1.5 text-sm text-muted-foreground"
+                                        >
+                                          <span>
+                                            {field.label}
+                                            {field.required ? " *" : ""}
+                                          </span>
+                                          <Input
+                                            type={
+                                              field.type === "number"
+                                                ? "number"
+                                                : field.type === "date"
+                                                  ? "date"
+                                                  : "text"
+                                            }
+                                            inputMode={
+                                              field.type === "number"
+                                                ? "decimal"
+                                                : undefined
+                                            }
+                                            min={
+                                              field.type === "number"
+                                                ? "0"
+                                                : undefined
+                                            }
+                                            step={
+                                              field.type === "number"
+                                                ? "any"
+                                                : undefined
+                                            }
+                                            placeholder={
+                                              field.placeholder ?? ""
+                                            }
+                                            value={
+                                              values[
+                                                customActivityValueKey(
+                                                  activityKey,
+                                                  field.key,
+                                                )
+                                              ] ?? ""
+                                            }
+                                            onChange={(e) =>
+                                              updateCustomActivityField(
+                                                entity.id,
+                                                activityKey,
+                                                field.key,
+                                                e.target.value,
+                                              )
+                                            }
+                                          />
+                                        </label>
+                                      ))}
+                                    </div>
+                                  ) : activityKey === "note" ? (
+                                    <Input
+                                      type="text"
+                                      placeholder="e.g. health observation, behaviour, field inspection"
+                                      value={values.note ?? ""}
+                                      onChange={(e) =>
+                                        updateEntityField(
+                                          entity.id,
+                                          "note",
+                                          e.target.value,
+                                        )
+                                      }
+                                    />
+                                  ) : field ? (
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                      <label className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                                        <span>{field.label}</span>
+                                        <Input
+                                          type="number"
+                                          inputMode={field.inputMode}
+                                          min={
+                                            field.eventType === "mortality"
+                                              ? "0"
+                                              : "0"
+                                          }
+                                          step={
+                                            field.eventType === "mortality" ||
+                                            field.eventType === "egg_count"
+                                              ? "1"
+                                              : "any"
+                                          }
+                                          value={values[field.key] ?? ""}
+                                          onChange={(e) =>
+                                            updateEntityField(
+                                              entity.id,
+                                              field.key,
+                                              e.target.value,
+                                            )
+                                          }
+                                        />
+                                      </label>
+                                      {field.key === "feed_kg" && (
+                                        <label className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                                          <span>Feed source</span>
+                                          <select
+                                            className="min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                                            value={
+                                              feedItemSelection[entity.id] ?? ""
+                                            }
+                                            onChange={(e) =>
+                                              setFeedItemSelection((prev) => ({
+                                                ...prev,
+                                                [entity.id]: e.target.value,
+                                              }))
+                                            }
+                                          >
+                                            <option value="">
+                                              From stock…
+                                            </option>
+                                            {inventoryItems.map((item) => (
+                                              <option
+                                                key={item.id}
+                                                value={item.id}
+                                              >
+                                                {item.name}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </label>
+                                      )}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            },
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );

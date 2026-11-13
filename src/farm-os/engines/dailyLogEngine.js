@@ -45,7 +45,7 @@ export const MORTALITY_FIELD = {
   key: "mortality",
   label: "Mortality",
   eventType: "mortality",
-  payloadKey: "count",
+  payloadKey: "quantity",
   inputMode: "numeric",
 };
 
@@ -199,10 +199,10 @@ export function validateDailyLog({
     }
 
     if (row.type === "mortality") {
-      const value = Number(payload.count);
+      const value = Number(payload.quantity);
 
-      if (!Number.isFinite(value) || value < 0) {
-        errors.push("Mortality must be 0 or greater.");
+      if (!Number.isInteger(value) || value < 1) {
+        errors.push("Mortality must be a whole number of at least 1.");
       }
     }
   }

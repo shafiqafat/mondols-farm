@@ -599,7 +599,7 @@ function DailyLog() {
         current.harvest_kg = payload.qty_kg ?? "";
         activityKeys.push("harvest_kg");
       } else if (event.type === "mortality") {
-        current.mortality = payload.count ?? "";
+        current.mortality = payload.quantity ?? payload.count ?? "";
         activityKeys.push("mortality");
       } else if (event.type === "treatment") {
         const key =

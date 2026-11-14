@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  CheckCircle2,
-  ClipboardList,
-  ListTodo,
-} from "lucide-react";
+import { CheckCircle2, ClipboardList, ListTodo, Pencil, X } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
 import { localDateISO } from "../lib/localDate";
 import { useAuth } from "../hooks/useAuth";
@@ -52,6 +48,7 @@ function Tasks() {
     notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
   const [completingId, setCompletingId] = useState(null);
   const [showCompleted, setShowCompleted] = useState(false);
 
@@ -64,11 +61,7 @@ function Tasks() {
         .from("tasks")
         .select("*, entity:entity_id(id, label, status)")
         .order("due_at", { ascending: true, nullsFirst: false }),
-      supabase
-        .from("farm_entities")
-        .select("id, label")
-        .eq("status", "active")
-        .order("label"),
+      supabase.from("farm_entities").select("id, label").order("label"),
     ]);
 
     if (tasksRes.error) {
@@ -93,26 +86,7 @@ function Tasks() {
     loadAll();
   }, []);
 
-  async function handleAdd(e) {
-    e.preventDefault();
-    if (!form.title.trim()) return;
-    setSaving(true);
-    setPageError("");
-
-    const { error } = await supabase.from("tasks").insert({
-      title: form.title.trim(),
-      entity_id: form.entityId || null,
-      due_at: form.dueAt || null,
-      recurrence: form.recurrence || null,
-      priority: form.priority,
-      notes: form.notes || null,
-    });
-
-    setSaving(false);
-    if (error) {
-      setPageError(error.message);
-      return;
-    }
+  function resetForm() {
     setForm({
       title: "",
       entityId: "",
@@ -121,7 +95,52 @@ function Tasks() {
       priority: "normal",
       notes: "",
     });
-    loadAll();
+    setEditingTaskId(null);
+  }
+
+  function handleEdit(task) {
+    setForm({
+      title: task.title ?? "",
+      entityId: task.entity_id ?? "",
+      dueAt: task.due_at ?? "",
+      recurrence: task.recurrence ?? "",
+      priority: task.priority ?? "normal",
+      notes: task.notes ?? "",
+    });
+    setEditingTaskId(task.id);
+    setPageError("");
+    document.getElementById("task-title")?.focus();
+  }
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    if (!form.title.trim()) return;
+
+    setSaving(true);
+    setPageError("");
+
+    const taskData = {
+      title: form.title.trim(),
+      entity_id: form.entityId || null,
+      due_at: form.dueAt || null,
+      recurrence: form.recurrence || null,
+      priority: form.priority,
+      notes: form.notes.trim() || null,
+    };
+
+    const result = editingTaskId
+      ? await supabase.from("tasks").update(taskData).eq("id", editingTaskId)
+      : await supabase.from("tasks").insert(taskData);
+
+    setSaving(false);
+
+    if (result.error) {
+      setPageError(result.error.message);
+      return;
+    }
+
+    resetForm();
+    await loadAll();
   }
 
   async function handleComplete(task) {
@@ -281,21 +300,33 @@ function Tasks() {
                     )}
                   </div>
                   {canEdit && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleComplete(task)}
-                      disabled={completingId === task.id}
-                      className={
-                        completingId === task.id
-                          ? "tasks-completing-button"
-                          : ""
-                      }
-                    >
-                      <CheckCircle2 className="size-4" />
-                      {completingId === task.id ? "Completing…" : "Done"}
-                    </Button>
+                    <div className="flex w-full gap-2 sm:w-auto">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(task)}
+                        className="flex-1 sm:flex-none"
+                      >
+                        <Pencil className="size-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleComplete(task)}
+                        disabled={completingId === task.id}
+                        className={`flex-1 sm:flex-none ${
+                          completingId === task.id
+                            ? "tasks-completing-button"
+                            : ""
+                        }`}
+                      >
+                        <CheckCircle2 className="size-4" />
+                        {completingId === task.id ? "Completing…" : "Done"}
+                      </Button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -323,11 +354,15 @@ function Tasks() {
           <div className="mb-5">
             <div className="flex items-center gap-2">
               <ClipboardList className="size-5 shrink-0 text-primary" />
-              <h2 className="text-base font-semibold">Add a task</h2>
+              <h2 className="text-base font-semibold">
+                {editingTaskId ? "Edit task" : "Add a task"}
+              </h2>
             </div>
 
             <p className="mt-1 ml-7 text-sm text-muted-foreground">
-              Create a one-time or recurring task for the farm.
+              {editingTaskId
+                ? "Update the task details and save your changes."
+                : "Create a one-time or recurring task for the farm."}
             </p>
           </div>
 
@@ -440,9 +475,26 @@ function Tasks() {
               rows={3}
             />
           </div>
-          <div className="mt-5 flex justify-end border-t border-border/60 pt-5">
+          <div className="mt-5 flex flex-wrap justify-end gap-2 border-t border-border/60 pt-5">
+            {editingTaskId && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={resetForm}
+                disabled={saving}
+              >
+                <X className="size-4" />
+                Cancel
+              </Button>
+            )}
             <Button type="submit" disabled={saving}>
-              {saving ? "Adding…" : "Add task"}
+              {saving
+                ? editingTaskId
+                  ? "Saving…"
+                  : "Adding…"
+                : editingTaskId
+                  ? "Save changes"
+                  : "Add task"}
             </Button>
           </div>
         </form>

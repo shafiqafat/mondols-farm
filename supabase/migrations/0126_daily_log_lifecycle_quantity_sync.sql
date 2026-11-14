@@ -8,9 +8,14 @@ begin;
 
 create table if not exists public.daily_log_batch_lifecycle_events (
   event_id uuid primary key references public.entity_events(id),
-  batch_id uuid not null references public.daily_log_batches(id) on delete cascade,
+  batch_id uuid references public.daily_log_batches(id) on delete cascade,
   created_at timestamptz not null default now()
 );
+
+-- Some historical mortality events were created outside a Daily Log batch.
+-- NULL batch_id keeps those events in the lifecycle audit map as well.
+alter table public.daily_log_batch_lifecycle_events
+  alter column batch_id drop not null;
 
 create index if not exists daily_log_batch_lifecycle_events_batch_idx
   on public.daily_log_batch_lifecycle_events(batch_id);
@@ -33,48 +38,43 @@ declare
   v_current_quantity numeric;
 begin
 
-  -- GROUP entities: apply historical mortality not previously deducted.
+  -- GROUP entities: include all unreversed, unmapped mortality events,
+  -- including historical events that are not linked to daily_log_batches.
   for v_row in
-    with batch_events as (
-      select distinct on (ee.id)
+    with parsed as (
+      select
         ee.id as event_id,
         ee.entity_id,
         coalesce(
           nullif(ee.payload->>'quantity',''),
           nullif(ee.payload->>'count','')
-        ) as quantity_text,
-        dlb.id as batch_id
-      from public.daily_log_batches dlb
-      cross join lateral unnest(
-        coalesce(dlb.event_ids, '{}'::uuid[])
-      ) as u(event_id)
-      join public.entity_events ee on ee.id = u.event_id
+        ) as quantity_text
+      from public.entity_events ee
       left join public.daily_log_batch_lifecycle_events mapped
         on mapped.event_id = ee.id
       where ee.type = 'mortality'
         and ee.reversed_at is null
         and mapped.event_id is null
-      order by ee.id, dlb.created_at, dlb.id
     ),
-    parsed as (
+    quantified as (
       select *,
         case
           when quantity_text ~ '^[0-9]+$'
           then quantity_text::numeric
           else null
         end as mortality_qty
-      from batch_events
+      from parsed
     )
     select
-      p.entity_id,
-      sum(p.mortality_qty) as total_mortality,
+      q.entity_id,
+      sum(q.mortality_qty) as total_mortality,
       count(*) as event_count,
-      count(p.mortality_qty) as valid_quantity_count,
-      array_agg(p.event_id order by p.event_id) as event_ids
-    from parsed p
-    join public.farm_entities fe on fe.id = p.entity_id
+      count(q.mortality_qty) as valid_quantity_count,
+      array_agg(q.event_id order by q.event_id) as event_ids
+    from quantified q
+    join public.farm_entities fe on fe.id = q.entity_id
     where fe.tracking_mode = 'group'
-    group by p.entity_id
+    group by q.entity_id
   loop
 
     if v_row.total_mortality is null
@@ -110,34 +110,31 @@ begin
     set quantity = v_current_quantity - v_row.total_mortality
     where id = v_row.entity_id;
 
-    -- Mark historical events as applied.
+    -- Map every applied event. batch_id is NULL for events not linked
+    -- to a Daily Log batch.
     insert into public.daily_log_batch_lifecycle_events(batch_id, event_id)
-    select distinct on (ee.id)
-      dlb.id,
+    select
+      (
+        select dlb.id
+        from public.daily_log_batches dlb
+        where ee.id = any(coalesce(dlb.event_ids, '{}'::uuid[]))
+        order by dlb.created_at, dlb.id
+        limit 1
+      ),
       ee.id
-    from public.daily_log_batches dlb
-    cross join lateral unnest(
-      coalesce(dlb.event_ids, '{}'::uuid[])
-    ) as u(event_id)
-    join public.entity_events ee on ee.id = u.event_id
+    from public.entity_events ee
     where ee.id = any(v_row.event_ids)
       and ee.type = 'mortality'
       and ee.reversed_at is null
-    order by ee.id, dlb.created_at, dlb.id
     on conflict (event_id) do nothing;
 
   end loop;
-
 
   -- INDIVIDUAL entities: apply death only when the latest unreversed
   -- sale/mortality lifecycle event is mortality.
   for v_row in
     select distinct ee.entity_id
-    from public.daily_log_batches dlb
-    cross join lateral unnest(
-      coalesce(dlb.event_ids, '{}'::uuid[])
-    ) as u(event_id)
-    join public.entity_events ee on ee.id = u.event_id
+    from public.entity_events ee
     join public.farm_entities fe on fe.id = ee.entity_id
     left join public.daily_log_batch_lifecycle_events mapped
       on mapped.event_id = ee.id
@@ -171,16 +168,18 @@ begin
         );
 
       insert into public.daily_log_batch_lifecycle_events(batch_id, event_id)
-      select dlb.id, ee.id
-      from public.daily_log_batches dlb
-      cross join lateral unnest(
-        coalesce(dlb.event_ids, '{}'::uuid[])
-      ) as u(event_id)
-      join public.entity_events ee on ee.id = u.event_id
-      where ee.id = v_latest_event_id
-        and ee.type = 'mortality'
-      order by dlb.created_at, dlb.id
-      limit 1
+      select
+        (
+          select dlb.id
+          from public.daily_log_batches dlb
+          where v_latest_event_id = any(
+            coalesce(dlb.event_ids, '{}'::uuid[])
+          )
+          order by dlb.created_at, dlb.id
+          limit 1
+        ),
+        v_latest_event_id
+      where v_latest_event_id is not null
       on conflict (event_id) do nothing;
 
     end if;

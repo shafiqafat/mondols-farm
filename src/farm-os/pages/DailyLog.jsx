@@ -428,7 +428,7 @@ function DailyLog() {
         supabase
           .from("farm_entities")
           .select(
-            "id, label, quantity, species_config:species_config_id(id, name, category, capabilities)",
+            "id, label, quantity, tracking_mode, species_config:species_config_id(id, name, category, capabilities)",
           )
           .eq("status", "active")
           .order("label"),
@@ -1177,9 +1177,22 @@ function DailyLog() {
                 >
                   <CardHeader className="border-b border-border/50 bg-muted/[0.18] px-5 py-4 sm:px-6">
                     <CardTitle className="flex flex-col gap-1 text-base sm:flex-row sm:items-center sm:justify-between">
-                      <span>{entity.label}</span>
+                      <span className="flex flex-wrap items-center gap-2">
+                        {entity.label}
+                        <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                          {entity.tracking_mode === "individual"
+                            ? "Individual animal"
+                            : entity.tracking_mode === "group"
+                              ? "Group"
+                              : entity.tracking_mode || "Unspecified"}
+                        </span>
+                      </span>
                       <span className="text-sm font-normal text-muted-foreground">
                         {entity.species_config?.name}
+                        {entity.tracking_mode === "group" &&
+                        entity.quantity != null
+                          ? ` · ${entity.quantity} animals`
+                          : ""}
                       </span>
                     </CardTitle>
                   </CardHeader>
@@ -1350,32 +1363,68 @@ function DailyLog() {
                                     />
                                   ) : field ? (
                                     <div className="grid gap-3 sm:grid-cols-2">
-                                      <label className="flex flex-col gap-1.5 text-sm text-muted-foreground">
-                                        <span>{field.label}</span>
-                                        <Input
-                                          type="number"
-                                          inputMode={field.inputMode}
-                                          min={
-                                            field.eventType === "mortality"
-                                              ? "0"
-                                              : "0"
-                                          }
-                                          step={
-                                            field.eventType === "mortality" ||
-                                            field.eventType === "egg_count"
-                                              ? "1"
-                                              : "any"
-                                          }
-                                          value={values[field.key] ?? ""}
-                                          onChange={(e) =>
-                                            updateEntityField(
-                                              entity.id,
-                                              field.key,
-                                              e.target.value,
-                                            )
-                                          }
-                                        />
-                                      </label>
+                                      {field.eventType === "mortality" &&
+                                      entity.tracking_mode === "individual" ? (
+                                        <label className="flex items-center gap-3 rounded-md border border-border/70 px-3 py-3 text-sm text-foreground">
+                                          <input
+                                            type="checkbox"
+                                            className="size-4 accent-primary"
+                                            checked={
+                                              String(
+                                                values[field.key] ?? "",
+                                              ) === "1"
+                                            }
+                                            onChange={(e) =>
+                                              updateEntityField(
+                                                entity.id,
+                                                field.key,
+                                                e.target.checked ? "1" : "",
+                                              )
+                                            }
+                                          />
+                                          <span>
+                                            <span className="block font-medium">
+                                              Mark this animal as deceased
+                                            </span>
+                                            <span className="block text-xs text-muted-foreground">
+                                              This records one individual
+                                              mortality event for {entity.label}
+                                              .
+                                            </span>
+                                          </span>
+                                        </label>
+                                      ) : (
+                                        <label className="flex flex-col gap-1.5 text-sm text-muted-foreground">
+                                          <span>
+                                            {field.eventType === "mortality"
+                                              ? "Number of deaths"
+                                              : field.label}
+                                          </span>
+                                          <Input
+                                            type="number"
+                                            inputMode={field.inputMode}
+                                            min={
+                                              field.eventType === "mortality"
+                                                ? "1"
+                                                : "0"
+                                            }
+                                            step={
+                                              field.eventType === "mortality" ||
+                                              field.eventType === "egg_count"
+                                                ? "1"
+                                                : "any"
+                                            }
+                                            value={values[field.key] ?? ""}
+                                            onChange={(e) =>
+                                              updateEntityField(
+                                                entity.id,
+                                                field.key,
+                                                e.target.value,
+                                              )
+                                            }
+                                          />
+                                        </label>
+                                      )}
                                       {field.key === "feed_kg" && (
                                         <label className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                                           <span>Feed source</span>

@@ -385,139 +385,114 @@ species_config (
     setSavingEntity(true);
     setPageError("");
 
-    const { data: createdEntity, error: entityError } = await supabase
-      .from("farm_entities")
-      .insert({
-        species_config_id: newEntity.speciesConfigId,
-        label: newEntity.label.trim(),
-        tracking_mode: newEntity.trackingMode,
-        quantity: newEntity.quantity !== "" ? Number(newEntity.quantity) : null,
-        acquired_at: newEntity.acquiredAt || null,
-        location: newEntity.location || null,
-        notes: newEntity.notes || null,
-        status: "active",
-      })
-      .select("id")
-      .single();
+    let ageAtAcquisitionDays = null;
+    let lifecycleBirthDate = newEntity.birthDate || null;
+    let lifecycleBirthDatePrecision = newEntity.birthDate
+      ? newEntity.birthDatePrecision
+      : "unknown";
 
-    if (entityError) {
-      setSavingEntity(false);
-      setPageError(entityError.message);
-      return;
-    }
+    if (
+      newEntity.trackingMode === "individual" &&
+      !newEntity.birthDate &&
+      newEntity.originType !== "born_on_farm" &&
+      newEntity.acquiredAt &&
+      newEntity.ageAtAcquisition !== ""
+    ) {
+      const estimatedBirthDate = calculateEstimatedBirthDate(
+        newEntity.acquiredAt,
+        newEntity.ageAtAcquisition,
+        newEntity.ageUnit,
+      );
 
-    if (newEntity.trackingMode === "individual") {
-      let ageAtAcquisitionDays = null;
-      let lifecycleBirthDate = newEntity.birthDate || null;
-      let lifecycleBirthDatePrecision = newEntity.birthDate
-        ? newEntity.birthDatePrecision
-        : "unknown";
-
-      if (
-        !newEntity.birthDate &&
-        newEntity.originType !== "born_on_farm" &&
-        newEntity.acquiredAt &&
-        newEntity.ageAtAcquisition !== ""
-      ) {
-        const estimatedBirthDate = calculateEstimatedBirthDate(
-          newEntity.acquiredAt,
-          newEntity.ageAtAcquisition,
-          newEntity.ageUnit,
-        );
-
-        if (estimatedBirthDate) {
-          lifecycleBirthDate = estimatedBirthDate;
-          lifecycleBirthDatePrecision = "estimated";
-        }
-      }
-
-      if (newEntity.ageAtAcquisition !== "") {
-        const age = Number(newEntity.ageAtAcquisition);
-
-        if (newEntity.ageUnit === "days") {
-          ageAtAcquisitionDays = Math.round(age);
-        } else if (newEntity.ageUnit === "months") {
-          ageAtAcquisitionDays = Math.round(age * 30.4375);
-        } else if (newEntity.ageUnit === "years") {
-          ageAtAcquisitionDays = Math.round(age * 365.25);
-        }
-      }
-
-      const { error: lifecycleError } = await supabase
-        .from("entity_lifecycle")
-        .insert({
-          entity_id: createdEntity.id,
-          origin_type: newEntity.originType,
-          birth_date: lifecycleBirthDate,
-          birth_date_precision: lifecycleBirthDatePrecision,
-          age_at_acquisition_days: ageAtAcquisitionDays,
-        });
-
-      if (lifecycleError) {
-        await supabase
-          .from("farm_entities")
-          .delete()
-          .eq("id", createdEntity.id);
-
-        setSavingEntity(false);
-        setPageError(lifecycleError.message);
-        return;
+      if (estimatedBirthDate) {
+        lifecycleBirthDate = estimatedBirthDate;
+        lifecycleBirthDatePrecision = "estimated";
       }
     }
 
     if (
+      newEntity.trackingMode === "individual" &&
+      newEntity.ageAtAcquisition !== ""
+    ) {
+      const age = Number(newEntity.ageAtAcquisition);
+      if (newEntity.ageUnit === "days") {
+        ageAtAcquisitionDays = Math.round(age);
+      } else if (newEntity.ageUnit === "months") {
+        ageAtAcquisitionDays = Math.round(age * 30.4375);
+      } else if (newEntity.ageUnit === "years") {
+        ageAtAcquisitionDays = Math.round(age * 365.25);
+      }
+    }
+
+    const parentage = [];
+    if (
       newEntity.originType === "born_on_farm" &&
       newEntity.trackingMode === "individual"
     ) {
-      const parentageRows = [];
+      parentage.push(
+        {
+          parent_role: "mother",
+          parent_type: newEntity.motherType,
+          parent_entity_id:
+            newEntity.motherType === "farm_entity"
+              ? newEntity.motherEntityId || null
+              : null,
+          external_reference:
+            newEntity.motherType === "external"
+              ? newEntity.motherExternalReference.trim() || null
+              : null,
+        },
+        {
+          parent_role: "father",
+          parent_type: newEntity.fatherType,
+          parent_entity_id:
+            newEntity.fatherType === "farm_entity"
+              ? newEntity.fatherEntityId || null
+              : null,
+          external_reference:
+            newEntity.fatherType === "external"
+              ? newEntity.fatherExternalReference.trim() || null
+              : null,
+        },
+      );
+    }
 
-      parentageRows.push({
-        child_entity_id: createdEntity.id,
-        parent_role: "mother",
-        parent_type: newEntity.motherType,
-        parent_entity_id:
-          newEntity.motherType === "farm_entity"
-            ? newEntity.motherEntityId || null
-            : null,
-        external_reference:
-          newEntity.motherType === "external"
-            ? newEntity.motherExternalReference.trim() || null
-            : null,
+    const { data: registrationData, error: registrationError } =
+      await supabase.rpc("register_farm_entity", {
+        p_species_config_id: newEntity.speciesConfigId,
+        p_label: newEntity.label.trim(),
+        p_tracking_mode: newEntity.trackingMode,
+        p_quantity: Number(newEntity.quantity),
+        p_acquired_at: newEntity.acquiredAt || null,
+        p_location: newEntity.location || null,
+        p_notes: newEntity.notes || null,
+        p_origin_type:
+          newEntity.trackingMode === "individual" ? newEntity.originType : null,
+        p_birth_date:
+          newEntity.trackingMode === "individual" ? lifecycleBirthDate : null,
+        p_birth_date_precision:
+          newEntity.trackingMode === "individual"
+            ? lifecycleBirthDatePrecision
+            : "unknown",
+        p_age_at_acquisition_days:
+          newEntity.trackingMode === "individual" ? ageAtAcquisitionDays : null,
+        p_parentage: parentage,
       });
 
-      parentageRows.push({
-        child_entity_id: createdEntity.id,
-        parent_role: "father",
-        parent_type: newEntity.fatherType,
-        parent_entity_id:
-          newEntity.fatherType === "farm_entity"
-            ? newEntity.fatherEntityId || null
-            : null,
-        external_reference:
-          newEntity.fatherType === "external"
-            ? newEntity.fatherExternalReference.trim() || null
-            : null,
-      });
+    if (registrationError) {
+      setSavingEntity(false);
+      setPageError(registrationError.message);
+      return;
+    }
 
-      const { error: parentageError } = await supabase
-        .from("entity_parentage")
-        .insert(parentageRows);
+    const createdEntity = Array.isArray(registrationData)
+      ? registrationData[0]
+      : registrationData;
 
-      if (parentageError) {
-        await supabase
-          .from("entity_lifecycle")
-          .delete()
-          .eq("entity_id", createdEntity.id);
-
-        await supabase
-          .from("farm_entities")
-          .delete()
-          .eq("id", createdEntity.id);
-
-        setSavingEntity(false);
-        setPageError(parentageError.message);
-        return;
-      }
+    if (!createdEntity?.entity_id) {
+      setSavingEntity(false);
+      setPageError("Registration completed, but no entity ID was returned.");
+      return;
     }
 
     // Assign through the existing RPC after any lifecycle/parentage records

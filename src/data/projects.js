@@ -12,16 +12,16 @@ const projects = [
     slug: "sonali-chickens",
     title: "Sonali Chicken Rearing",
     description:
-      "A small-scale poultry project focused on raising Sonali chickens with proper feeding, housing, and daily care.",
+      "An active Sonali poultry project focused on flock health, feed management, mortality monitoring, and small-scale meat production.",
     status: "ONGOING",
     category: "Poultry",
     image: sonaliChickens,
 
     details: {
-      startDate: "October 2026",
-      currentScale: "20 birds",
-      targetScale: "Expand gradually",
-      currentCount: 20,
+      startDate: "November 2026",
+      currentScale: "27 birds (30 purchased; 3 mortality)",
+      targetScale: "Expand gradually based on flock health and results",
+      currentCount: 27,
       breed: "Sonali",
       purpose: "Meat production and small-scale farm development",
       housing: "Small-scale poultry housing",
@@ -29,12 +29,12 @@ const projects = [
     },
 
     overview:
-      "The Sonali chicken project is part of our effort to build a practical, manageable poultry farming operation. We focus on daily care, feed management, health monitoring, and learning from actual production results.",
+      "The Sonali flock began with 30 birds in November 2026. Three birds were lost to Gambura, leaving 27. The project now focuses on flock health, feed management, preventive care, and recording actual production results.",
 
     approach: [
       "Monitor daily feed consumption and water availability.",
       "Maintain clean, dry, and well-ventilated housing.",
-      "Observe bird health and follow appropriate vaccination guidance.",
+      "Monitor flock health closely, including the previous Gambura-related losses, and follow appropriate veterinary and vaccination guidance.",
       "Record expenses, growth, and sales to evaluate profitability.",
     ],
   },
@@ -44,14 +44,14 @@ const projects = [
     slug: "mixed-vegetable-garden",
     title: "Mixed Vegetable Garden",
     description:
-      "An upcoming seasonal vegetable project featuring carrots, black cumin, coriander, Malabar spinach, red amaranth, and sweet pumpkin.",
-    status: "UPCOMING",
+      "A seasonal vegetable project in preparation, with land preparation completed and seeds purchased for a mixed-crop garden.",
+    status: "ONGOING",
     category: "Vegetable Farming",
     image: mixedVegetableGarden,
 
     details: {
-      season: "Winter and seasonal cultivation",
-      area: "To be determined",
+      season: "Winter and seasonal cultivation 2026–27",
+      area: "Part of 4 kathas prepared for grass and vegetables",
       variety: "Multiple seasonal crops",
       purpose: "Household food production and potential surplus sales",
       irrigation: "Based on crop requirements and available water",
@@ -67,7 +67,7 @@ const projects = [
     },
 
     overview:
-      "The mixed vegetable garden will diversify farm production through several crops with different growing periods. The plan prioritizes household food needs, affordable cultivation, and the possibility of selling surplus produce.",
+      "The farm has prepared approximately 4 kathas for grass and vegetable cultivation, and vegetable seeds have been purchased. The crop mix includes carrots, black cumin, coriander, Malabar spinach, red amaranth, and sweet pumpkin. Planting progress and actual cultivated area should be updated as sowing proceeds.",
 
     approach: [
       "Prepare the soil and assess sunlight and drainage.",
@@ -83,24 +83,25 @@ const projects = [
     slug: "broiler-chickens",
     title: "Broiler Chicken Rearing",
     description:
-      "A broiler poultry project focused on efficient growth, responsible care, and careful feed-cost management.",
+      "An active broiler batch focused on growth, feed efficiency, bird health, and tracking sales and operating costs.",
     status: "ONGOING",
     category: "Poultry",
     image: broilerChickens,
 
     details: {
-      startDate: "October 2026",
-      currentScale: "32 birds",
-      targetScale: "Expand based on results",
-      currentCount: 32,
+      startDate: "November 2026",
+      currentScale:
+        "27 birds alive (32 started; 1 mortality; 4 sold/sent to Dhaka)",
+      targetScale: "Evaluate this batch before expanding",
+      currentCount: 27,
       breed: "Broiler",
       purpose: "Meat production",
       housing: "Small-scale broiler housing",
-      feed: "Commercial starter and grower/finisher feed",
+      feed: "Commercial starter and grower/finisher feed; approximately 100 kg consumed so far",
     },
 
     overview:
-      "Our broiler project explores small-scale meat production with an emphasis on feed efficiency, bird health, and practical cost control. Production records will help us assess performance and plan future batches.",
+      "The first broiler batch started with 32 chicks at ৳45 each. One bird died and four were sold/sent to Dhaka, leaving 27 birds as of 17 November 2026. Approximately 100 kg of feed has been used so far. The four-bird sale is expected to generate about ৳1,450. Records will be used to assess feed efficiency, mortality, sales, and batch profitability.",
 
     approach: [
       "Follow an age-appropriate feeding schedule.",
@@ -115,28 +116,29 @@ const projects = [
     slug: "goat-rearing",
     title: "Goat Rearing",
     description:
-      "A planned small-scale goat-rearing project focused on healthy livestock, suitable housing, and affordable feeding.",
+      "An active small-scale Black Bengal goat project focused on individual animal records, health, suitable housing, and affordable feeding.",
     status: "ONGOING",
     category: "Livestock",
     image: goatRearing,
 
     details: {
-      startDate: "Planned for November 2026",
+      startDate: "November 2026",
       breed: "Black Bengal goat",
-      currentScale: "2 goats",
+      currentScale: "2 female goats",
+      currentCount: 2,
       targetScale: "Gradual expansion based on results",
       purpose: "Livestock production and gradual farm expansion",
       housing: "Clean, dry, and well-ventilated shelter",
-      feed: "Suitable forage, including planned Napier grass, with supplementary feed as needed",
+      feed: "Suitable forage, with Napier grass planting started and supplementary feed as needed",
       breedingPlan: "To be determined after livestock selection",
     },
 
     overview:
-      "The goat-rearing project is planned as a gradual addition to the farm. The initial priority will be suitable livestock selection, affordable forage, proper housing, and reliable health management.",
+      "The farm acquired two female Black Bengal goats in November 2026. The project is now active, with priorities including individual animal identification, health and lifecycle records, affordable forage, suitable housing, and veterinary guidance.",
 
     approach: [
-      "Prepare appropriate housing before acquiring goats.",
-      "Establish a dependable forage supply.",
+      "Maintain clean, dry, and well-ventilated housing for the two acquired goats.",
+      "Continue establishing a dependable forage supply, including the Napier grass planting already started.",
       "Provide clean water and suitable supplementary nutrition.",
       "Arrange veterinary guidance and preventive healthcare.",
       "Maintain records of feed, health, expenses, and growth.",
@@ -148,22 +150,23 @@ const projects = [
     slug: "quail-farming",
     title: "Quail Farming",
     description:
-      "A proposed small-scale quail project to evaluate suitable housing, feeding requirements, and market opportunities.",
+      "A small active quail group being maintained while the farm evaluates housing, feeding requirements, and future market opportunities.",
     status: "ONGOING",
     category: "Poultry",
     image: quailFarming,
 
     details: {
-      breed: "Japanese quail under consideration",
+      breed: "Quail (variety not yet confirmed)",
       currentScale: "5 birds",
-      targetScale: "100 birds",
+      currentCount: 5,
+      targetScale: "Evaluate demand and costs before scaling toward 100 birds",
       purpose: "Evaluate small-scale egg or meat production",
       housing: "To be planned according to the production model",
       feed: "Suitable balanced quail feed",
     },
 
     overview:
-      "Quail farming remains a proposed project. Before starting, we will evaluate local demand, chick availability, housing requirements, feed costs, and the most practical production model.",
+      "The farm currently keeps five quails. This is an initial small group rather than a full production batch. Future expansion will depend on local demand, housing, feed costs, and the production model.",
 
     approach: [
       "Research local demand for quail eggs and meat.",
@@ -209,22 +212,24 @@ const projects = [
     slug: "pigeon-rearing",
     title: "Pigeon Rearing",
     description:
-      "A proposed small-scale pigeon project to evaluate suitable housing, feeding requirements, and market opportunities.",
+      "A small active pigeon group being maintained while the farm evaluates suitable housing, feeding, and future expansion.",
     status: "ONGOING",
     category: "Poultry",
     image: deshiPigeon,
 
     details: {
-      breed: "Deshi pigeon under consideration",
-      currentScale: "1 pair",
-      targetScale: "10 pairs",
+      breed: "Deshi pigeon",
+      currentScale: "2 birds",
+      currentCount: 2,
+      targetScale:
+        "Gradual expansion after evaluating breeding and market conditions",
       purpose: "Evaluate small-scale egg or meat production",
       housing: "To be planned according to the production model",
       feed: "Suitable balanced pigeon feed",
     },
 
     overview:
-      "Pigeon rearing remains a proposed project. Before starting, we will evaluate local demand, chick availability, housing requirements, feed costs, and the most practical production model.",
+      "The farm currently keeps two Deshi pigeons. The initial focus is suitable housing, feeding, health monitoring, and learning whether a larger breeding group is practical.",
 
     approach: [
       "Research local demand for pigeon eggs and meat.",

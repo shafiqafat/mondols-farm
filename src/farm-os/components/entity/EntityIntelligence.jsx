@@ -115,23 +115,20 @@ function EntityIntelligence({ entity, events = [] }) {
                     Farm intelligence
                   </p>
 
-                  {analysis.detectedPurposes.length > 0 ? (
-                    <>
-                      <p className="mt-1.5 text-sm font-medium leading-6 text-foreground">
-                        Primary focus: {analysis.detectedPurposes.join(", ")}
-                      </p>
+                  <p className="mt-1.5 text-sm font-semibold leading-6 text-foreground">
+                    {analysis.operationalFocus.title}
+                  </p>
 
-                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                        This focus was inferred from the registration note and
-                        the capabilities configured for this entity.
-                      </p>
-                    </>
-                  ) : (
-                    <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
-                      There is not enough contextual information yet to
-                      determine a specific operational focus for this entity.
-                    </p>
-                  )}
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {analysis.operationalFocus.description}
+                  </p>
+
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Evidence: {analysis.operationalFocus.evidence}
+                    {analysis.operationalFocus.source === "activity"
+                      ? " · Based on recorded activities, not a confirmed business purpose."
+                      : ""}
+                  </p>
                 </div>
               </div>
             </div>

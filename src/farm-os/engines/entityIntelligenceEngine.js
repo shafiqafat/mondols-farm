@@ -1,15 +1,35 @@
 const EVENT_CAPABILITY_MAP = {
-  feed: "feed",
-  Feed_given: "feed",
-  weight: "weight",
-  egg_production: "egg",
-  Egg_count: "egg",
+  // Current canonical event types.
+  feed_given: "feed",
+  weight_check: "weight",
+  egg_count: "egg",
   mortality: "health",
   treatment: "health",
   health_note: "health",
   breeding: "breeding",
   harvest: "harvest",
+
+  // Legacy event types.
+  feed: "feed",
+  Feed_given: "feed",
+  weight: "weight",
+  egg_production: "egg",
+  Egg_count: "egg",
 };
+
+function getEventCapability(event) {
+  const type = String(event?.type ?? "").trim();
+
+  return (
+    EVENT_CAPABILITY_MAP[type] ??
+    EVENT_CAPABILITY_MAP[type.toLowerCase()] ??
+    null
+  );
+}
+
+function isEffectiveEvent(event) {
+  return !event?.reversed_at;
+}
 
 const CAPABILITY_LABELS = {
   feed: "Feed",
@@ -80,25 +100,30 @@ function detectPurposes(notes, capabilities) {
 }
 
 function buildActivitySummary(events) {
-  const counts = events.reduce((result, event) => {
-    const capability = EVENT_CAPABILITY_MAP[event.type];
+  return events.reduce((result, event) => {
+    if (!isEffectiveEvent(event)) return result;
 
-    if (!capability) {
-      return result;
-    }
+    const capability = getEventCapability(event);
+
+    if (!capability) return result;
 
     result[capability] = (result[capability] || 0) + 1;
 
     return result;
   }, {});
-
-  return counts;
 }
-function getEventDate(event) {
-  const value = event.occurred_at || event.event_date || event.created_at;
 
-  if (!value) {
-    return null;
+// Parse PostgreSQL DATE values in local time.
+function getEventDate(event) {
+  const value = event?.occurred_at || event?.event_date || event?.created_at;
+
+  if (!value) return null;
+
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 
   const date = new Date(value);
@@ -106,8 +131,16 @@ function getEventDate(event) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function startOfLocalDay(date) {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
 function buildTrendSummary(events, capabilities = {}) {
-  if (!events.length) {
+  const effectiveEvents = events.filter(isEffectiveEvent);
+
+  if (!effectiveEvents.length) {
     return {
       recentEventCount: 0,
       previousEventCount: 0,
@@ -117,32 +150,36 @@ function buildTrendSummary(events, capabilities = {}) {
     };
   }
 
-  const now = new Date();
+  const today = startOfLocalDay(new Date());
 
-  const recentStart = new Date(now);
-  recentStart.setDate(recentStart.getDate() - 7);
+  // Last 7 calendar days, including today.
+  const recentStart = new Date(today);
+  recentStart.setDate(recentStart.getDate() - 6);
 
-  const previousStart = new Date(now);
-  previousStart.setDate(previousStart.getDate() - 14);
+  // The 7 calendar days immediately before that.
+  const previousStart = new Date(today);
+  previousStart.setDate(previousStart.getDate() - 13);
 
-  const recentEvents = events.filter((event) => {
+  const recentEvents = effectiveEvents.filter((event) => {
     const date = getEventDate(event);
-    return date && date >= recentStart;
+
+    return date && date >= recentStart && date <= today;
   });
 
-  const previousEvents = events.filter((event) => {
+  const previousEvents = effectiveEvents.filter((event) => {
     const date = getEventDate(event);
+
     return date && date >= previousStart && date < recentStart;
   });
 
-  const latestEvent = [...events]
+  const latestEvent = effectiveEvents
     .map(getEventDate)
-    .filter((date) => date)
+    .filter((date) => date && date <= today)
     .sort((a, b) => b - a)[0];
 
   const daysSinceLastEvent = latestEvent
     ? Math.floor(
-        (now.getTime() - latestEvent.getTime()) / (1000 * 60 * 60 * 24),
+        (today.getTime() - startOfLocalDay(latestEvent).getTime()) / 86400000,
       )
     : null;
 
@@ -155,18 +192,17 @@ function buildTrendSummary(events, capabilities = {}) {
   }
 
   const capabilityKeys = Object.entries(capabilities)
-    .filter(([, enabled]) => enabled)
+    .filter(([, enabled]) => enabled !== false)
     .map(([capability]) => capability);
 
   const capabilityTrends = capabilityKeys.map((capability) => {
     const recentCount = recentEvents.filter(
-      (event) => EVENT_CAPABILITY_MAP[event.type] === capability,
+      (event) => getEventCapability(event) === capability,
     ).length;
 
     const previousCount = previousEvents.filter(
-      (event) => EVENT_CAPABILITY_MAP[event.type] === capability,
+      (event) => getEventCapability(event) === capability,
     ).length;
-    const inactive = recentCount === 0;
 
     let capabilityTrend = "stable";
 
@@ -181,7 +217,7 @@ function buildTrendSummary(events, capabilities = {}) {
       recentCount,
       previousCount,
       trend: capabilityTrend,
-      inactive,
+      inactive: recentCount === 0,
     };
   });
 
@@ -193,6 +229,82 @@ function buildTrendSummary(events, capabilities = {}) {
     capabilityTrends,
   };
 }
+
+
+function buildOperationalFocus({ activitySummary, detectedPurposes, species }) {
+  const entries = Object.entries(activitySummary).sort(([, a], [, b]) => b - a);
+
+  const classifiedCount = entries.reduce((sum, [, count]) => sum + count, 0);
+
+  if (classifiedCount > 0) {
+    const [capability, count] = entries[0];
+    const share = Math.round((count / classifiedCount) * 100);
+
+    const labels = {
+      feed: "Feed management",
+      weight: "Growth monitoring",
+      health: "Health management",
+      egg: "Egg production",
+      breeding: "Breeding management",
+      milk: "Milk production",
+      harvest: "Harvest management",
+    };
+
+    const label = labels[capability] ?? capability;
+
+    if (classifiedCount >= 3 && share >= 40) {
+      return {
+        title: label,
+        description: `${label} represents ${share}% of classified activity records for this entity.`,
+        evidence: `${count} of ${classifiedCount} classified activity records`,
+        source: "activity",
+        capability,
+        count,
+        classifiedCount,
+        share,
+      };
+    }
+
+    return {
+      title: "Multiple active management areas",
+      description: `${label} is currently the most frequently recorded activity, but no single area dominates.`,
+      evidence: `${classifiedCount} classified activity records`,
+      source: "activity",
+      capability,
+      count,
+      classifiedCount,
+      share,
+    };
+  }
+
+  if (detectedPurposes.length > 0) {
+    return {
+      title: detectedPurposes[0],
+      description:
+        "This purpose was inferred from registration notes and configured capabilities. No classified activity records are available yet.",
+      evidence: "Registration information",
+      source: "registration",
+      capability: null,
+      count: 0,
+      classifiedCount: 0,
+      share: 0,
+    };
+  }
+
+  return {
+    title: "Not enough information yet",
+    description: species?.name
+      ? `${species.name} is registered, but its operational focus cannot yet be determined from the available information.`
+      : "Add registration context or record activities to establish an operational focus.",
+    evidence: "Insufficient context",
+    source: "none",
+    capability: null,
+    count: 0,
+    classifiedCount: 0,
+    share: 0,
+  };
+}
+
 
 function buildObservations({
   entity,
@@ -217,6 +329,18 @@ function buildObservations({
         events.length === 1 ? "activity has" : "activities have"
       } been recorded for this entity.`,
     );
+
+    const reversedCount = events.filter(
+      (event) => !isEffectiveEvent(event),
+    ).length;
+
+    if (reversedCount > 0) {
+      observations.push(
+        `${reversedCount} reversed ${
+          reversedCount === 1 ? "record is" : "records are"
+        } excluded from current activity totals.`,
+      );
+    }
   } else {
     observations.push("No activity has been recorded for this entity yet.");
   }
@@ -238,6 +362,7 @@ function buildObservations({
   if (entity.quantity != null) {
     observations.push(`The current recorded quantity is ${entity.quantity}.`);
   }
+
   const inactiveCapabilities =
     trendSummary?.capabilityTrends?.filter((item) => item.inactive) ?? [];
 
@@ -256,9 +381,15 @@ export function buildEntityIntelligenceContext({ entity, events = [] }) {
   const capabilities = entity.species_config?.capabilities ?? {};
 
   const activitySummary = buildActivitySummary(events);
+
   const trendSummary = buildTrendSummary(events, capabilities);
 
   const detectedPurposes = detectPurposes(entity.notes, capabilities);
+  const operationalFocus = buildOperationalFocus({
+    activitySummary,
+    detectedPurposes,
+    species: entity.species_config,
+  });
 
   const observations = buildObservations({
     entity,
@@ -287,9 +418,10 @@ export function buildEntityIntelligenceContext({ entity, events = [] }) {
 
     activity: events.map((event) => ({
       type: event.type,
-      capability: EVENT_CAPABILITY_MAP[event.type] ?? null,
+      capability: getEventCapability(event),
       date: getEventDate(event),
       payload: event.payload ?? {},
+      isEffective: isEffectiveEvent(event),
     })),
 
     analysis: {
@@ -297,6 +429,7 @@ export function buildEntityIntelligenceContext({ entity, events = [] }) {
       activitySummary,
       trendSummary,
       observations,
+      operationalFocus,
     },
   };
 }
